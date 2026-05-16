@@ -1,0 +1,4 @@
+dependencies:
+  idf: ">=5.0"
+  # esp-bsp and lvgl are provided as local components in the components/ directory
+  # to avoid registry download issues. We use our own BSP layer (main/bsp/) instead.
