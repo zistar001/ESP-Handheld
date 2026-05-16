@@ -77,3 +77,39 @@ esp_err_t bsp_board_init(void) {
     bsp_i2c_init();
     return ESP_OK;
 }
+
+/* ---- Key Driver ---- */
+#include "key_driver.h"
+
+static key_cb_t key_callback = NULL;
+static const gpio_num_t key_pins[KEY_MAX] = {
+    BSP_KEY_UP, BSP_KEY_DOWN, BSP_KEY_LEFT, BSP_KEY_RIGHT,
+    BSP_KEY_A, BSP_KEY_B, BSP_KEY_START
+};
+
+esp_err_t key_driver_init(key_cb_t cb) {
+    key_callback = cb;
+    for (int i = 0; i < KEY_MAX; i++) {
+        gpio_set_direction(key_pins[i], GPIO_MODE_INPUT);
+        gpio_set_pull_mode(key_pins[i], GPIO_PULLUP_ONLY);
+    }
+    return ESP_OK;
+}
+
+void key_driver_scan_task(void *arg) {
+    uint8_t last[KEY_MAX]={0}, stable[KEY_MAX]={0}, cnt[KEY_MAX]={0};
+    while (1) {
+        for (int i = 0; i < KEY_MAX; i++) {
+            uint8_t lv = gpio_get_level(key_pins[i]);
+            if (lv == last[i]) {
+                if (cnt[i] < 3) cnt[i]++;
+                if (cnt[i] == 3 && stable[i] != lv) {
+                    stable[i] = lv;
+                    if (key_callback) key_callback(i, lv == 0);
+                }
+            } else { cnt[i] = 0; }
+            last[i] = lv;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
