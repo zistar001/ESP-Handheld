@@ -1,5 +1,6 @@
 #include "bsp_board.h"
 #include "st7789_driver.h"
+#include "sd_card.h"
 #include "esp_log.h"
 #include "driver/ledc.h"
 
@@ -75,6 +76,7 @@ esp_err_t bsp_board_init(void) {
     ESP_LOGI(TAG, "BSP init");
     bsp_lcd_init();
     bsp_i2c_init();
+    sd_card_init();  // optional, fail不影响主功能
     return ESP_OK;
 }
 
