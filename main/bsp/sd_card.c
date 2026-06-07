@@ -34,7 +34,7 @@ esp_err_t sd_card_init(void) {
     /* SD卡SPI模式 */
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.slot = spi_host;
-    host.max_freq_khz = 4000;  /* 4MHz */
+    host.max_freq_khz = 400;  /* SD init requires ≤400kHz */
 
     sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
     slot_config.gpio_cs = BSP_SD_CS;

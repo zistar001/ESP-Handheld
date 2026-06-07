@@ -14,7 +14,11 @@ static const char *TAG = "NES_WRAP";
 static void on_game_exit(void) {
     ESP_LOGI(TAG, "Game exited, restoring LVGL");
     ui_display_set_nes_active(false);
-app_manager_return();
+    /* Only transition if still in running state (may already be in menu
+     * if user pressed START during loading) */
+    if (app_manager_get_state() == APP_STATE_RUNNING) {
+        app_manager_return();
+    }
 }
 
 void nes_wrapper_init(void) {
@@ -33,12 +37,14 @@ void nes_start(const char *rom_path) {
         return;
     }
     ESP_LOGI(TAG, "Starting game: %s", rom_path);
-nes_game_init();
+    /* Re-register exit callback (it's cleared after each use) */
+    nes_game_set_exit_callback(on_game_exit);
     ui_display_set_nes_active(true);
     nes_game_start(rom_path);
 }
 
 void nes_stop(void) {
+    if (!nes_game_is_running()) return;
     ESP_LOGI(TAG, "Stopping game...");
     nes_game_stop();
     ui_display_set_nes_active(false);

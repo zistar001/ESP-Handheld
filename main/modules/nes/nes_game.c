@@ -10,6 +10,7 @@
 #include "box_audio_codec.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_task_wdt.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -34,6 +35,7 @@ static const char *TAG = "NES";
  * Emulator state
  * ================================================================ */
 static volatile bool s_running = false;
+static volatile bool s_abort = false;   /* stop requested during loading */
 static TaskHandle_t s_vid_task = NULL;
 static TaskHandle_t s_game_task = NULL;
 static SemaphoreHandle_t s_game_done_sem = NULL;
@@ -46,9 +48,9 @@ static TimerHandle_t s_audio_timer = NULL;
 /* ================================================================
  * Display geometry — 240x280 LCD, NES is 256x240
  * Crop 8 pixels from each side, center vertically with 20px margin
+ * (Vertical centering computed in video_task: voff = (280-240)/2 = 20)
  * ================================================================ */
 #define CROP_X      ((NES_SCREEN_WIDTH - ST7789_WIDTH) / 2)   /* 8 */
-#define MARGIN_Y    ((ST7789_HEIGHT - NES_SCREEN_HEIGHT) / 2) /* 20 */
 #define LINE_PIXELS  ST7789_WIDTH  /* 240 */
 
 /* ================================================================
@@ -87,8 +89,13 @@ void osd_getsoundinfo(sndinfo_t *info) {
  * ================================================================ */
 static void video_task(void *arg) {
     (void)arg;
-    static uint16_t line_buf[LINE_PIXELS];
     static uint32_t frame_cnt = 0;
+    /* Line buffer on stack (internal SRAM) — avoids PSRAM DMA cache issues */
+    uint16_t line_buf[LINE_PIXELS];
+
+    /* NES 256x240 → crop 8px each side, offset 20 for vertical center on 280 */
+    const int voff = (ST7789_HEIGHT - NES_SCREEN_HEIGHT) / 2;   /* 20 */
+    const int crop = (NES_SCREEN_WIDTH - ST7789_WIDTH) / 2;      /* 8 */
 
     while (1) {
         xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY);
@@ -101,28 +108,26 @@ static void video_task(void *arg) {
             continue;
         }
 
-
         esp_lcd_panel_handle_t panel = st7789_get_panel();
         if (!panel) continue;
 
         st7789_spi_lock();
+        /* Line-by-line render: uses internal SRAM line_buf, DMA-safe */
         for (int y = 0; y < NES_SCREEN_HEIGHT; y++) {
-            uint8_t *src = SCREENMEMORY + y * NES_SCREEN_WIDTH + CROP_X;
+            uint8_t *src = SCREENMEMORY + y * NES_SCREEN_WIDTH + crop;
             for (int x = 0; x < LINE_PIXELS; x++) {
                 uint16_t c = nes_palette_256[src[x]];
-                line_buf[x] = ((c & 0xFF) << 8) | ((c >> 8) & 0xFF);
+                line_buf[x] = (c >> 8) | (c << 8);
             }
-            esp_lcd_panel_draw_bitmap(panel, 0, MARGIN_Y + y,
-                                      LINE_PIXELS, MARGIN_Y + y + 1, line_buf);
+            esp_lcd_panel_draw_bitmap(panel, 0, voff + y,
+                                      LINE_PIXELS, voff + y + 1, line_buf);
         }
         st7789_spi_unlock();
 
         if (++frame_cnt % 120 == 0) {
-            ESP_LOGI("NES_VID", "frame %lu DMA=%lu", frame_cnt,
+            ESP_LOGI("NES_VID", "frame %lu DMA free=%lu", frame_cnt,
                      heap_caps_get_free_size(MALLOC_CAP_DMA));
         }
-
-
     }
 }
 
@@ -210,23 +215,34 @@ static void game_task(void *arg) {
     nes_setcontext(NESmachine);
     nes_reset();
 
+    /* Check: did someone request stop during ROM loading? */
+    if (s_abort) {
+        ESP_LOGW(TAG, "Stop requested during load, aborting");
+        goto done;
+    }
+
     s_running = true;
     /* Start audio timer at NES refresh rate */
     if (s_audio_timer) xTimerStart(s_audio_timer, 0);
     /* Reset video frame counter — written by video_task */
     ESP_LOGI(TAG, "Running...");
 
+    const int32_t frame_us = 1000000 / NES_REFRESH_RATE;  /* 16667us */
     while (s_running) {
+        /* Feed the task watchdog — this loop can run for minutes without yielding */
+        esp_task_wdt_reset();
+
         uint32_t t0 = esp_timer_get_time();
         nes_renderframe(true);
         xTaskNotify(s_vid_task, 0, eSetValueWithOverwrite);
-        /* Precise 60fps frame limiter: vTaskDelay whole ms, spin-wait remainder us */
-        int32_t t_elapsed = (int32_t)(esp_timer_get_time() - t0);
-        int32_t remain_us = (1000000 / NES_REFRESH_RATE) - t_elapsed;
-        if (remain_us > 0) {
-            int32_t coarse_ms = (remain_us - 1000) / 1000;  /* leave ~1ms for spin */
-            if (coarse_ms > 0) vTaskDelay(coarse_ms);
-            while ((int32_t)(esp_timer_get_time() - t0) < (1000000 / NES_REFRESH_RATE)) { }
+        int32_t elapsed = (int32_t)(esp_timer_get_time() - t0);
+        int32_t remain = frame_us - elapsed;
+        /* vTaskDelay for coarse sleep (10ms granularity), spin-wait for precision */
+        if (remain > 11000) {
+            vTaskDelay(pdMS_TO_TICKS((remain - 10000) / 1000));
+        }
+        while ((int32_t)(esp_timer_get_time() - t0) < frame_us) {
+            asm volatile("nop");
         }
 
         /* Check quit combo: B + START held for 3 frames */
@@ -265,7 +281,7 @@ done:
 esp_err_t nes_game_init(void) {
     if (!SCREENMEMORY) {
         SCREENMEMORY = heap_caps_malloc(NES_SCREEN_WIDTH * NES_SCREEN_HEIGHT,
-                                         MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+                                         MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
     }
     if (!cachedRom) {
         cachedRom = heap_caps_malloc(romMaxSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -310,18 +326,25 @@ void nes_game_start(const char *rom_path) {
         return;
     }
     if (!rom_path) return;
+    /* Reset semaphore: consume any stale signal from previous game exit */
+    if (s_game_done_sem) {
+        xSemaphoreTake(s_game_done_sem, 0);
+    }
     /* Create game task on Core 1 */
     xTaskCreatePinnedToCore(game_task, "nes_game", 8192,
                             (void *)rom_path, 5, &s_game_task, 1);
 }
 
 void nes_game_stop(void) {
-    if (!s_running) return;
+    if (!s_running && !s_game_task) return;
+    s_abort = true;
     s_running = false;
-    /* Wait for game task to finish cleanup (timeout 2s) */
+    /* Wait for game_task to finish cleanup before returning (prevents
+     * race where game_task sets s_running=true after we've switched to LVGL) */
     if (s_game_done_sem) {
-        xSemaphoreTake(s_game_done_sem, pdMS_TO_TICKS(2000));
+        xSemaphoreTake(s_game_done_sem, pdMS_TO_TICKS(3000));
     }
+    s_abort = false;
 }
 
 bool nes_game_is_running(void) {

@@ -100,10 +100,11 @@ void app_main(void) {
     settings_load(&cfg);
     ESP_LOGI(TAG, "Settings loaded: vol=%d bright=%d", cfg.volume, cfg.brightness);
 
-    /* 3. SD card first (creates SPI bus, LCD joins later — retro-go approach) */
-    sd_card_init();
+    /* 3. SD card first (creates SPI bus at safe speed, LCD joins later) */
+    ret = sd_card_init();
+    if (ret != ESP_OK) ESP_LOGW(TAG, "SD card init failed (continuing): %s", esp_err_to_name(ret));
 
-    /* 4. BSP: LCD + I2C */
+    /* 4. BSP: LCD joins existing SPI bus */
     bsp_board_init();
     bsp_lcd_backlight_set(cfg.brightness);
 
@@ -142,7 +143,7 @@ void app_main(void) {
 
     /* 15. Key driver */
     key_driver_init(key_handler);
-    xTaskCreatePinnedToCore(key_driver_scan_task, "key", 4096, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(key_driver_scan_task, "key", 4096, NULL, 2, NULL, 0);
 
     /* 16. App manager — shows launcher/home screen */
     app_manager_init();
