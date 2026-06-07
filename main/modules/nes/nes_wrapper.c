@@ -4,7 +4,7 @@
 #include "bsp/key_driver.h"
 #include "nes_port.h"
 #include "app/app_manager.h"
-#include "modules/pc_remote/ble_hid.h"
+
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -14,10 +14,7 @@ static const char *TAG = "NES_WRAP";
 static void on_game_exit(void) {
     ESP_LOGI(TAG, "Game exited, restoring LVGL");
     ui_display_set_nes_active(false);
-    /* Delay to let pending SPI DMA transfers complete before BLE reclaims DMA */
-    vTaskDelay(pdMS_TO_TICKS(200));
-    ble_hid_init();
-    app_manager_return();
+app_manager_return();
 }
 
 void nes_wrapper_init(void) {
@@ -36,9 +33,7 @@ void nes_start(const char *rom_path) {
         return;
     }
     ESP_LOGI(TAG, "Starting game: %s", rom_path);
-    ble_hid_deinit();
-    /* Retry NES init if it failed at boot (BLE was consuming DMA) */
-    nes_game_init();
+nes_game_init();
     ui_display_set_nes_active(true);
     nes_game_start(rom_path);
 }

@@ -24,7 +24,7 @@
 #include "modules/sensor/aht20_driver.h"
 #include "modules/imu/imu_driver.h"
 #include "modules/power/battery_monitor.h"
-#include "modules/pc_remote/ble_hid.h"
+
 #include "modules/wifi_manager/wifi_manager.h"
 #include "modules/weather/weather.h"
 #include "modules/time_sync/time_sync.h"
@@ -128,10 +128,8 @@ void app_main(void) {
 
     /* 14. NES wrapper (allocate memory, create video task) */
     nes_wrapper_init();
-    /* 10. BLE HID */
-    ble_hid_init();
 
-    /* 11. WiFi manager (best-effort; BLE may have consumed DMA pool) */
+    /* 11. WiFi manager (independent mode) */
     ret = wifi_manager_init();
     if (ret != ESP_OK) ESP_LOGW(TAG, "WiFi init failed (continuing): %s", esp_err_to_name(ret));
 

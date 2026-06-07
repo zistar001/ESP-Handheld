@@ -3,20 +3,24 @@
 #include "sd_card.h"
 #include "esp_log.h"
 #include "driver/ledc.h"
+#include "driver/i2c_master.h"
 
 static const char *TAG = "BSP";
-static spi_device_handle_t lcd_spi = NULL;
-spi_device_handle_t bsp_get_lcd_spi(void) { return lcd_spi; }
+static i2c_master_bus_handle_t s_i2c_bus = NULL;
 
 esp_err_t bsp_lcd_backlight_set(uint8_t brightness_percent) {
     if (brightness_percent > 100) brightness_percent = 100;
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, (brightness_percent * 8192) / 100);
+    /* 13-bit duty: 0~8191, use 8191 as max */
+    uint32_t duty = (brightness_percent * 8191) / 100;
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
     return ESP_OK;
 }
 
 esp_err_t bsp_lcd_init(void) {
     ESP_LOGI(TAG, "LCD init...");
+
+    /* Configure backlight PWM */
     gpio_set_direction(BSP_LCD_BL, GPIO_MODE_OUTPUT);
     ledc_timer_config_t ledc_timer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
@@ -32,51 +36,46 @@ esp_err_t bsp_lcd_init(void) {
         .duty = 0, .hpoint = 0
     };
     ledc_channel_config(&ledc_ch);
-    bsp_lcd_backlight_set(50);
+    bsp_lcd_backlight_set(50);  /* 50% brightness initially */
 
-    gpio_set_direction(BSP_LCD_RST, GPIO_MODE_OUTPUT);
-    gpio_set_level(BSP_LCD_RST, 0);
-    vTaskDelay(pdMS_TO_TICKS(10));
-    gpio_set_level(BSP_LCD_RST, 1);
-    vTaskDelay(pdMS_TO_TICKS(10));
+    /* Initialize ST7789 via ESP-IDF panel API */
+    st7789_init(NULL);  /* NULL = let st7789_init create its own SPI */
 
-    spi_bus_config_t bus_cfg = {
-        .mosi_io_num = BSP_LCD_MOSI, .miso_io_num = -1,
-        .sclk_io_num = BSP_LCD_CLK,
-        .quadwp_io_num = -1, .quadhd_io_num = -1,
-        .max_transfer_sz = 240 * 280 * 2 + 8
-    };
-    spi_bus_initialize(BSP_LCD_HOST, &bus_cfg, SPI_DMA_CH_AUTO);
-
-    spi_device_interface_config_t dev_cfg = {
-        .clock_speed_hz = 60 * 1000 * 1000,
-        .mode = 0, .spics_io_num = BSP_LCD_CS,
-        .queue_size = 7, .flags = SPI_DEVICE_NO_DUMMY
-    };
-    spi_bus_add_device(BSP_LCD_HOST, &dev_cfg, &lcd_spi);
-
-    st7789_init(lcd_spi);
     ESP_LOGI(TAG, "LCD init done");
     return ESP_OK;
 }
 
 esp_err_t bsp_i2c_init(void) {
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = BSP_I2C_SDA, .scl_io_num = BSP_I2C_SCL,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = BSP_I2C_CLK
+    ESP_LOGI(TAG, "I2C init (new driver)...");
+    ESP_LOGI(TAG, "SDA=%d, SCL=%d", BSP_I2C_SDA, BSP_I2C_SCL);
+    i2c_master_bus_config_t bus_cfg = {
+        .i2c_port = I2C_NUM_0,
+        .sda_io_num = BSP_I2C_SDA,
+        .scl_io_num = BSP_I2C_SCL,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
     };
-    return i2c_param_config(I2C_NUM_0, &conf) |
-           i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0);
+    ESP_LOGI(TAG, "Creating I2C bus...");
+    esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_i2c_bus);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "I2C init failed: %s", esp_err_to_name(ret));
+        return ret;
+    }
+    ESP_LOGI(TAG, "I2C init OK, handle=%p", s_i2c_bus);
+    return ESP_OK;
+}
+
+i2c_master_bus_handle_t bsp_get_i2c_bus(void) {
+    return s_i2c_bus;
 }
 
 esp_err_t bsp_board_init(void) {
     ESP_LOGI(TAG, "BSP init");
     bsp_lcd_init();
     bsp_i2c_init();
-    sd_card_init();  // optional, fail不影响主功能
+    // 延迟SD卡初始化，避免SPI总线冲突
+    // sd_card_init();
     return ESP_OK;
 }
 

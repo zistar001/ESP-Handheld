@@ -1,6 +1,7 @@
 #ifndef KEY_DRIVER_H
 #define KEY_DRIVER_H
 #include "esp_err.h"
+#include <stdbool.h>
 
 typedef enum {
     KEY_UP=0, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_START, KEY_MAX

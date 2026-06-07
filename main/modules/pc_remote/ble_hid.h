@@ -1,0 +1,10 @@
+#pragma once
+#include "esp_err.h"
+#include <stdbool.h>
+
+esp_err_t ble_hid_init(void);
+esp_err_t ble_hid_send_key(uint8_t modifier, uint8_t key);
+esp_err_t ble_hid_send_mouse(uint8_t buttons, int8_t dx, int8_t dy);
+esp_err_t ble_hid_deinit(void);
+bool ble_hid_is_connected(void);
+const char *ble_hid_get_passkey(void);
