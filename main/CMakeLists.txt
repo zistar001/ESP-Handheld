@@ -18,7 +18,7 @@ idf_component_register(
           # Time sync
           "modules/time_sync/time_sync.c"
           # Weather
-          "modules/weather/weather.c" "modules/weather/inflate.c"
+          "modules/weather/weather.c"
           # WiFi
           "modules/wifi_manager/wifi_manager.c" "modules/wifi_manager/wifi_bridge.cpp"
           # XiaoZhi wrapper

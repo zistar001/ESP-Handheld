@@ -7,7 +7,8 @@
 #define COLOR_WHITE    lv_color_hex(0xFFFFFF)
 #define COLOR_GREY     lv_color_hex(0x999999)
 
-/* Static UI elements */
+/* Static UI elements + screen + cached data */
+static lv_obj_t *s_scr = NULL;
 static lv_obj_t *wifi_icon, *bat_icon, *bat_pct;
 static lv_obj_t *time_lbl, *date_lbl;
 static lv_obj_t *temp_lbl, *temp_unit_lbl, *city_lbl, *range_lbl;
@@ -16,8 +17,16 @@ static lv_obj_t *fore_icon[3], *fore_temp[3], *fore_day[3];
 static lv_obj_t *indoor_label, *indoor_temp, *indoor_hum;
 static lv_obj_t *deco_lbl;
 
+/* Cached data — survives screen recreation */
+static char s_cached_time[16], s_cached_date[16];
+static char s_cached_city[32], s_cached_desc[32];
+static char s_cached_fore[3][16];
+static int  s_cached_temp, s_cached_high, s_cached_low;
+static float s_cached_indoor_temp, s_cached_indoor_hum;
+static bool s_cached_data_valid = false;
+
 lv_obj_t *home_screen_create(void) {
-    /* 删除旧屏幕释放LVGL内存 */
+    /* Screen objects may be deleted by other screens — always recreate, restore from cache */
     lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, COLOR_BG, 0);
@@ -131,12 +140,44 @@ lv_obj_t *home_screen_create(void) {
 
     lv_scr_load(scr);
     if (old) lv_obj_del(old);
+    s_scr = scr;
+
+    /* Restore cached data after recreation */
+    if (s_cached_data_valid) {
+        lv_label_set_text(time_lbl, s_cached_time);
+        lv_label_set_text(date_lbl, s_cached_date);
+        if (*s_cached_city) lv_label_set_text(city_lbl, s_cached_city);
+        if (*s_cached_desc) lv_label_set_text(desc_lbl, s_cached_desc);
+        if (s_cached_temp) {
+            char buf[16]; snprintf(buf, sizeof(buf), "%d", s_cached_temp);
+            lv_label_set_text(temp_lbl, buf);
+        }
+        if (s_cached_high || s_cached_low) {
+            char buf[32]; snprintf(buf, sizeof(buf),
+                "\xE2\x86\x91%d\xC2\xB0""C  \xE2\x86\x93%d\xC2\xB0""C",
+                s_cached_high, s_cached_low);
+            lv_label_set_text(range_lbl, buf);
+        }
+        for (int i = 0; i < 3; i++) {
+            if (*s_cached_fore[i]) lv_label_set_text(fore_day[i], s_cached_fore[i]);
+        }
+        if (s_cached_indoor_temp) {
+            char buf[16]; snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", s_cached_indoor_temp);
+            lv_label_set_text(indoor_temp, buf);
+        }
+        if (s_cached_indoor_hum) {
+            char buf[16]; snprintf(buf, sizeof(buf), "%.0f%%", s_cached_indoor_hum);
+            lv_label_set_text(indoor_hum, buf);
+        }
+    }
     return scr;
 }
 
 /* ── Update Functions ── */
 
 void home_screen_update_time(const char *time_str, const char *date_str) {
+    if (time_str) { strncpy(s_cached_time, time_str, sizeof(s_cached_time)-1); s_cached_data_valid = true; }
+    if (date_str) { strncpy(s_cached_date, date_str, sizeof(s_cached_date)-1); }
     if (time_lbl) lv_label_set_text(time_lbl, time_str ? time_str : "--:--");
     if (date_lbl) lv_label_set_text(date_lbl, date_str ? date_str : "");
 }
@@ -145,6 +186,10 @@ void home_screen_update_weather(const char *city, const char *desc,
                                  int temp, int temp_high, int temp_low,
                                  const char *icon) {
     char buf[64];
+    s_cached_temp = temp; s_cached_high = temp_high; s_cached_low = temp_low;
+    if (city) strncpy(s_cached_city, city, sizeof(s_cached_city)-1);
+    if (desc) strncpy(s_cached_desc, desc, sizeof(s_cached_desc)-1);
+    s_cached_data_valid = true;
     if (city_lbl && city) lv_label_set_text(city_lbl, city);
     if (desc_lbl && desc) lv_label_set_text(desc_lbl, desc);
     if (temp_lbl) {
@@ -171,20 +216,21 @@ void home_screen_update_wifi(bool connected) {
 void home_screen_update_forecast(int day_index, const char *desc, int temp_high, int temp_low) {
     if (day_index < 0 || day_index >= 3) return;
     char buf[32];
-    if (fore_day[day_index] && desc) {
-        /* Show high/low instead of day name */
-        snprintf(buf, sizeof(buf), "%d/%d", temp_high, temp_low);
-        lv_label_set_text(fore_day[day_index], buf);
+    snprintf(s_cached_fore[day_index], sizeof(s_cached_fore[0]), "%d/%d", temp_high, temp_low);
+    if (fore_day[day_index]) {
+        lv_label_set_text(fore_day[day_index], s_cached_fore[day_index]);
     }
     if (fore_temp[day_index]) {
         snprintf(buf, sizeof(buf), "%d\xC2\xB0", temp_high);
         lv_label_set_text(fore_temp[day_index], buf);
     }
-    (void)desc; /* could map to weather icons later */
+    (void)desc;
 }
 
 void home_screen_update_indoor(float temp, float humi) {
     char buf[32];
+    s_cached_indoor_temp = temp;
+    s_cached_indoor_hum = humi;
     if (indoor_temp) {
         snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", temp);
         lv_label_set_text(indoor_temp, buf);
