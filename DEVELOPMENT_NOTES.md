@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-09
 **Current Branch:** codex/nofrendo-migration
-**Current Commit:** 46b1f5e (fix: NES game system refactor — SD card, rendering, exit freeze, WDT)
+**Current Commit:** 2e39be7 (fix: home screen data persistence across navigation)
 **Build Status:** ✅ Compiles and flashes
 **Game Status:** ✅ NES playable, SD card working, exit/re-entry stable
 
@@ -252,6 +252,18 @@ Additionally, all LVGL operations were called from the `key_driver_scan_task` (p
 
 **Fix:** Changed to `MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT`, freeing 61KB of internal SRAM for WiFi, audio DMA, and mbedTLS.
 
+### Home Screen Data Lost on Navigation Return
+
+**Root Cause:** `home_screen_create()` always deleted the old screen (`lv_obj_del(lv_scr_act())`) and created a brand new screen with all labels initialized to `"--:--"` / `"---"`. When the user entered the menu (which also deletes the home screen), then returned, all data (time, weather, indoor data) was gone. The `launcher_update_task` eventually refilled the time/indoor data, but weather required a new HTTP request cycle (30 min interval).
+
+**Fix:** Added a data cache layer in `home_screen.c`:
+- Static variables cache time, date, weather, forecast, indoor temp/hum
+- `home_screen_update_*()` functions save to cache AND update labels
+- `home_screen_create()` restores from cache after screen recreation
+- `s_cached_data_valid` flag ensures data is only restored after at least one fetch
+
+**Key lesson:** When switching between LVGL screens, the old screen object is deleted by the new screen's creator. To preserve data, explicitly cache it in static variables and restore after recreation.
+
 ### Important Lessons Learned
 
 **1. LVGL单缓冲+DMA异步传输=条纹**
@@ -289,7 +301,11 @@ Additionally, all LVGL operations were called from the `key_driver_scan_task` (p
 
 ### Commit History
 ```
-723029e — Optimize: DFS disable, LVGL double-buffer, WiFi, remove BLE
+2e39be7 — Home screen data persistence (cache + restore)
+2f58353 — Weather gzip via zlib, memory optimizations
+5a073cb — Ignore .claude/ and managed_components/
+46b1f5e — NES refactor (SD card, rendering, exit freeze, WDT)
+723029e — DFS disable, LVGL double-buffer, WiFi, remove BLE
 e9ed773 — NES game module (gamer project emucore)
 6e04d4a — sensor drivers + SD card SPI
 a931d41 — GPIO key driver
