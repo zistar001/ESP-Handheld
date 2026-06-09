@@ -36,6 +36,12 @@ CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=n
 CONFIG_SPIRAM_MEMTEST=n
 CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC=y
 CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA=y
+# Let mbedTLS IO buffers allocate from PSRAM (key for SSL memory)
+CONFIG_MBEDTLS_DYNAMIC_BUFFER=y
+# Free CA cert after verification
+CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT=y
+# Don't keep peer certificate after TLS handshake
+CONFIG_MBEDTLS_SSL_KEEP_PEER_CERTIFICATE=n
 
 # WiFi memory optimization (xiaozhi-derived)
 CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=3
@@ -46,5 +52,11 @@ CONFIG_LWIP_TCPIP_RECVMBOX_SIZE=16
 # Increase tick rate for precise frame timing (1000Hz=1ms tick, was 100Hz)
 CONFIG_FREERTOS_HZ=1000
 
+# System event task stack — WiFi event handlers need more than 2304
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+CONFIG_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+
+# LVGL: byte-swap RGB565 for ST7789 SPI (MSB-first)
+CONFIG_LV_COLOR_16_SWAP=y
 # LVGL memory pool
 CONFIG_LV_MEM_SIZE_KILOBYTES=64

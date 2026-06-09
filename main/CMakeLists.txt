@@ -18,7 +18,7 @@ idf_component_register(
           # Time sync
           "modules/time_sync/time_sync.c"
           # Weather
-          "modules/weather/weather.c"
+          "modules/weather/weather.c" "modules/weather/inflate.c"
           # WiFi
           "modules/wifi_manager/wifi_manager.c" "modules/wifi_manager/wifi_bridge.cpp"
           # XiaoZhi wrapper
@@ -48,6 +48,6 @@ idf_component_register(
     REQUIRES driver esp_timer spi_flash nvs_flash fatfs sdmmc app_update esp_partition esp_hid esp_adc
              esp_lcd nes_core espressif__esp_codec_dev lvgl
              esp_wifi esp_event esp_netif esp_http_client json
-             esp_pm esp_http_server)
+             esp_pm esp_http_server mbedtls zlib)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=format-truncation)

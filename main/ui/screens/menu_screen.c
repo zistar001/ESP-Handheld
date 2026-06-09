@@ -12,10 +12,10 @@ static lv_obj_t *highlight;
 static int sel = 0;
 
 static const struct { const char *icon; const char *label; app_id_t app; } items[] = {
-    { "\xEF\x84\x9B", "\xE6\xB8\xB8\xE6\x88\x8F", APP_ID_NES },        /* 游戏 */
-    { "\xEF\x84\x9C", "\xE9\x94\xAE\xE9\xBC\xA0", APP_ID_PC_REMOTE },  /* 键鼠 */
-    { "\xEF\x80\xB3", "\xE9\x97\xB9\xE9\x92\x9F", APP_ID_COUNTDOWN },  /* 闹钟 → 倒计时 */
-    { "\xEF\x80\x93", "\xE8\xAE\xBE\xE7\xBD\xAE", APP_ID_SETTINGS },   /* 设置 */
+    { LV_SYMBOL_PLAY,   "\xE6\xB8\xB8\xE6\x88\x8F", APP_ID_NES },        /* ▶ 游戏 */
+    { LV_SYMBOL_SETTINGS, "\xE8\xAE\xBE\xE7\xBD\xAE", APP_ID_SETTINGS }, /* ⚙ 设置 */
+    { LV_SYMBOL_OK,     "\xE5\x85\xB3\xE4\xBA\x8E", APP_ID_ABOUT },      /* ✓ 关于 */
+    { LV_SYMBOL_CLOSE,  "\xE9\x97\xB9\xE9\x92\x9F", APP_ID_COUNTDOWN },  /* ✗ 闹钟 */
 };
 
 static void card_cb(lv_event_t *e) {
@@ -24,6 +24,7 @@ static void card_cb(lv_event_t *e) {
 }
 
 lv_obj_t *menu_screen_create(void) {
+    lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x0A0A0A), 0);
 
@@ -93,6 +94,7 @@ lv_obj_t *menu_screen_create(void) {
     lv_obj_set_pos(highlight, col_x[0] - 2, row1_y - 2);
 
     lv_scr_load(scr);
+    if (old) lv_obj_del(old);
     return scr;
 }
 

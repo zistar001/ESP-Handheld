@@ -1,6 +1,7 @@
 #include "wifi_manager.h"
 #include "wifi_bridge.h"
 #include "esp_log.h"
+#include "esp_wifi.h"
 
 static const char *TAG = "WIFI_MGR";
 static bool s_inited = false;
@@ -20,6 +21,10 @@ esp_err_t wifi_manager_init(void) {
 
     s_inited = true;
     ESP_LOGI(TAG, "WiFi manager ready");
+
+    /* Disable power save for stable TCP connections */
+    esp_wifi_set_ps(WIFI_PS_NONE);
+
     return ESP_OK;
 }
 

@@ -64,6 +64,33 @@ esp_err_t st7789_init(spi_device_handle_t spi) {
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel));
+
+    /* ----------------------------------------------------------------
+     * ST7789V 增强初始化 — ESP-IDF 默认 init 不包含这些寄存器，
+     * 缺少它们可能导致 VCOM/VRH 电压不准，产生黑色横条纹。
+     * ---------------------------------------------------------------- */
+    vTaskDelay(pdMS_TO_TICKS(20));
+
+    /* 电压/电源控制 */
+    esp_lcd_panel_io_tx_param(panel_io, 0xC2, (uint8_t[]){0x0D, 0x02}, 2);  /* VDV_VRH_EN */
+    esp_lcd_panel_io_tx_param(panel_io, 0xC3, (uint8_t[]){0x0C}, 1);        /* VRH */
+    esp_lcd_panel_io_tx_param(panel_io, 0xC4, (uint8_t[]){0x0D}, 1);        /* VDV */
+    esp_lcd_panel_io_tx_param(panel_io, 0xBB, (uint8_t[]){0x1F}, 1);        /* VCOM */
+    esp_lcd_panel_io_tx_param(panel_io, 0xC0, (uint8_t[]){0x2C}, 1);        /* LCMCTRL */
+    esp_lcd_panel_io_tx_param(panel_io, 0xD0, (uint8_t[]){0xA4, 0xA1}, 2);  /* PWCTRL1 */
+    /* 注：0xB0 (RAMCTRL) 由 ESP-IDF panel_st7789_init 设置，此处不覆盖 */
+
+    /* 正极伽玛曲线 */
+    esp_lcd_panel_io_tx_param(panel_io, 0xE0, (uint8_t[]){
+        0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F,
+        0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23
+    }, 14);
+    /* 负极伽玛曲线 */
+    esp_lcd_panel_io_tx_param(panel_io, 0xE1, (uint8_t[]){
+        0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F,
+        0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23
+    }, 14);
+
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel, false));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel, false, false));
     ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel, true));
@@ -72,7 +99,7 @@ esp_err_t st7789_init(spi_device_handle_t spi) {
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel, true));
 
     s_initialized = true;
-    ESP_LOGI(TAG, "ST7789V ready (240x280, 60MHz, XiaoZhi-compatible)");
+    ESP_LOGI(TAG, "ST7789V ready (240x280, 80MHz, init+voltage+gamma)");
     return ESP_OK;
 }
 

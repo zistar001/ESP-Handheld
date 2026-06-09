@@ -3,6 +3,7 @@
 #include "modules/nes/nes_wrapper.h"
 #include "bsp/sd_card.h"
 #include "bsp/st7789_driver.h"
+#include "ui/display_driver.h"
 #include "esp_log.h"
 #include "lvgl.h"
 #include <dirent.h>
@@ -43,7 +44,7 @@ static int scan_roms(void) {
 
     if (!sd_card_is_mounted()) {
         ESP_LOGI(TAG, "SD card not mounted, initializing...");
-        ESP_LOGI(TAG, "DMA free before SD init: %lu",
+        ESP_LOGI(TAG, "DMA free before SD init: %zu",
                  heap_caps_get_free_size(MALLOC_CAP_DMA));
         esp_err_t ret = sd_card_init();
         if (ret != ESP_OK) {
@@ -90,6 +91,7 @@ static int scan_roms(void) {
 void rom_browser_enter(void) {
     int n = scan_roms();
 
+    lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x1a1a2e), 0);
 
@@ -124,6 +126,7 @@ void rom_browser_enter(void) {
     }
 
     lv_scr_load(scr);
+    if (old) lv_obj_del(old);
 }
 
 /* 按键处理 — 由main.c的key_handler转发 */
@@ -137,6 +140,7 @@ void rom_browser_key(key_id_t key, bool pressed) {
     /* ROM列表导航（只处理按下事件） */
     if (!pressed) return;
     ESP_LOGI(TAG, "Key: %d, sel=%d, count=%d", key, s_sel, s_rom_count);
+    lvgl_lock();
     switch (key) {
         case KEY_UP:
             if (s_sel > 0) { s_sel--; update_highlight(); }
@@ -157,4 +161,5 @@ void rom_browser_key(key_id_t key, bool pressed) {
         default:
             break;
     }
+    lvgl_unlock();
 }

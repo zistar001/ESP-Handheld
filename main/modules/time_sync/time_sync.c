@@ -93,14 +93,9 @@ esp_err_t time_sync_init(void) {
     /* Try to restore last known time from NVS */
     restore_from_nvs();
 
-    /* Start SNTP if WiFi is configured */
-    settings_t s;
-    settings_load(&s);
-    if (strlen(s.wifi_ssid) > 0) {
-        init_sntp();
-    } else {
-        ESP_LOGW(TAG, "WiFi not configured — SNTP disabled, using NVS time only");
-    }
+    /* Always start SNTP — WiFi may connect via saved credentials later.
+     * SNTP silently retries if WiFi isn't ready yet. */
+    init_sntp();
 
     return ESP_OK;
 }

@@ -7,6 +7,7 @@
 #include "modules/wifi_manager/wifi_manager.h"
 #include "ui/screens/settings_screen.h"
 #include "ui/screens/countdown_screen.h"
+#include "ui/display_driver.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
@@ -31,6 +32,24 @@ void app_manager_init(void) { state = APP_STATE_LAUNCHER; cur_app = APP_ID_NONE;
 void app_manager_set_state(app_state_t s) { state = s; }
 app_state_t app_manager_get_state(void) { return state; }
 app_id_t app_manager_get_current_app(void) { return cur_app; }
+
+static void wifi_do_reset(void) {
+    ESP_LOGI(TAG, "WiFi reset + config mode");
+    wifi_manager_forget_ssids();
+    wifi_manager_stop_station();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    wifi_manager_start_config();
+    app_manager_launch(APP_ID_WIFI_SETUP);
+}
+
+void app_manager_wifi_action(void) {
+    wifi_do_reset();
+}
+
+static void wifi_reset_cb(lv_event_t *e) {
+    (void)e;
+    wifi_do_reset();
+}
 
 esp_err_t app_manager_launch(app_id_t id) {
     if (id < 0 || id >= APP_ID_MAX) return ESP_ERR_INVALID_ARG;
@@ -86,54 +105,58 @@ esp_err_t app_manager_launch(app_id_t id) {
         case APP_ID_WIFI_SETUP: {
             ESP_LOGI(TAG, "WiFi setup");
             wifi_manager_init();
+            lv_obj_t *old = lv_scr_act();
             lv_obj_t *scr = lv_obj_create(NULL);
             lv_obj_set_style_bg_color(scr, lv_color_hex(0x1a1a2e), 0);
-            lv_obj_t *l = lv_label_create(scr);
-            char buf[320];
+            lv_obj_add_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
+            lv_obj_t *title = lv_label_create(scr);
+            lv_label_set_text(title, "WiFi Settings (B: Back)");
+            lv_obj_set_style_text_color(title, lv_color_hex(0xFFFFFF), 0);
+            lv_obj_set_pos(title, 10, 10);
+
+            lv_obj_t *status = lv_label_create(scr);
+            lv_obj_set_style_text_color(status, lv_color_hex(0xCCCCCC), 0);
+            lv_obj_set_pos(status, 10, 45);
+
+            char buf[256];
+            int y = 45;
             if (wifi_manager_is_connected()) {
                 snprintf(buf, sizeof(buf),
-                    "WiFi: Connected\n\n"
-                    "SSID: %s\n"
-                    "IP:   %s\n"
-                    "RSSI: %d dBm\n\n"
-                    "B: Back",
-                    wifi_manager_get_ssid(),
-                    wifi_manager_get_ip(),
+                    "Connected\nSSID: %s\nIP: %s\nRSSI: %d dBm",
+                    wifi_manager_get_ssid(), wifi_manager_get_ip(),
                     wifi_manager_get_rssi());
+                y = 105;
             } else if (wifi_manager_is_config_mode()) {
                 snprintf(buf, sizeof(buf),
-                    "Config Mode Active\n\n"
-                    "Connect to AP:\n%s\n\n"
-                    "Open browser:\n%s\n\n"
-                    "B: Back",
-                    wifi_manager_get_ap_ssid(),
-                    wifi_manager_get_ap_url());
+                    "Config Mode Active\nAP: %s\nURL: %s",
+                    wifi_manager_get_ap_ssid(), wifi_manager_get_ap_url());
+                y = 105;
             } else if (wifi_manager_has_saved_ssid()) {
                 snprintf(buf, sizeof(buf),
-                    "WiFi: Connecting...\n\n"
-                    "Saved network found,\n"
-                    "connecting in background.\n\n"
-                    "To start config AP,\n"
-                    "re-enter this menu.\n\n"
-                    "B: Back");
+                    "Connecting...\nSaved network found.");
                 wifi_manager_start_station();
+                y = 95;
             } else {
                 snprintf(buf, sizeof(buf),
-                    "No WiFi configured\n\n"
-                    "Starting web config mode...\n"
-                    "Connect to AP:\n%s\n\n"
-                    "Open browser:\n%s\n\n"
-                    "B: Back",
-                    wifi_manager_get_ap_ssid(),
-                    wifi_manager_get_ap_url());
-                wifi_manager_start_config();
+                    "No WiFi configured.\nTap button to start setup.");
+                y = 85;
             }
+            lv_label_set_text(status, buf);
 
-            lv_label_set_text(l, buf);
-            lv_obj_set_style_text_color(l, lv_color_hex(0xCCCCCC), 0);
-            lv_obj_center(l);
+            lv_obj_t *btn = lv_btn_create(scr);
+            lv_obj_set_size(btn, 220, 36);
+            lv_obj_set_pos(btn, 10, y + 5);
+            lv_obj_set_style_bg_color(btn, lv_color_hex(0xFF5C00), 0);
+            lv_obj_set_style_radius(btn, 6, 0);
+            lv_obj_t *btn_lbl = lv_label_create(btn);
+            lv_label_set_text(btn_lbl, wifi_manager_is_connected() ?
+                              "Reconfigure WiFi" : "WiFi Setup");
+            lv_obj_center(btn_lbl);
+            lv_obj_add_event_cb(btn, wifi_reset_cb, LV_EVENT_CLICKED, NULL);
+
             lv_scr_load(scr);
+            if (old) lv_obj_del(old);
             break;
         }
         case APP_ID_COUNTDOWN: {

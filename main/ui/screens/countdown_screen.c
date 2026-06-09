@@ -115,6 +115,7 @@ static void reset_cb(lv_event_t *e) {
 
 /* ── Screen create ── */
 lv_obj_t *countdown_screen_create(void) {
+    lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, BG, 0);
 
@@ -244,6 +245,7 @@ lv_obj_t *countdown_screen_create(void) {
     lv_timer_pause(countdown_timer);
 
     lv_scr_load(scr);
+    if (old) lv_obj_del(old);
     return scr;
 }
 

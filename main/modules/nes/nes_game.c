@@ -45,6 +45,9 @@ static int16_t *s_audio_buf = NULL;
 static void (*s_exit_callback)(void) = NULL;
 static TimerHandle_t s_audio_timer = NULL;
 
+/* Shadow framebuffer in PSRAM — allows emulation + SPI transfer to overlap */
+static uint8_t *s_shadow = NULL;
+
 /* ================================================================
  * Display geometry — 240x280 LCD, NES is 256x240
  * Crop 8 pixels from each side, center vertically with 20px margin
@@ -90,16 +93,17 @@ void osd_getsoundinfo(sndinfo_t *info) {
 static void video_task(void *arg) {
     (void)arg;
     static uint32_t frame_cnt = 0;
-    /* Line buffer on stack (internal SRAM) — avoids PSRAM DMA cache issues */
-    uint16_t line_buf[LINE_PIXELS];
+    /* Batch buffer: 8 lines × 240px in BSS (internal SRAM, DMA-safe) */
+    #define BATCH_LINES 8
+    static uint16_t batch_buf[BATCH_LINES][LINE_PIXELS];
 
-    /* NES 256x240 → crop 8px each side, offset 20 for vertical center on 280 */
+    /* NES 256x240 → crop 8px each side, voff 20 for vertical center on 280 */
     const int voff = (ST7789_HEIGHT - NES_SCREEN_HEIGHT) / 2;   /* 20 */
     const int crop = (NES_SCREEN_WIDTH - ST7789_WIDTH) / 2;      /* 8 */
 
     while (1) {
         xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY);
-        if (!s_running || !SCREENMEMORY) {
+        if (!s_running || !s_shadow) {
             if (s_exit_callback) {
                 void (*cb)(void) = s_exit_callback;
                 s_exit_callback = NULL;
@@ -112,20 +116,29 @@ static void video_task(void *arg) {
         if (!panel) continue;
 
         st7789_spi_lock();
-        /* Line-by-line render: uses internal SRAM line_buf, DMA-safe */
-        for (int y = 0; y < NES_SCREEN_HEIGHT; y++) {
-            uint8_t *src = SCREENMEMORY + y * NES_SCREEN_WIDTH + crop;
-            for (int x = 0; x < LINE_PIXELS; x++) {
-                uint16_t c = nes_palette_256[src[x]];
-                line_buf[x] = (c >> 8) | (c << 8);
+        /* Batch render: convert palette then transfer 8 lines at once.
+         * Reduces SPI transactions from 240→30, cutting command overhead ~10×. */
+        for (int y = 0; y < NES_SCREEN_HEIGHT; y += BATCH_LINES) {
+            int batch_h = (y + BATCH_LINES <= NES_SCREEN_HEIGHT) ? BATCH_LINES : (NES_SCREEN_HEIGHT - y);
+            for (int r = 0; r < batch_h; r++) {
+                uint8_t *src = s_shadow + (y + r) * NES_SCREEN_WIDTH + crop;
+                for (int x = 0; x < LINE_PIXELS; x++) {
+                    uint16_t c = nes_palette_256[src[x]];
+                    batch_buf[r][x] = (c >> 8) | (c << 8);
+                }
             }
             esp_lcd_panel_draw_bitmap(panel, 0, voff + y,
-                                      LINE_PIXELS, voff + y + 1, line_buf);
+                                      LINE_PIXELS, voff + y + batch_h, (uint16_t *)batch_buf);
         }
         st7789_spi_unlock();
 
+        /* Signal game_task: frame transfer complete */
+        if (s_game_task) {
+            xTaskNotify(s_game_task, 0, eSetValueWithOverwrite);
+        }
+
         if (++frame_cnt % 120 == 0) {
-            ESP_LOGI("NES_VID", "frame %lu DMA free=%lu", frame_cnt,
+            ESP_LOGI("NES_VID", "frame %lu DMA free=%zu", frame_cnt,
                      heap_caps_get_free_size(MALLOC_CAP_DMA));
         }
     }
@@ -222,27 +235,52 @@ static void game_task(void *arg) {
     }
 
     s_running = true;
+    /* Subscribe this task to the watchdog (IDF v5.x new API) */
+    esp_task_wdt_add(NULL);
     /* Start audio timer at NES refresh rate */
     if (s_audio_timer) xTimerStart(s_audio_timer, 0);
-    /* Reset video frame counter — written by video_task */
     ESP_LOGI(TAG, "Running...");
 
     const int32_t frame_us = 1000000 / NES_REFRESH_RATE;  /* 16667us */
+    uint32_t frame_count = 0;
+    uint32_t t_last_log = esp_timer_get_time();
+    int64_t max_frame_us = 0;
     while (s_running) {
-        /* Feed the task watchdog — this loop can run for minutes without yielding */
         esp_task_wdt_reset();
 
+        /* 1. Emulate NES frame → SCREENMEMORY */
         uint32_t t0 = esp_timer_get_time();
         nes_renderframe(true);
+
+        /* 2. Snapshot to shadow buffer (PSRAM) + kick SPI transfer.
+         *    Fire-and-forget: don't wait for SPI to finish.
+         *    Video task reads from shadow while we render next frame to SCREENMEMORY. */
+        memcpy(s_shadow, SCREENMEMORY, NES_SCREEN_WIDTH * NES_SCREEN_HEIGHT);
+        uint32_t t_copy = esp_timer_get_time();
         xTaskNotify(s_vid_task, 0, eSetValueWithOverwrite);
-        int32_t elapsed = (int32_t)(esp_timer_get_time() - t0);
-        int32_t remain = frame_us - elapsed;
-        /* vTaskDelay for coarse sleep (10ms granularity), spin-wait for precision */
+
+        /* 3. Frame pace to 60fps — spin-wait any remaining time */
+        int32_t emu_us = (int32_t)(t_copy - t0);
+        if (emu_us > max_frame_us) max_frame_us = emu_us;
+        int32_t remain = frame_us - emu_us;
         if (remain > 11000) {
             vTaskDelay(pdMS_TO_TICKS((remain - 10000) / 1000));
         }
         while ((int32_t)(esp_timer_get_time() - t0) < frame_us) {
             asm volatile("nop");
+        }
+
+        /* 4. Log FPS every 5s */
+        frame_count++;
+        uint32_t t_now = esp_timer_get_time();
+        if (t_now - t_last_log >= 5000000) {
+            float fps = (float)frame_count * 1000000.0f / (float)(t_now - t_last_log);
+            ESP_LOGI(TAG, "FPS=%.1f emu=%lu max=%lld",
+                     fps, (unsigned long)(emu_us),
+                     (long long)max_frame_us);
+            frame_count = 0;
+            t_last_log = t_now;
+            max_frame_us = 0;
         }
 
         /* Check quit combo: B + START held for 3 frames */
@@ -281,7 +319,7 @@ done:
 esp_err_t nes_game_init(void) {
     if (!SCREENMEMORY) {
         SCREENMEMORY = heap_caps_malloc(NES_SCREEN_WIDTH * NES_SCREEN_HEIGHT,
-                                         MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+                                         MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     }
     if (!cachedRom) {
         cachedRom = heap_caps_malloc(romMaxSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -299,6 +337,10 @@ esp_err_t nes_game_init(void) {
         memset(NESmachine->rominfo, 0, sizeof(rominfo_t));
     }
 
+    if (!s_shadow) {
+        s_shadow = heap_caps_malloc(NES_SCREEN_WIDTH * NES_SCREEN_HEIGHT,
+                                    MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    }
     if (!s_audio_buf) s_audio_buf = heap_caps_malloc(DEFAULT_FRAGSIZE * sizeof(int16_t), MALLOC_CAP_SPIRAM);
 
     if (!s_game_done_sem) s_game_done_sem = xSemaphoreCreateBinary();
@@ -315,7 +357,7 @@ esp_err_t nes_game_init(void) {
         xTaskCreatePinnedToCore(video_task, "nes_vid", 4096, NULL, 1, &s_vid_task, 0);
     }
 
-    ESP_LOGI(TAG, "Init OK: SCREEN=%p ROM=%p DMA free=%lu",
+    ESP_LOGI(TAG, "Init OK: SCREEN=%p ROM=%p DMA free=%zu",
              SCREENMEMORY, cachedRom, heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
     return ESP_OK;
 }

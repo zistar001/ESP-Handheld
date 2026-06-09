@@ -2,9 +2,8 @@
 #include <esp-wifi-connect/include/wifi_manager.h>
 #include <esp-wifi-connect/include/ssid_manager.h>
 #include <esp_log.h>
-#include <esp_netif.h>
-#include <esp_event.h>
-#include <nvs.h>
+#include <esp_timer.h>
+#include <cstring>
 
 static const char *TAG = "WIFI_BRIDGE";
 
@@ -12,15 +11,56 @@ static const char *TAG = "WIFI_BRIDGE";
 
 static EventGroupHandle_t s_events = NULL;
 static bool s_inited = false;
-static bool s_netif_inited = false;
+static bool s_station_started = false;
+static esp_timer_handle_t s_fallback_timer = NULL;
 static char s_ip_str[16] = "";
 static char s_ssid_str[33] = "";
-static bool s_station_started = false;
+
+/* Try to connect: if saved SSIDs exist, start station; else enter config mode */
+static void try_wifi_connect(void) {
+    auto &ssid_mgr = SsidManager::GetInstance();
+    if (!ssid_mgr.GetSsidList().empty()) {
+        ESP_LOGI(TAG, "Starting WiFi connection attempt");
+        s_station_started = false;
+        wifi_bridge_start_station();  /* will skip if already started */
+    } else {
+        ESP_LOGI(TAG, "No saved SSIDs, entering config mode");
+        vTaskDelay(pdMS_TO_TICKS(1500));  /* let user see the message */
+        WifiManager::GetInstance().StartConfigAp();
+    }
+}
+
+static void fallback_to_config(void *arg) {
+    (void)arg;
+    ESP_LOGW(TAG, "WiFi connection timeout, entering config mode");
+    WifiManager::GetInstance().StopStation();
+    s_station_started = false;
+    WifiManager::GetInstance().StartConfigAp();
+}
+
+static void cancel_fallback(void) {
+    if (s_fallback_timer) esp_timer_stop(s_fallback_timer);
+}
+
+static void start_fallback(void) {
+    if (!s_fallback_timer) {
+        esp_timer_create_args_t t = {
+            .callback = fallback_to_config,
+            .arg = NULL,
+            .dispatch_method = ESP_TIMER_TASK,
+            .name = "wifi_fb",
+            .skip_unhandled_events = true,
+        };
+        esp_timer_create(&t, &s_fallback_timer);
+    }
+    esp_timer_start_once(s_fallback_timer, 60 * 1000000);
+}
 
 static void on_wifi_event(WifiEvent event, const std::string &data) {
     switch (event) {
         case WifiEvent::Connected:
             ESP_LOGI(TAG, "WiFi connected: %s", data.c_str());
+            cancel_fallback();
             if (s_events) xEventGroupSetBits(s_events, CONNECTED_BIT);
             {
                 auto &wifi = WifiManager::GetInstance();
@@ -36,9 +76,12 @@ static void on_wifi_event(WifiEvent event, const std::string &data) {
             break;
         case WifiEvent::ConfigModeEnter:
             ESP_LOGI(TAG, "Config mode entered, AP: %s", data.c_str());
+            cancel_fallback();
             break;
         case WifiEvent::ConfigModeExit:
-            ESP_LOGI(TAG, "Config mode exited");
+            ESP_LOGI(TAG, "Config mode exited, trying connect");
+            /* User submitted credentials via web. Try to connect. */
+            try_wifi_connect();
             break;
         default:
             break;
@@ -47,12 +90,6 @@ static void on_wifi_event(WifiEvent event, const std::string &data) {
 
 esp_err_t wifi_bridge_init(const char *ssid_prefix, const char *lang) {
     if (s_inited) return ESP_OK;
-
-    if (!s_netif_inited) {
-        ESP_ERROR_CHECK(esp_netif_init());
-        ESP_ERROR_CHECK(esp_event_loop_create_default());
-        s_netif_inited = true;
-    }
 
     if (!s_events) s_events = xEventGroupCreate();
 
@@ -69,23 +106,6 @@ esp_err_t wifi_bridge_init(const char *ssid_prefix, const char *lang) {
 
     wifi.SetEventCallback(on_wifi_event);
 
-    /* Migrate legacy SSID from settings_manager NVS if SsidManager is empty */
-    auto &ssid_mgr = SsidManager::GetInstance();
-    if (ssid_mgr.GetSsidList().empty()) {
-        nvs_handle_t nvs;
-        if (nvs_open("settings", NVS_READONLY, &nvs) == ESP_OK) {
-            char ssid[32] = {0}, pass[64] = {0};
-            size_t len = sizeof(ssid);
-            if (nvs_get_str(nvs, "wifi_ssid", ssid, &len) == ESP_OK && strlen(ssid) > 0) {
-                len = sizeof(pass);
-                nvs_get_str(nvs, "wifi_pass", pass, &len);
-                ssid_mgr.AddSsid(ssid, pass);
-                ESP_LOGI(TAG, "Migrated legacy WiFi config: %s", ssid);
-            }
-            nvs_close(nvs);
-        }
-    }
-
     s_inited = true;
     return ESP_OK;
 }
@@ -100,11 +120,13 @@ void wifi_bridge_start_station(void) {
     s_station_started = true;
     WifiManager::GetInstance().StartStation();
     ESP_LOGI(TAG, "Station mode started");
+    start_fallback();
 }
 
 void wifi_bridge_stop_station(void) {
     if (!s_inited) return;
     s_station_started = false;
+    cancel_fallback();
     WifiManager::GetInstance().StopStation();
 }
 
@@ -112,18 +134,11 @@ int wifi_bridge_get_rssi(void) {
     return WifiManager::GetInstance().GetRssi();
 }
 
-const char *wifi_bridge_get_ip(void) {
-    return s_ip_str;
-}
-
-const char *wifi_bridge_get_ssid(void) {
-    return s_ssid_str;
-}
+const char *wifi_bridge_get_ip(void) { return s_ip_str; }
+const char *wifi_bridge_get_ssid(void) { return s_ssid_str; }
 
 void wifi_bridge_forget_ssids(void) {
-    auto &ssid_mgr = SsidManager::GetInstance();
-    ssid_mgr.Clear();
-    ;
+    SsidManager::GetInstance().Clear();
     wifi_bridge_stop_station();
     s_ip_str[0] = '\0';
     s_ssid_str[0] = '\0';

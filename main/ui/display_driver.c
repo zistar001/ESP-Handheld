@@ -4,17 +4,29 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "lvgl.h"
 
 static const char *TAG = "UI_DISP";
 
 static bool nes_active = false;
+static SemaphoreHandle_t s_lvgl_mutex = NULL;
+
+void lvgl_lock(void) {
+    if (s_lvgl_mutex) xSemaphoreTake(s_lvgl_mutex, portMAX_DELAY);
+}
+
+void lvgl_unlock(void) {
+    if (s_lvgl_mutex) xSemaphoreGive(s_lvgl_mutex);
+}
 
 void ui_display_set_nes_active(bool active) {
     nes_active = active;
     if (!active) {
+        lvgl_lock();
         lv_obj_t *scr = lv_scr_act();
         if (scr) lv_obj_invalidate(scr);
+        lvgl_unlock();
     }
 }
 
@@ -36,11 +48,16 @@ static void lvgl_tick_task(void *arg) {
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(10));
         lv_tick_inc(10);
-        if (!nes_active) lv_timer_handler();
+        if (!nes_active) {
+            lvgl_lock();
+            lv_timer_handler();
+            lvgl_unlock();
+        }
     }
 }
 
 esp_err_t ui_display_init(void) {
+    if (!s_lvgl_mutex) s_lvgl_mutex = xSemaphoreCreateMutex();
     lv_init();
 
     esp_lcd_panel_handle_t p = st7789_get_panel();
@@ -58,17 +75,25 @@ esp_err_t ui_display_init(void) {
         free(white);
     }
 
-    /* LVGL display buffer — XiaoZhi config: 20 lines, single, DMA, swap_bytes */
+    /* LVGL display buffer — 双缓冲解决DMA未完成时LVGL重写数据导致的条纹 */
     size_t buf_size = ST7789_WIDTH * 20 * sizeof(lv_color_t);
     lv_color_t *buf = heap_caps_malloc(buf_size, MALLOC_CAP_DMA);
+    lv_color_t *buf2 = heap_caps_malloc(buf_size, MALLOC_CAP_DMA);
     if (!buf) {
         buf = heap_caps_malloc(buf_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-        if (!buf) buf = heap_caps_malloc(buf_size, MALLOC_CAP_8BIT);
+        buf2 = NULL;
+    }
+    if (!buf2 && buf) {
+        buf2 = heap_caps_malloc(buf_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    }
+    if (!buf) {
+        buf = heap_caps_malloc(buf_size, MALLOC_CAP_8BIT);
+        buf2 = NULL;
     }
     if (!buf) { ESP_LOGE(TAG, "Buffer alloc failed"); return ESP_ERR_NO_MEM; }
 
     static lv_disp_draw_buf_t draw_buf;
-    lv_disp_draw_buf_init(&draw_buf, buf, NULL, ST7789_WIDTH * 20);
+    lv_disp_draw_buf_init(&draw_buf, buf, buf2, ST7789_WIDTH * 20);
 
     static lv_disp_drv_t disp_drv;
     lv_disp_drv_init(&disp_drv);

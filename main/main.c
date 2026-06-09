@@ -11,6 +11,7 @@
 
 /* UI */
 #include "ui/display_driver.h"
+#include "ui/screens/settings_screen.h"
 
 /* App framework */
 #include "app/app_manager.h"
@@ -50,12 +51,15 @@ static void key_handler(key_id_t key, bool pressed) {
     switch (state) {
         case APP_STATE_LAUNCHER:
             if (pressed && key == KEY_START) {
+                lvgl_lock();
                 menu_enter();
+                lvgl_unlock();
             }
             break;
 
         case APP_STATE_MENU:
             if (pressed) {
+                lvgl_lock();
                 switch (key) {
                     case KEY_UP:    menu_navigate(0, -1); break;
                     case KEY_DOWN:  menu_navigate(0, 1);  break;
@@ -66,16 +70,36 @@ static void key_handler(key_id_t key, bool pressed) {
                     case KEY_START: app_manager_return(); break;
                     default: break;
                 }
+                lvgl_unlock();
             }
             break;
 
         case APP_STATE_RUNNING:
             if (app_manager_get_current_app() == APP_ID_NES) {
-                /* NES: forward ALL key events (press + release) */
                 rom_browser_key(key, pressed);
+            } else if (app_manager_get_current_app() == APP_ID_SETTINGS && pressed) {
+                lvgl_lock();
+                switch (key) {
+                    case KEY_UP:    settings_screen_navigate(-1); break;
+                    case KEY_DOWN:  settings_screen_navigate(1);  break;
+                    case KEY_A:     settings_screen_select();     break;
+                    case KEY_B:
+                    case KEY_START: app_manager_return(); break;
+                    default: break;
+                }
+                lvgl_unlock();
+            } else if (app_manager_get_current_app() == APP_ID_WIFI_SETUP && pressed) {
+                lvgl_lock();
+                if (key == KEY_A) {
+                    app_manager_wifi_action();
+                } else if (key == KEY_B || key == KEY_START) {
+                    app_manager_return();
+                }
+                lvgl_unlock();
             } else if (pressed && (key == KEY_B || key == KEY_START)) {
-                /* Other apps: B or START goes back */
+                lvgl_lock();
                 app_manager_return();
+                lvgl_unlock();
             }
             break;
     }

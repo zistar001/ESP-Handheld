@@ -17,41 +17,31 @@ static lv_obj_t *indoor_label, *indoor_temp, *indoor_hum;
 static lv_obj_t *deco_lbl;
 
 lv_obj_t *home_screen_create(void) {
+    /* 删除旧屏幕释放LVGL内存 */
+    lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, COLOR_BG, 0);
 
     /* ── Status Bar (28px) ── */
-    /* Left: WiFi */
     wifi_icon = lv_label_create(scr);
-    lv_label_set_text(wifi_icon, LV_SYMBOL_WIFI);
+    lv_label_set_text(wifi_icon, LV_SYMBOL_CLOSE);
     lv_obj_set_style_text_color(wifi_icon, lv_color_hex(0xFFFFFFCC), 0);
-    lv_obj_set_pos(wifi_icon, 12, 6);
-
-    /* Right: battery + time */
-    bat_icon = lv_label_create(scr);
-    lv_label_set_text(bat_icon, LV_SYMBOL_BATTERY_FULL);
-    lv_obj_set_style_text_color(bat_icon, lv_color_hex(0xFFFFFFCC), 0);
-    lv_obj_set_pos(bat_icon, 155, 5);
+    lv_obj_set_pos(wifi_icon, 6, 6);
 
     bat_pct = lv_label_create(scr);
     lv_label_set_text(bat_pct, "---");
     lv_obj_set_style_text_color(bat_pct, lv_color_hex(0xFFFFFFCC), 0);
-    lv_obj_set_pos(bat_pct, 176, 6);
+    lv_obj_set_pos(bat_pct, 216, 6);
 
-    lv_obj_t *stm = lv_label_create(scr);
-    lv_label_set_text(stm, "12:45");
-    lv_obj_set_style_text_color(stm, lv_color_hex(0xFFFFFFCC), 0);
-    lv_obj_set_pos(stm, 210, 6);
-
-    /* ── Time Area ── */
+    /* ── Time Area (will be updated by launcher_update_task) ── */
     time_lbl = lv_label_create(scr);
-    lv_label_set_text(time_lbl, "12:45");
+    lv_label_set_text(time_lbl, "--:--");
     lv_obj_set_style_text_color(time_lbl, COLOR_WHITE, 0);
     lv_obj_set_style_text_font(time_lbl, &lv_font_montserrat_48, 0);
     lv_obj_set_pos(time_lbl, 15, 44);
 
     date_lbl = lv_label_create(scr);
-    lv_label_set_text(date_lbl, "2026/05/17 周日");
+    lv_label_set_text(date_lbl, "----/--/--");
     lv_obj_set_style_text_color(date_lbl, COLOR_GREY, 0);
     lv_obj_set_style_text_font(date_lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(date_lbl, 15, 92);
@@ -68,7 +58,7 @@ lv_obj_t *home_screen_create(void) {
 
     /* Left: Temperature */
     temp_lbl = lv_label_create(scr);
-    lv_label_set_text(temp_lbl, "26");
+    lv_label_set_text(temp_lbl, "--");
     lv_obj_set_style_text_color(temp_lbl, COLOR_ORANGE, 0);
     lv_obj_set_style_text_font(temp_lbl, &lv_font_montserrat_48, 0);
     lv_obj_set_pos(temp_lbl, 15, 116);
@@ -79,26 +69,24 @@ lv_obj_t *home_screen_create(void) {
     lv_obj_set_pos(temp_unit_lbl, 68, 136);
 
     desc_lbl = lv_label_create(scr);
-    lv_label_set_text(desc_lbl, "\xE6\x99\xB4\xE6\x9C\x97"); /* 晴朗 */
+    lv_label_set_text(desc_lbl, "---");
     lv_obj_set_style_text_color(desc_lbl, COLOR_GREY, 0);
     lv_obj_set_style_text_font(desc_lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(desc_lbl, 15, 164);
 
     /* Right: City + Range */
     city_lbl = lv_label_create(scr);
-    lv_label_set_text(city_lbl, "\xE4\xB8\x8A\xE6\xB5\xB7\xE5\xB8\x82"); /* 上海市 */
+    lv_label_set_text(city_lbl, "---");
     lv_obj_set_style_text_color(city_lbl, lv_color_hex(0xFFFFFFCC), 0);
     lv_obj_set_style_text_font(city_lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(city_lbl, 118, 120);
 
     range_lbl = lv_label_create(scr);
-    lv_label_set_text(range_lbl, "\xE2\x86\x91""28\xC2\xB0C  \xE2\x86\x93""20\xC2\xB0C"); /* ↑28°C ↓20°C */
+    lv_label_set_text(range_lbl, "---");
     lv_obj_set_style_text_color(range_lbl, COLOR_GREY, 0);
     lv_obj_set_pos(range_lbl, 118, 142);
 
     /* ── 3-Day Forecast ── */
-    static const char *days[] = {"\xE5\x91\xA8\xE4\xB8\x80", "\xE5\x91\xA8\xE4\xBA\x8C", "\xE5\x91\xA8\xE4\xB8\x89"};
-
     for (int i = 0; i < 3; i++) {
         fore_icon[i] = lv_label_create(scr);
         lv_label_set_text(fore_icon[i], LV_SYMBOL_OK);
@@ -106,14 +94,13 @@ lv_obj_t *home_screen_create(void) {
         lv_obj_set_pos(fore_icon[i], 15 + i * 70, 188);
 
         fore_temp[i] = lv_label_create(scr);
-        lv_label_set_text(fore_temp[i], "26\xC2\xB0");
+        lv_label_set_text(fore_temp[i], "--\xC2\xB0");
         lv_obj_set_style_text_color(fore_temp[i], lv_color_hex(0xFFFFFFAA), 0);
         lv_obj_set_pos(fore_temp[i], 15 + i * 70, 208);
 
         fore_day[i] = lv_label_create(scr);
-        lv_label_set_text(fore_day[i], days[i]);
+        lv_label_set_text(fore_day[i], "---");
         lv_obj_set_style_text_color(fore_day[i], lv_color_hex(0xFFFFFF88), 0);
-        lv_obj_set_style_text_font(fore_day[i], &lv_font_simsun_16_cjk, 0);
         lv_obj_set_pos(fore_day[i], 15 + i * 70, 224);
     }
 
@@ -133,16 +120,17 @@ lv_obj_t *home_screen_create(void) {
     lv_obj_set_pos(indoor_label, 60, 254);
 
     indoor_temp = lv_label_create(scr);
-    lv_label_set_text(indoor_temp, "26.5\xC2\xB0""C");
+    lv_label_set_text(indoor_temp, "--\xC2\xB0""C");
     lv_obj_set_style_text_color(indoor_temp, COLOR_ORANGE, 0);
     lv_obj_set_pos(indoor_temp, 106, 254);
 
     indoor_hum = lv_label_create(scr);
-    lv_label_set_text(indoor_hum, "55%");
+    lv_label_set_text(indoor_hum, "--%");
     lv_obj_set_style_text_color(indoor_hum, COLOR_ORANGE, 0);
     lv_obj_set_pos(indoor_hum, 168, 254);
 
     lv_scr_load(scr);
+    if (old) lv_obj_del(old);
     return scr;
 }
 
@@ -177,6 +165,33 @@ void home_screen_update_weather(const char *city, const char *desc,
 void home_screen_update_wifi(bool connected) {
     if (wifi_icon) {
         lv_label_set_text(wifi_icon, connected ? LV_SYMBOL_WIFI : LV_SYMBOL_CLOSE);
+    }
+}
+
+void home_screen_update_forecast(int day_index, const char *desc, int temp_high, int temp_low) {
+    if (day_index < 0 || day_index >= 3) return;
+    char buf[32];
+    if (fore_day[day_index] && desc) {
+        /* Show high/low instead of day name */
+        snprintf(buf, sizeof(buf), "%d/%d", temp_high, temp_low);
+        lv_label_set_text(fore_day[day_index], buf);
+    }
+    if (fore_temp[day_index]) {
+        snprintf(buf, sizeof(buf), "%d\xC2\xB0", temp_high);
+        lv_label_set_text(fore_temp[day_index], buf);
+    }
+    (void)desc; /* could map to weather icons later */
+}
+
+void home_screen_update_indoor(float temp, float humi) {
+    char buf[32];
+    if (indoor_temp) {
+        snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", temp);
+        lv_label_set_text(indoor_temp, buf);
+    }
+    if (indoor_hum) {
+        snprintf(buf, sizeof(buf), "%.0f%%", humi);
+        lv_label_set_text(indoor_hum, buf);
     }
 }
 

@@ -3,6 +3,7 @@ build/
 build_output.log
 sdkconfig
 components/
+managed_components/
 check_msys.py
 build.sh
 build_verbose.bat
