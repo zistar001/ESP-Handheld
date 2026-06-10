@@ -1,0 +1,11 @@
+{
+    "target": "esp32s3",
+    "builds": [
+        {
+            "name": "gezipai",
+            "sdkconfig_append": [
+                "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions/gezipai/16m_dualsystem.csv\""
+            ]
+        }
+    ]
+}

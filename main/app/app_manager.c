@@ -5,8 +5,11 @@
 #include "modules/nes/nes_wrapper.h"
 #include "modules/settings/settings_manager.h"
 #include "modules/wifi_manager/wifi_manager.h"
+#include "modules/pc_remote/air_mouse.h"
 #include "ui/screens/settings_screen.h"
 #include "ui/screens/countdown_screen.h"
+#include "ui/screens/airmouse_screen.h"
+#include "ui/screens/kbd_screen.h"
 #include "ui/display_driver.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
@@ -20,12 +23,12 @@ static app_id_t cur_app = APP_ID_NONE;
 
 static const app_entry_t apps[] = {
     { APP_ID_NES, "NES", "1" },
-    { APP_ID_XIAOZHI, "AI", "2" },
-    { APP_ID_PC_REMOTE, "\xE9\x94\xAE\xE9\xBC\xA0", "3" },
-    { APP_ID_SETTINGS, "\xE8\xAE\xBE\xE7\xBD\xAE", "4" },
+    { APP_ID_KEYBOARD, "Kbd", "K" },
+    { APP_ID_PC_REMOTE, "Mouse", "M" },
+    { APP_ID_SETTINGS, "Config", "4" },
     { APP_ID_WIFI_SETUP, "WiFi", "5" },
-    { APP_ID_ABOUT, "\xE5\x85\xB3\xE4\xBA\x8E", "6" },
-    { APP_ID_COUNTDOWN, "\xE5\x80\x92\xE8\xAE\xA1\xE6\x97\xB6", "7" },
+    { APP_ID_ABOUT, "About", "6" },
+    { APP_ID_COUNTDOWN, "Timer", "7" },
 };
 
 void app_manager_init(void) { state = APP_STATE_LAUNCHER; cur_app = APP_ID_NONE; launcher_enter(); }
@@ -60,39 +63,15 @@ esp_err_t app_manager_launch(app_id_t id) {
         case APP_ID_NES:
             rom_browser_enter();
             break;
-        case APP_ID_XIAOZHI: {
-            ESP_LOGI(TAG, "Switching to XiaoZhi AI via partition reboot");
-            const esp_partition_t *running = esp_ota_get_running_partition();
-            if (!running) {
-                ESP_LOGE(TAG, "Cannot detect running partition");
-                break;
-            }
-            ESP_LOGI(TAG, "Running from: %s (subtype=%d)",
-                     running->label, running->subtype);
-
-            const esp_partition_t *target = NULL;
-            if (running->subtype == ESP_PARTITION_SUBTYPE_APP_FACTORY ||
-                running->subtype == ESP_PARTITION_SUBTYPE_APP_OTA_0) {
-                target = esp_partition_find_first(
-                    ESP_PARTITION_TYPE_APP,
-                    ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
-            } else {
-                target = esp_partition_find_first(
-                    ESP_PARTITION_TYPE_APP,
-                    ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
-            }
-
-            if (target) {
-                ESP_LOGI(TAG, "Switching to: %s", target->label);
-                ESP_ERROR_CHECK(esp_ota_set_boot_partition(target));
-                esp_restart();
-            } else {
-                ESP_LOGE(TAG, "Target partition not found");
-            }
+        case APP_ID_KEYBOARD:
+            ESP_LOGI(TAG, "Keyboard HID");
+            air_mouse_set_enabled(false);
+            kbd_screen_create();
             break;
-        }
         case APP_ID_PC_REMOTE:
-            ESP_LOGI(TAG, "PC remote not available (BLE removed)");
+            ESP_LOGI(TAG, "Air Mouse");
+            air_mouse_set_enabled(false);
+            airmouse_screen_create();
             break;
         case APP_ID_SETTINGS:
             ESP_LOGI(TAG, "Open settings");
@@ -203,6 +182,8 @@ esp_err_t app_manager_launch(app_id_t id) {
 void app_manager_return(void) {
     if (state == APP_STATE_RUNNING) {
         if (cur_app == APP_ID_NES) nes_stop();
+        if (cur_app == APP_ID_PC_REMOTE || cur_app == APP_ID_KEYBOARD)
+            air_mouse_set_enabled(false);
         cur_app = APP_ID_NONE;
         state = APP_STATE_MENU; menu_enter();
     } else if (state == APP_STATE_MENU) {

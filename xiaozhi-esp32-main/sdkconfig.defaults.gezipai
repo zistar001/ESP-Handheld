@@ -1,0 +1,2 @@
+CONFIG_BOARD_TYPE_GEZIPAI=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions/gezipai/16m_dualsystem.csv"

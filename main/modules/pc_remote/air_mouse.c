@@ -10,8 +10,11 @@ static const char *TAG = "AIR_MOUSE";
 static float sensitivity = 1.0f;
 static float gyro_bias_x = 0, gyro_bias_y = 0, gyro_bias_z = 0;
 static float prev_gx = 0, prev_gy = 0;
+static bool s_enabled = false;
 
 void air_mouse_set_sensitivity(float s) { sensitivity = s; }
+void air_mouse_set_enabled(bool en) { s_enabled = en; }
+bool air_mouse_is_enabled(void) { return s_enabled; }
 
 esp_err_t air_mouse_init(void) {
     ESP_LOGI(TAG, "Calibrating gyro bias — keep device still...");
@@ -43,7 +46,7 @@ esp_err_t air_mouse_init(void) {
 void air_mouse_task(void *arg) {
     imu_data_t imu;
     while (1) {
-        if (imu_read(&imu) == ESP_OK) {
+        if (s_enabled && imu_read(&imu) == ESP_OK) {
             /* Subtract bias, then low-pass filter */
             float raw_x = imu.gx - gyro_bias_x;
             float raw_y = imu.gy - gyro_bias_y;
@@ -51,10 +54,10 @@ void air_mouse_task(void *arg) {
             float gy = raw_y * 0.7f + prev_gy * 0.3f;
             prev_gx = gx; prev_gy = gy;
 
-            /* Dead zone: ignore drift below 0.5 dps */
-            if (fabsf(gx) > 0.5f || fabsf(gy) > 0.5f) {
-                int8_t dx = (int8_t)fminf(fmaxf(gx * sensitivity * 4, -127), 127);
-                int8_t dy = (int8_t)fminf(fmaxf(gy * sensitivity * 4, -127), 127);
+            /* Dead zone: ignore sensor noise drift */
+            if (fabsf(gx) > 1.5f || fabsf(gy) > 1.5f) {
+                int8_t dx = (int8_t)fminf(fmaxf(-gx * sensitivity * 2, -127), 127);
+                int8_t dy = (int8_t)fminf(fmaxf(gy * sensitivity * 2, -127), 127);
                 ble_hid_send_mouse(0, dx, dy);
             }
         }

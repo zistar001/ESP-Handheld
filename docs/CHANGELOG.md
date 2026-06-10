@@ -1,5 +1,61 @@
 # ESP32-S3 Handheld Game - 变更记录
 
+## 2026-06-10 — BLE HID 键鼠 + 双App重构
+
+### 一、PC远控模块 (全新)
+- **BLE HID键盘+鼠标** 通过 `ble_hid.c` 实现
+  - 键盘报告 (Report ID 1)：`ble_hid_send_key(modifier, key)`
+  - 鼠标报告 (Report ID 2)：`ble_hid_send_mouse(buttons, dx, dy)`
+  - Just Works 配对（免密码），设备名 "ESP-Handheld"
+- **空中飞鼠** `air_mouse.c` 使用IMU陀螺仪数据 → BLE鼠标
+  - 零偏校准（100次采样平均）
+  - 互补低通滤波
+  - 死区1.5 dps滤除噪声
+  - 灵敏度可调 (0.5/1.0/2.0)
+  - 默认关闭，进入Mouse App后打开才启用
+- **sdkconfig** 启用BT/Bluedroid/BLE 4.2
+  - `CONFIG_BT_ENABLED=y`, `CONFIG_BT_BLUEDROID_ENABLED=y`
+  - `CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST=y`（BT内存走PSRAM节省内部DRAM）
+  - `CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=y`
+
+### 二、双App拆分
+- **⌨ Kbd App**：键盘HID模式
+  - 开关Kbd ON/OFF
+  - A=Enter，B=ESC，方向键=方向键
+  - A长按=语音（预留）
+- **🖱 Mouse App**：空中飞鼠模式
+  - 开关Mouse ON/OFF
+  - A=左键，B=右键，→=语音（预留）
+  - 灵敏度三档 Low/Mid/High
+- 菜单从4项扩展到6项：NES / Config / Kbd / Mouse / About / Timer
+- 退出方式：START+B组合键（500ms窗口内）
+- 退出时自动释放HID按键、关闭飞鼠
+
+### 三、UI改进
+- 所有中文字符改为英文（LVGL自带SimSun字体字库不全）
+- Remote界面重写为独立Kbd/Mouse两个界面
+- 按钮风格：灰色=OFF，橙色=ON
+
+### 四、Bug修复
+- **天气不显示**: gunzip解压缓冲区从8KB改为动态分配，修复API响应变大问题
+- **菜单崩溃**: 修复app_manager中lvgl_lock死锁
+- **飞鼠方向反了**: X轴取反
+- **飞鼠灵敏度太高**: 系数从×4降到×2
+- **鼠标乱飘**: 增加死区到1.5dps，默认关闭，进App才启用
+
+### 五、文件变更
+- `main/modules/imu/imu_driver.c/h` — 新增 `imu_is_ready()`
+- `main/modules/pc_remote/ble_hid.c/h` — 新增 `ble_hid_mouse_click()`, `ble_hid_release_all()`
+- `main/modules/pc_remote/air_mouse.c/h` — 新增 `air_mouse_set_enabled()`, `air_mouse_is_enabled()`
+- `main/ui/screens/kbd_screen.c/h` — **新建** 键盘App界面
+- `main/ui/screens/airmouse_screen.c/h` — 重写为鼠标App界面+灵敏度
+- `main/ui/screens/menu_screen.c` — 扩展到6项
+- `main/ui/screens/home_screen.c` — 字体改为Montserrat
+- `main/app/app_manager.c/h` — 新增APP_ID_KEYBOARD
+- `main/modules/weather/weather.c` — gunzip改为动态缓冲
+- `sdkconfig` / `sdkconfig.defaults` — 启用BT/BLE配置
+- `main/CMakeLists.txt` — 加入pc_remote和kbd_screen源文件
+
 ## 2026-06-08 — NES游戏系统重构
 
 ### 一、SD卡修复

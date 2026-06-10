@@ -1,5 +1,8 @@
 #include "ble_hid.h"
+#include <string.h>
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_bt.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
@@ -115,19 +118,17 @@ esp_err_t ble_hid_init(void) {
 
     ESP_ERROR_CHECK(esp_ble_gap_register_callback(gap_event_handler));
 
-    esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;
-    esp_ble_io_cap_t iocap = ESP_IO_CAP_IO;
+    esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_BOND;   /* SC + bond, no MITM */
+    esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;                  /* No display — no passkey prompt */
     uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     uint8_t key_size = 16;
-    uint32_t passkey = 1234;
 
     esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, 1);
     esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, 1);
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, 1);
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, 1);
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, 1);
-    esp_ble_gap_set_security_param(ESP_BLE_SM_SET_STATIC_PASSKEY, &passkey, sizeof(uint32_t));
 
     esp_ble_gap_set_device_name(ble_hid_config.device_name);
 
@@ -152,10 +153,11 @@ esp_err_t ble_hid_init(void) {
 
 esp_err_t ble_hid_send_key(uint8_t modifier, uint8_t key) {
     if (!connected || !hid_dev) return ESP_ERR_INVALID_STATE;
-    uint8_t report[8] = { modifier, 0, key, 0, 0, 0, 0, 0 };
-    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
-    memset(report, 0, 8);
-    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
+    uint8_t report[7] = { modifier, 0, key, 0, 0, 0, 0 };
+    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 7);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    memset(report, 0, 7);
+    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 7);
     return ESP_OK;
 }
 
@@ -166,6 +168,21 @@ esp_err_t ble_hid_send_mouse(uint8_t buttons, int8_t dx, int8_t dy) {
     return ESP_OK;
 }
 
+
+void ble_hid_mouse_click(uint8_t buttons) {
+    if (!hid_dev) return;
+    uint8_t report[4] = { buttons, 0, 0, 0 };
+    esp_hidd_dev_input_set(hid_dev, 0, 2, report, 4);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    memset(report, 0, 4);
+    esp_hidd_dev_input_set(hid_dev, 0, 2, report, 4);
+}
+
+void ble_hid_release_all(void) {
+    if (!hid_dev) return;
+    uint8_t zero[7] = {0};
+    esp_hidd_dev_input_set(hid_dev, 0, 1, zero, 7);
+}
 
 esp_err_t ble_hid_deinit(void) {
     if (hid_dev) {

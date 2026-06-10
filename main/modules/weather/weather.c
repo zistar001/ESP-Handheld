@@ -26,7 +26,7 @@ static char *gunzip(const void *src, size_t src_len) {
     if (src_len < 18 || s[0] != 0x1F || s[1] != 0x8B || s[2] != 8)
         return NULL;
 
-    /* Pass FULL gzip data (with header) to zlib; 16+MAX_WBITS=31 = auto-detect gzip/zlib */
+    /* Use inflate in a loop with growing buffer to handle any response size */
     z_stream strm;
     memset(&strm, 0, sizeof(strm));
     strm.next_in = (void *)s;
@@ -34,21 +34,31 @@ static char *gunzip(const void *src, size_t src_len) {
     int ret = inflateInit2(&strm, 16 + MAX_WBITS);
     if (ret != Z_OK) return NULL;
 
-    char *dst = malloc(8192);
+    size_t alloc = 4096;
+    char *dst = malloc(alloc);
     if (!dst) { inflateEnd(&strm); return NULL; }
-    strm.next_out = (void *)dst;
-    strm.avail_out = 8192;
 
-    ret = inflate(&strm, Z_NO_FLUSH);
+    do {
+        strm.next_out = (unsigned char *)dst + strm.total_out;
+        strm.avail_out = alloc - strm.total_out;
+        if (strm.avail_out < 1024) {
+            /* Double the buffer */
+            alloc *= 2;
+            char *p = realloc(dst, alloc);
+            if (!p) { free(dst); inflateEnd(&strm); return NULL; }
+            dst = p;
+            strm.next_out = (unsigned char *)dst + strm.total_out;
+            strm.avail_out = alloc - strm.total_out;
+        }
+        ret = inflate(&strm, Z_NO_FLUSH);
+    } while (ret == Z_OK);
+
     if (ret != Z_STREAM_END) {
-        ESP_LOGW(TAG, "inflate err %d total_in=%u total_out=%u", ret, (unsigned)strm.total_in, (unsigned)strm.total_out);
         inflateEnd(&strm); free(dst); return NULL;
     }
     inflateEnd(&strm);
 
-    size_t out_len = strm.total_out;
-    if (out_len >= 8191) { free(dst); return NULL; }
-    dst[out_len] = '\0';
+    dst[strm.total_out] = '\0';
     return dst;
 }
 
@@ -105,9 +115,15 @@ static esp_err_t evt(esp_http_client_event_t *e) {
             if (!s_resp || !s_resp_len) break;
             char *body = NULL;
             if (s_resp_len >= 2 && (unsigned char)s_resp[0]==0x1F && (unsigned char)s_resp[1]==0x8B) {
+                /* Try gzip decompression with larger output buffer */
                 body = gunzip(s_resp, s_resp_len);
-                if (!body) { ESP_LOGW(TAG, "gunzip fail"); break; }
-            } else body = strdup(s_resp);
+                if (!body) {
+                    ESP_LOGW(TAG, "gunzip fail len=%u", (unsigned)s_resp_len);
+                    break;
+                }
+            } else {
+                body = strdup(s_resp);
+            }
             if (body) { parse_weather(body); free(body); }
             break;
         }

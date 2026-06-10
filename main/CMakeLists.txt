@@ -23,12 +23,16 @@ idf_component_register(
           "modules/wifi_manager/wifi_manager.c" "modules/wifi_manager/wifi_bridge.cpp"
           # XiaoZhi wrapper
           "modules/xiaozhi/xiaozhi_wrapper.c"
+          # PC Remote (BLE HID + air mouse + WiFi audio)
+          "modules/pc_remote/ble_hid.c" "modules/pc_remote/air_mouse.c" "modules/pc_remote/wifi_audio.c"
           # UI
           "ui/display_driver.c"
           "ui/components/status_bar.c"
           "ui/screens/home_screen.c" "ui/screens/menu_screen.c"
           "ui/screens/settings_screen.c"
           "ui/screens/countdown_screen.c"
+          "ui/screens/airmouse_screen.c"
+          "ui/screens/kbd_screen.c"
     INCLUDE_DIRS "."
                  "bsp"
                  "app"
@@ -42,10 +46,11 @@ idf_component_register(
                  "modules/weather"
                  "modules/wifi_manager"
                  "modules/xiaozhi"
+                 "modules/pc_remote"
                  "ui"
                  "ui/components"
                  "ui/screens"
-    REQUIRES driver esp_timer spi_flash nvs_flash fatfs sdmmc app_update esp_partition esp_hid esp_adc
+    REQUIRES driver esp_timer spi_flash nvs_flash fatfs sdmmc app_update esp_partition bt esp_hid esp_adc
              esp_lcd nes_core espressif__esp_codec_dev lvgl
              esp_wifi esp_event esp_netif esp_http_client json
              esp_pm esp_http_server mbedtls zlib)

@@ -1,21 +1,26 @@
 #include "menu_screen.h"
 #include "app/app_manager.h"
+#include <stdlib.h>
 
 #define CARD_COLOR    lv_color_hex(0xFF5C00)
 #define CARD_W        96
 #define CARD_H        68
 #define CARD_R        12
 #define GRID_COLS     2
+#define MAX_ITEMS     10
 
-static lv_obj_t *cards[4];
+static lv_obj_t *cards[MAX_ITEMS];
 static lv_obj_t *highlight;
 static int sel = 0;
+static int item_count = 0;
 
 static const struct { const char *icon; const char *label; app_id_t app; } items[] = {
-    { LV_SYMBOL_PLAY,   "\xE6\xB8\xB8\xE6\x88\x8F", APP_ID_NES },        /* ▶ 游戏 */
-    { LV_SYMBOL_SETTINGS, "\xE8\xAE\xBE\xE7\xBD\xAE", APP_ID_SETTINGS }, /* ⚙ 设置 */
-    { LV_SYMBOL_OK,     "\xE5\x85\xB3\xE4\xBA\x8E", APP_ID_ABOUT },      /* ✓ 关于 */
-    { LV_SYMBOL_CLOSE,  "\xE9\x97\xB9\xE9\x92\x9F", APP_ID_COUNTDOWN },  /* ✗ 闹钟 */
+    { LV_SYMBOL_PLAY,    "NES",      APP_ID_NES },
+    { LV_SYMBOL_SETTINGS,"Config",   APP_ID_SETTINGS },
+    { "\xE2\x8C\xA8",    "Kbd",      APP_ID_KEYBOARD },  /* ⌨ Kbd */
+    { LV_SYMBOL_PLAY,    "Mouse",    APP_ID_PC_REMOTE }, /* ▶ Mouse */
+    { LV_SYMBOL_OK,      "About",    APP_ID_ABOUT },
+    { LV_SYMBOL_CLOSE,   "Timer",    APP_ID_COUNTDOWN },
 };
 
 static void card_cb(lv_event_t *e) {
@@ -46,15 +51,16 @@ lv_obj_t *menu_screen_create(void) {
     lv_obj_set_style_text_color(bat, lv_color_hex(0xFFFFFFCC), 0);
     lv_obj_set_pos(bat, 210, 6);
 
-    /* 2×2 Grid: top edge y=55, bottom edge y=280-30=250 */
-    /* Row Y: 55, (250-55-68)/2 = gap between rows...
-       Actually 55 + 68 = 123, then gap 16, then 123+16+68=207. Close enough */
-    int row1_y = 55, row2_y = 139, col_x[2] = {16, 128};
+    item_count = sizeof(items) / sizeof(items[0]);
+    if (item_count > MAX_ITEMS) item_count = MAX_ITEMS;
 
-    for (int i = 0; i < 4; i++) {
-        int row = i / GRID_COLS;
+    int col_x[2] = {16, 128};
+    int gap = 16;
+
+    for (int i = 0; i < item_count; i++) {
         int col = i % GRID_COLS;
-        int y = (row == 0) ? row1_y : row2_y;
+        int row = i / GRID_COLS;
+        int y = 55 + row * (CARD_H + gap);
 
         lv_obj_t *card = lv_btn_create(scr);
         lv_obj_set_size(card, CARD_W, CARD_H);
@@ -77,7 +83,7 @@ lv_obj_t *menu_screen_create(void) {
         lv_obj_t *lbl = lv_label_create(card);
         lv_label_set_text(lbl, items[i].label);
         lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFFFF), 0);
-        lv_obj_set_style_text_font(lbl, &lv_font_simsun_16_cjk, 0);
+        lv_obj_set_style_text_font(lbl, &lv_font_montserrat_14, 0);
 
         lv_obj_add_event_cb(card, card_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
 
@@ -85,13 +91,14 @@ lv_obj_t *menu_screen_create(void) {
     }
 
     /* Selection highlight */
+    sel = 0;
     highlight = lv_obj_create(scr);
     lv_obj_set_size(highlight, CARD_W + 4, CARD_H + 4);
     lv_obj_set_style_border_color(highlight, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_border_width(highlight, 2, 0);
     lv_obj_set_style_border_opa(highlight, LV_OPA_50, 0);
     lv_obj_set_style_bg_opa(highlight, LV_OPA_0, 0);
-    lv_obj_set_pos(highlight, col_x[0] - 2, row1_y - 2);
+    lv_obj_set_pos(highlight, col_x[0] - 2, 55 - 2);
 
     lv_scr_load(scr);
     if (old) lv_obj_del(old);
@@ -102,23 +109,23 @@ void menu_screen_navigate(int dx, int dy) {
     int old = sel;
     if (dx != 0) {
         int nx = sel + dx;
-        if (nx >= 0 && nx < 4) sel = nx;
+        if (nx >= 0 && nx < item_count) sel = nx;
     } else if (dy != 0) {
         int ny = sel + dy * GRID_COLS;
-        if (ny >= 0 && ny < 4) sel = ny;
+        if (ny >= 0 && ny < item_count) sel = ny;
     }
     if (sel == old) return;
 
-    int row = sel / GRID_COLS;
     int col = sel % GRID_COLS;
+    int row = sel / GRID_COLS;
     int col_x[2] = {16, 128};
-    int row_y[2] = {55, 139};
+    int gap = 16;
 
-    lv_obj_set_pos(highlight, col_x[col] - 2, row_y[row] - 2);
+    lv_obj_set_pos(highlight, col_x[col] - 2, 55 + row * (CARD_H + gap) - 2);
 }
 
 void menu_screen_select(void) {
-    if (sel >= 0 && sel < 4) {
+    if (sel >= 0 && sel < item_count) {
         app_manager_launch(items[sel].app);
     }
 }

@@ -52,7 +52,7 @@ lv_obj_t *home_screen_create(void) {
     date_lbl = lv_label_create(scr);
     lv_label_set_text(date_lbl, "----/--/--");
     lv_obj_set_style_text_color(date_lbl, COLOR_GREY, 0);
-    lv_obj_set_style_text_font(date_lbl, &lv_font_simsun_16_cjk, 0);
+    lv_obj_set_style_text_font(date_lbl, &lv_font_montserrat_14, 0);
     lv_obj_set_pos(date_lbl, 15, 92);
 
     /* ── Background decoration: large sun symbol at low opacity ── */
@@ -80,14 +80,14 @@ lv_obj_t *home_screen_create(void) {
     desc_lbl = lv_label_create(scr);
     lv_label_set_text(desc_lbl, "---");
     lv_obj_set_style_text_color(desc_lbl, COLOR_GREY, 0);
-    lv_obj_set_style_text_font(desc_lbl, &lv_font_simsun_16_cjk, 0);
+    lv_obj_set_style_text_font(desc_lbl, &lv_font_montserrat_14, 0);
     lv_obj_set_pos(desc_lbl, 15, 164);
 
     /* Right: City + Range */
     city_lbl = lv_label_create(scr);
     lv_label_set_text(city_lbl, "---");
     lv_obj_set_style_text_color(city_lbl, lv_color_hex(0xFFFFFFCC), 0);
-    lv_obj_set_style_text_font(city_lbl, &lv_font_simsun_16_cjk, 0);
+    lv_obj_set_style_text_font(city_lbl, &lv_font_montserrat_14, 0);
     lv_obj_set_pos(city_lbl, 118, 120);
 
     range_lbl = lv_label_create(scr);
@@ -123,9 +123,9 @@ lv_obj_t *home_screen_create(void) {
 
     /* ── Indoor Data ── */
     indoor_label = lv_label_create(scr);
-    lv_label_set_text(indoor_label, "\xE5\xAE\xA4\xE5\x86\x85"); /* 室内 */
+    lv_label_set_text(indoor_label, "In");
     lv_obj_set_style_text_color(indoor_label, COLOR_GREY, 0);
-    lv_obj_set_style_text_font(indoor_label, &lv_font_simsun_16_cjk, 0);
+    lv_obj_set_style_text_font(indoor_label, &lv_font_montserrat_14, 0);
     lv_obj_set_pos(indoor_label, 60, 254);
 
     indoor_temp = lv_label_create(scr);
