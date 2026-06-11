@@ -16,11 +16,12 @@ static int item_count = 0;
 
 static const struct { const char *icon; const char *label; app_id_t app; } items[] = {
     { LV_SYMBOL_PLAY,    "NES",      APP_ID_NES },
-    { LV_SYMBOL_SETTINGS,"Config",   APP_ID_SETTINGS },
     { "\xE2\x8C\xA8",    "Kbd",      APP_ID_KEYBOARD },
-    { LV_SYMBOL_PLAY,    "Mouse",    APP_ID_PC_REMOTE },
-    { LV_SYMBOL_OK,      "About",    APP_ID_ABOUT },
+    { LV_SYMBOL_GPS,     "Mouse",    APP_ID_MOUSE },
     { LV_SYMBOL_CLOSE,   "Timer",    APP_ID_COUNTDOWN },
+    { LV_SYMBOL_OK,      "Coming",   APP_ID_FORTUNE },
+    { LV_SYMBOL_OK,      "Coming",   APP_ID_RECORDER },
+    { LV_SYMBOL_SETTINGS,"Config",   APP_ID_SETTINGS },
 };
 
 static void card_cb(lv_event_t *e) {

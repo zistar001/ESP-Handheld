@@ -26,12 +26,11 @@ static app_id_t cur_app = APP_ID_NONE;
 static const app_entry_t apps[] = {
     { APP_ID_NES, "NES", "1" },
     { APP_ID_KEYBOARD, "Kbd", "K" },
-    { APP_ID_PC_REMOTE, "Mouse", "M" },
-    { APP_ID_SETTINGS, "Config", "4" },
-    { APP_ID_WIFI_SETUP, "WiFi", "5" },
-    { APP_ID_ABOUT, "About", "6" },
-    { APP_ID_COUNTDOWN, "Timer", "7" },
-    { APP_ID_IP_INPUT, "PC IP", "8" },
+    { APP_ID_MOUSE, "Mouse", "M" },
+    { APP_ID_COUNTDOWN, "Timer", "T" },
+    { APP_ID_FORTUNE, "Coming", "F" },
+    { APP_ID_RECORDER, "Coming", "R" },
+    { APP_ID_SETTINGS, "Config", "S" },
 };
 
 void app_manager_init(void) { state = APP_STATE_LAUNCHER; cur_app = APP_ID_NONE; launcher_enter(); }
@@ -74,10 +73,14 @@ esp_err_t app_manager_launch(app_id_t id) {
             air_mouse_set_enabled(false);
             kbd_screen_create();
             break;
-        case APP_ID_PC_REMOTE:
+        case APP_ID_MOUSE:
             ESP_LOGI(TAG, "Air Mouse");
             air_mouse_set_enabled(false);
             airmouse_screen_create();
+            break;
+        case APP_ID_FORTUNE:
+        case APP_ID_RECORDER:
+            ESP_LOGI(TAG, "Coming soon");
             break;
         case APP_ID_SETTINGS:
             ESP_LOGI(TAG, "Open settings");
@@ -194,7 +197,7 @@ esp_err_t app_manager_launch(app_id_t id) {
 void app_manager_return(void) {
     if (state == APP_STATE_RUNNING) {
         if (cur_app == APP_ID_NES) nes_stop();
-        if (cur_app == APP_ID_PC_REMOTE || cur_app == APP_ID_KEYBOARD) {
+        if (cur_app == APP_ID_MOUSE || cur_app == APP_ID_KEYBOARD) {
             air_mouse_set_enabled(false);
             wifi_audio_voice_stop();
         }

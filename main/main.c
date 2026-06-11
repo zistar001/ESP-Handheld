@@ -160,7 +160,7 @@ static void key_handler(key_id_t key, bool pressed) {
                     if (hid) ble_hid_send_key(0, hid);
                 }
 
-            } else if (app_manager_get_current_app() == APP_ID_PC_REMOTE) {
+            } else if (app_manager_get_current_app() == APP_ID_MOUSE) {
                 /* Air Mouse app */
                 static TickType_t start_tick = 0;
                 if (key == KEY_START) { if (pressed) start_tick = xTaskGetTickCount(); break; }
@@ -174,27 +174,10 @@ static void key_handler(key_id_t key, bool pressed) {
                     }
                     break;
                 }
-                /* → key: hold>500ms toggle voice (same as Kbd) */
-                if (key == KEY_RIGHT) {
-                    static TickType_t r_tick = 0;
-                    if (pressed) r_tick = xTaskGetTickCount();
-                    else if ((xTaskGetTickCount() - r_tick) > pdMS_TO_TICKS(500)) {
-                        if (wifi_audio_is_streaming()) {
-                            wifi_audio_voice_stop();
-                        } else {
-                            wifi_audio_voice_start();
-                        }
-                    }
-                }
                 if (!pressed) break;
                 if (airmouse_screen_mouse_enabled()) {
-                    /* Mouse ON: A=left click, B=right click, UI nav still works */
-                    if (key == KEY_A) {
-                        ble_hid_mouse_click(0x01);
-                        /* Also change sensitivity if focused on a sens button */
-                        lvgl_lock(); airmouse_screen_select(); lvgl_unlock();
-                        break;
-                    }
+                    /* Mouse ON: A=left click, UP/DOWN nav sensitivity */
+                    if (key == KEY_A) { ble_hid_mouse_click(0x01); break; }
                     /* UP/DOWN still navigate UI (sensitivity) */
                     lvgl_lock();
                     if (key == KEY_UP) airmouse_screen_navigate(0, -1);
