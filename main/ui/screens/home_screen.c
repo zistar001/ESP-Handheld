@@ -123,7 +123,7 @@ lv_obj_t *home_screen_create(void) {
 
     /* ── Indoor Data ── */
     indoor_label = lv_label_create(scr);
-    lv_label_set_text(indoor_label, "In");
+    lv_label_set_text(indoor_label, "\xe5\xae\xa4\xe5\x86\x85"); /* 室内 */
     lv_obj_set_style_text_color(indoor_label, COLOR_GREY, 0);
     lv_obj_set_style_text_font(indoor_label, &lv_font_montserrat_14, 0);
     lv_obj_set_pos(indoor_label, 60, 254);
