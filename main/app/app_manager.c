@@ -6,10 +6,12 @@
 #include "modules/settings/settings_manager.h"
 #include "modules/wifi_manager/wifi_manager.h"
 #include "modules/pc_remote/air_mouse.h"
+#include "modules/pc_remote/wifi_audio.h"
 #include "ui/screens/settings_screen.h"
 #include "ui/screens/countdown_screen.h"
 #include "ui/screens/airmouse_screen.h"
 #include "ui/screens/kbd_screen.h"
+#include "ui/screens/ip_input.h"
 #include "ui/display_driver.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
@@ -29,6 +31,7 @@ static const app_entry_t apps[] = {
     { APP_ID_WIFI_SETUP, "WiFi", "5" },
     { APP_ID_ABOUT, "About", "6" },
     { APP_ID_COUNTDOWN, "Timer", "7" },
+    { APP_ID_IP_INPUT, "PC IP", "8" },
 };
 
 void app_manager_init(void) { state = APP_STATE_LAUNCHER; cur_app = APP_ID_NONE; launcher_enter(); }
@@ -42,7 +45,7 @@ static void wifi_do_reset(void) {
     wifi_manager_stop_station();
     vTaskDelay(pdMS_TO_TICKS(500));
     wifi_manager_start_config();
-    app_manager_launch(APP_ID_WIFI_SETUP);
+    /* Don't re-launch — let existing WiFi setup screen show the AP info */
 }
 
 void app_manager_wifi_action(void) {
@@ -57,7 +60,10 @@ static void wifi_reset_cb(lv_event_t *e) {
 esp_err_t app_manager_launch(app_id_t id) {
     if (id < 0 || id >= APP_ID_MAX) return ESP_ERR_INVALID_ARG;
     cur_app = id; state = APP_STATE_RUNNING;
-    ESP_LOGI(TAG, "Launch: %s", apps[id].name);
+    const char *name = "?";
+    for (int i = 0; i < (int)(sizeof(apps)/sizeof(apps[0])); i++)
+        if (apps[i].id == id) { name = apps[i].name; break; }
+    ESP_LOGI(TAG, "Launch: %s", name);
 
     switch (id) {
         case APP_ID_NES:
@@ -108,9 +114,11 @@ esp_err_t app_manager_launch(app_id_t id) {
                 y = 105;
             } else if (wifi_manager_is_config_mode()) {
                 snprintf(buf, sizeof(buf),
-                    "Config Mode Active\nAP: %s\nURL: %s",
+                    "Config AP:\nSSID: %s\nURL: %s\n\n"
+                    "Phone: connect to AP\n"
+                    "Browser: open URL",
                     wifi_manager_get_ap_ssid(), wifi_manager_get_ap_url());
-                y = 105;
+                y = 160;
             } else if (wifi_manager_has_saved_ssid()) {
                 snprintf(buf, sizeof(buf),
                     "Connecting...\nSaved network found.");
@@ -118,8 +126,9 @@ esp_err_t app_manager_launch(app_id_t id) {
                 y = 95;
             } else {
                 snprintf(buf, sizeof(buf),
-                    "No WiFi configured.\nTap button to start setup.");
-                y = 85;
+                    "No WiFi configured.\nPress Setup to start AP\n"
+                    "then connect phone & open URL.");
+                y = 105;
             }
             lv_label_set_text(status, buf);
 
@@ -138,11 +147,14 @@ esp_err_t app_manager_launch(app_id_t id) {
             if (old) lv_obj_del(old);
             break;
         }
-        case APP_ID_COUNTDOWN: {
+        case APP_ID_COUNTDOWN:
             ESP_LOGI(TAG, "Countdown timer");
             countdown_screen_create();
             break;
-        }
+        case APP_ID_IP_INPUT:
+            ESP_LOGI(TAG, "PC IP input");
+            ip_input_screen_create();
+            break;
         case APP_ID_ABOUT: {
             ESP_LOGI(TAG, "Show about");
             const esp_partition_t *p = esp_ota_get_running_partition();
@@ -182,8 +194,10 @@ esp_err_t app_manager_launch(app_id_t id) {
 void app_manager_return(void) {
     if (state == APP_STATE_RUNNING) {
         if (cur_app == APP_ID_NES) nes_stop();
-        if (cur_app == APP_ID_PC_REMOTE || cur_app == APP_ID_KEYBOARD)
+        if (cur_app == APP_ID_PC_REMOTE || cur_app == APP_ID_KEYBOARD) {
             air_mouse_set_enabled(false);
+            wifi_audio_voice_stop();
+        }
         cur_app = APP_ID_NONE;
         state = APP_STATE_MENU; menu_enter();
     } else if (state == APP_STATE_MENU) {

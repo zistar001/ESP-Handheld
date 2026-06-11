@@ -1,6 +1,9 @@
 #include "wifi_bridge.h"
 #include <esp-wifi-connect/include/wifi_manager.h>
 #include <esp-wifi-connect/include/ssid_manager.h>
+extern "C" {
+#include "modules/pc_remote/wifi_audio.h"
+}
 #include <esp_log.h>
 #include <esp_timer.h>
 #include <cstring>
@@ -67,6 +70,8 @@ static void on_wifi_event(WifiEvent event, const std::string &data) {
                 strncpy(s_ip_str, wifi.GetIpAddress().c_str(), sizeof(s_ip_str) - 1);
                 strncpy(s_ssid_str, wifi.GetSsid().c_str(), sizeof(s_ssid_str) - 1);
             }
+            /* Rebuild PC IP if user set octet before WiFi connected */
+            wifi_audio_rebuild_pc_ip();
             break;
         case WifiEvent::Disconnected:
             ESP_LOGW(TAG, "WiFi disconnected");
@@ -80,7 +85,6 @@ static void on_wifi_event(WifiEvent event, const std::string &data) {
             break;
         case WifiEvent::ConfigModeExit:
             ESP_LOGI(TAG, "Config mode exited, trying connect");
-            /* User submitted credentials via web. Try to connect. */
             try_wifi_connect();
             break;
         default:

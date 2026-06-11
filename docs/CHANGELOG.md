@@ -1,5 +1,42 @@
 # ESP32-S3 Handheld Game - 变更记录
 
+## 2026-06-11 — WiFi语音流 + 配网修复 + 音频优化
+
+### 一、WiFi语音流（UDP → VB-Cable → Windows IME）
+- **ESP32侧 `wifi_audio.c`**: UDP单播音频到PC，16kHz 16-bit mono
+  - 动态IP发现：Config → PC IP 设置PC尾数，NVS持久化
+  - PTT模式：按住A说话，松手停止
+  - 麦克风增益自动拉到37dB（最大化SNR）
+- **PC侧 `tools/pc_voice_receiver.py`**: UDP接收 → sounddevice → VB-Cable CABLE Input
+  - 自动重采样16000→44100Hz
+  - 输出到VB-Cable虚拟麦克风
+- **音频质量修复**: channel_mask改为单麦(MASK(0))，参照XiaoZhi配置，消除噪声
+
+### 二、配网修复
+- BLE关掉后启动WiFi AP，避免2.4GHz干扰
+- 修复 `wifi_do_reset()` 递归启动bug
+- 优化配网界面显示AP名称和URL
+- WiFi连接后不自动重启BLE（由用户重启设备）
+
+### 三、UI改进
+- Kbd App双按钮：Kbd ON/OFF + Voice状态显示
+- Config → PC IP 尾数输入（UP/DOWN调节）
+- 菜单新增Kbd/Mouse App入口
+
+### 四、文件变更
+- `main/modules/pc_remote/wifi_audio.c/h` — 重写，动态IP+PTT+NVS持久化
+- `main/modules/audio/box_audio_codec.c` — channel_mask单麦修复
+- `main/modules/wifi_manager/wifi_manager.c` — 修复配网启动
+- `main/modules/wifi_manager/wifi_bridge.cpp` — WiFi连上后重建PC IP
+- `main/app/app_manager.c` — 新增APP_ID_IP_INPUT
+- `main/ui/screens/kbd_screen.c/h` — 双按钮+Voice指示器
+- `main/ui/screens/ip_input.c/h` — **新建** PC IP尾数输入界面
+- `main/ui/screens/settings_screen.c` — 新增PC IP设置项
+- `main/ui/screens/airmouse_screen.c/h` — 重构为纯飞鼠App+灵敏度
+- `tools/pc_voice_receiver.py` — **新建** PC端UDP音频接收器
+- `tools/send_ip.py` — PC端BLE IP发送工具（备选）
+- `docs/2026-06-09-pc-remote-architecture.md` — 更新架构文档
+
 ## 2026-06-10 — BLE HID 键鼠 + 双App重构
 
 ### 一、PC远控模块 (全新)

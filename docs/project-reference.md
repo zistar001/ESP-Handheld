@@ -490,7 +490,7 @@ esptool.py -p COM7 -b 921600 write_flash 0x810000 build/xiaozhi.bin
 - [ ] **音频输出:** 待测试
 - [ ] **WiFi语音流:** 待开发（Phase 2）
 
-### 2026-06-10 Game固件测试记录
+### 2026-06-11 Game固件测试记录
 
 **测试环境:** ESP32-S3 (QFN56 rev v0.2), 8MB Octal PSRAM, 16MB Flash, COM3
 
@@ -499,15 +499,18 @@ esptool.py -p COM7 -b 921600 write_flash 0x810000 build/xiaozhi.bin
 2. ✅ 空中飞鼠（IMU LSM6DS3 @ 0x6B → BLE鼠标）
 3. ✅ ⌨ Kbd App（键盘HID模式，A=Enter, B=ESC）
 4. ✅ 🖱 Mouse App（空中飞鼠+鼠标键，三级灵敏度）
-5. ✅ 菜单6项（NES/Config/Kbd/Mouse/About/Timer）
-6. ✅ START+B组合键退出HID模式
-7. ✅ 天气修复（gunzip动态缓冲区）
-8. ✅ 全英文UI（避开LVGL字体不全问题）
+5. ✅ WiFi语音采集（ES7210单麦→UDP→PC VB-Cable→Windows IME）
+6. ✅ 菜单6项（NES/Config/Kbd/Mouse/About/Timer）
+7. ✅ Config → PC IP尾数设置（NVS持久化）
+8. ✅ 配网修复（关BLE启动AP，递归bug修复）
+9. ✅ 天气修复（gunzip动态缓冲区）
+10. ✅ 崩溃修复（天气更新时检查launcher状态）
+11. ✅ 音频优化（channel_mask单麦，mic_gain 37dB）
 
-**当前问题：**
-- SD卡未插入（ESP_ERR_INVALID_CRC，不影响其他功能）
-- 电池ADC可能冲突（已跳过）
-- NES颜色可能需要调整
+**已知问题：**
+- SD卡未插入（不影响功能）
+- 电池ADC待测试
+- NES颜色可能需调整
 
 ### 2026-06-05 Game固件测试记录
 

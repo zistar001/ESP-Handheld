@@ -33,6 +33,7 @@ idf_component_register(
           "ui/screens/countdown_screen.c"
           "ui/screens/airmouse_screen.c"
           "ui/screens/kbd_screen.c"
+          "ui/screens/ip_input.c"
     INCLUDE_DIRS "."
                  "bsp"
                  "app"

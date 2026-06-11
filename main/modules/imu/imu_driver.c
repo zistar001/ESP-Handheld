@@ -76,10 +76,10 @@ esp_err_t imu_init(void) {
     }
     ESP_LOGI(TAG, "I2C bus handle = %p", bus);
 
-    /* === Step 1: Full I2C bus scan === */
-    i2c_scan(bus);
+    /* === Skip full I2C scan in production — IMU confirmed working === */
+    /* i2c_scan(bus); */
 
-    /* === Step 2: Probe both possible IMU addresses === */
+    /* === Probe both possible IMU addresses === */
     ESP_LOGI(TAG, "Probing LSM6DS3TR-C...");
     bool found_0x6A = probe_address(bus, IMU_ADDR_0);
     bool found_0x6B = probe_address(bus, IMU_ADDR_1);

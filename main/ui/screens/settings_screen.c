@@ -3,6 +3,7 @@
 #include "bsp_board.h"
 #include "modules/settings/settings_manager.h"
 #include "modules/wifi_manager/wifi_manager.h"
+#include "modules/pc_remote/wifi_audio.h"
 #include "es8311_driver.h"
 #include <stdio.h>
 #include <string.h>
@@ -29,6 +30,9 @@ static void enter_sleep(void) {
 }
 static void enter_wifi(void) {
     app_manager_launch(APP_ID_WIFI_SETUP);
+}
+static void enter_pc_ip(void) {
+    app_manager_launch(APP_ID_IP_INPUT);
 }
 static void enter_about(void) {
     app_manager_launch(APP_ID_ABOUT);
@@ -60,6 +64,10 @@ static const char *get_sleep_val(void) {
              s.sleep_enabled ? "ON" : "OFF", s.sleep_timeout_sec);
     return g_val_buf;
 }
+static const char *get_pc_ip_val(void) {
+    const char *ip = wifi_audio_get_pc_ip();
+    return (ip && ip[0]) ? ip : "not set";
+}
 static const char *get_about_val(void) {
     return "v1.0";
 }
@@ -68,6 +76,7 @@ static const settings_item_t items[MAX_ITEMS] = {
     { "Volume",     get_vol_val,     enter_volume },
     { "Brightness", get_bright_val,  enter_brightness },
     { "WiFi",       get_wifi_val,    enter_wifi },
+    { "PC IP",      get_pc_ip_val,   enter_pc_ip },
     { "Sleep",      get_sleep_val,   enter_sleep },
     { "About",      get_about_val,   enter_about },
 };

@@ -17,8 +17,8 @@ static int item_count = 0;
 static const struct { const char *icon; const char *label; app_id_t app; } items[] = {
     { LV_SYMBOL_PLAY,    "NES",      APP_ID_NES },
     { LV_SYMBOL_SETTINGS,"Config",   APP_ID_SETTINGS },
-    { "\xE2\x8C\xA8",    "Kbd",      APP_ID_KEYBOARD },  /* ⌨ Kbd */
-    { LV_SYMBOL_PLAY,    "Mouse",    APP_ID_PC_REMOTE }, /* ▶ Mouse */
+    { "\xE2\x8C\xA8",    "Kbd",      APP_ID_KEYBOARD },
+    { LV_SYMBOL_PLAY,    "Mouse",    APP_ID_PC_REMOTE },
     { LV_SYMBOL_OK,      "About",    APP_ID_ABOUT },
     { LV_SYMBOL_CLOSE,   "Timer",    APP_ID_COUNTDOWN },
 };

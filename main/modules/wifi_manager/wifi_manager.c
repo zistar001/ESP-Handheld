@@ -16,7 +16,7 @@ esp_err_t wifi_manager_init(void) {
         wifi_bridge_start_station();
         ESP_LOGI(TAG, "Saved WiFi found, auto-connecting...");
     } else {
-        ESP_LOGI(TAG, "No saved WiFi, use setup to configure");
+        ESP_LOGI(TAG, "No saved WiFi, use Config menu to setup");
     }
 
     s_inited = true;

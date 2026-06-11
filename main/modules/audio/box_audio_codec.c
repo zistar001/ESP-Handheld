@@ -208,8 +208,7 @@ static esp_err_t open_codecs(uint32_t rate)
         esp_codec_dev_sample_info_t fs = {
             .bits_per_sample = AUDIO_BITS,
             .channel = 4,
-            .channel_mask = ESP_CODEC_DEV_MAKE_CHANNEL_MASK(0)
-                          | ESP_CODEC_DEV_MAKE_CHANNEL_MASK(1),
+            .channel_mask = ESP_CODEC_DEV_MAKE_CHANNEL_MASK(0),  /* mic1 only, like XiaoZhi */
             .sample_rate = rate,
             .mclk_multiple = 0,
         };

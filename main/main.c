@@ -2,6 +2,7 @@
 #include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/timers.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 
@@ -15,6 +16,7 @@
 #include "ui/screens/settings_screen.h"
 #include "ui/screens/airmouse_screen.h"
 #include "ui/screens/kbd_screen.h"
+#include "ui/screens/ip_input.h"
 
 /* App framework */
 #include "app/app_manager.h"
@@ -29,6 +31,7 @@
 #include "modules/imu/imu_driver.h"
 #include "modules/pc_remote/air_mouse.h"
 #include "modules/pc_remote/ble_hid.h"
+#include "modules/pc_remote/wifi_audio.h"
 #include "modules/power/battery_monitor.h"
 
 #include "modules/wifi_manager/wifi_manager.h"
@@ -60,7 +63,7 @@ static void imu_display_task(void *arg) {
             float pitch = atan2f(-ax, sqrtf(ay * ay + az * az)) * 57.29578f;
             float roll  = atan2f(ay, az) * 57.29578f;
 
-            ESP_LOGI("IMU", "a=(%.2f,%.2f,%.2f)g g=(%.1f,%.1f,%.1f)dps p/r=%.0f/%.0f",
+            ESP_LOGD("IMU", "a=(%.2f,%.2f,%.2f)g g=(%.1f,%.1f,%.1f)dps p/r=%.0f/%.0f",
                      imu.ax, imu.ay, imu.az,
                      imu.gx, imu.gy, imu.gz,
                      pitch, roll);
@@ -107,10 +110,14 @@ static void key_handler(key_id_t key, bool pressed) {
             } else if (app_manager_get_current_app() == APP_ID_KEYBOARD) {
                 /* Keyboard HID app */
                 static TickType_t start_tick = 0;
+
                 if (key == KEY_START) { if (pressed) start_tick = xTaskGetTickCount(); break; }
+
+                /* B: ESC or START+B combo exit */
                 if (key == KEY_B) {
                     if (pressed) {
                         if ((xTaskGetTickCount() - start_tick) < pdMS_TO_TICKS(500)) {
+                            wifi_audio_voice_stop();
                             ble_hid_release_all(); lvgl_lock(); app_manager_return(); lvgl_unlock();
                         } else if (kbd_screen_is_enabled()) {
                             ble_hid_send_key(0, 0x29); /* B = ESC */
@@ -118,6 +125,25 @@ static void key_handler(key_id_t key, bool pressed) {
                     }
                     break;
                 }
+
+                /* A: PTT — press=speak, release=stop. No voice → Enter */
+                if (key == KEY_A) {
+                    if (pressed && kbd_screen_is_enabled()) {
+                        if (wifi_audio_voice_start() == ESP_OK)
+                            { lvgl_lock(); kbd_screen_set_voice_active(true); lvgl_unlock(); }
+                    } else if (!pressed) {
+                        if (wifi_audio_is_streaming()) {
+                            wifi_audio_voice_stop();
+                        }
+                        bool toggle = !kbd_screen_is_enabled();
+                        lvgl_lock();
+                        kbd_screen_set_voice_active(false);
+                        if (toggle) kbd_screen_select();
+                        lvgl_unlock();
+                    }
+                    break;
+                }
+
                 if (!pressed) break;
                 if (kbd_screen_is_enabled()) {
                     uint8_t hid = 0;
@@ -126,14 +152,9 @@ static void key_handler(key_id_t key, bool pressed) {
                         case KEY_DOWN:  hid = 0x51; break;
                         case KEY_LEFT:  hid = 0x50; break;
                         case KEY_RIGHT: hid = 0x4F; break;
-                        case KEY_A:     hid = 0x28; break; /* Enter */
                         default: break;
                     }
                     if (hid) ble_hid_send_key(0, hid);
-                } else {
-                    lvgl_lock();
-                    if (key == KEY_A) { kbd_screen_select(); }
-                    lvgl_unlock();
                 }
 
             } else if (app_manager_get_current_app() == APP_ID_PC_REMOTE) {
@@ -184,10 +205,22 @@ static void key_handler(key_id_t key, bool pressed) {
                     default: break;
                 }
                 lvgl_unlock();
+            } else if (app_manager_get_current_app() == APP_ID_IP_INPUT && pressed) {
+                lvgl_lock();
+                if (key == KEY_UP)        ip_input_navigate(0, 1);
+                else if (key == KEY_DOWN)  ip_input_navigate(0, -1);
+                else if (key == KEY_A)     ip_input_select();
+                else if (key == KEY_B || key == KEY_START) { ip_input_cancel(); app_manager_return(); }
+                lvgl_unlock();
             } else if (app_manager_get_current_app() == APP_ID_WIFI_SETUP && pressed) {
                 lvgl_lock();
                 if (key == KEY_A) {
-                    app_manager_wifi_action();
+                    ble_hid_deinit(); /* stop BLE to free 2.4GHz for WiFi AP */
+                    wifi_manager_forget_ssids();
+                    wifi_manager_stop_station();
+                    vTaskDelay(pdMS_TO_TICKS(500));
+                    wifi_manager_start_config();
+                    app_manager_launch(APP_ID_WIFI_SETUP); /* refresh screen */
                 } else if (key == KEY_B || key == KEY_START) {
                     app_manager_return();
                 }
@@ -216,6 +249,7 @@ void app_main(void) {
 
     /* 2. Settings (NVS-backed) */
     settings_init();
+    wifi_audio_load_settings();
     settings_t cfg;
     settings_load(&cfg);
     ESP_LOGI(TAG, "Settings loaded: vol=%d bright=%d", cfg.volume, cfg.brightness);

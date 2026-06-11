@@ -1,5 +1,6 @@
 #include "weather.h"
 #include "modules/wifi_manager/wifi_manager.h"
+#include "app/app_manager.h"
 #include "ui/screens/home_screen.h"
 #include "ui/display_driver.h"
 #include "esp_log.h"
@@ -75,12 +76,13 @@ static void parse_weather(const char *body) {
         if (text && temp) {
             ESP_LOGI(TAG, "Weather: %s %sC", text->valuestring, temp->valuestring);
             lvgl_lock();
-            home_screen_update_weather("", text->valuestring, atoi(temp->valuestring), 0,0, text->valuestring);
+            if (app_manager_get_state() == APP_STATE_LAUNCHER)
+                home_screen_update_weather("", text->valuestring, atoi(temp->valuestring), 0,0, text->valuestring);
             lvgl_unlock();
         }
     }
     cJSON *d = cJSON_GetObjectItem(root, "daily");
-    if (d && cJSON_IsArray(d)) {
+    if (d && cJSON_IsArray(d) && app_manager_get_state() == APP_STATE_LAUNCHER) {
         int n = cJSON_GetArraySize(d); if(n>3)n=3;
         lvgl_lock();
         for(int i=0;i<n;i++){
