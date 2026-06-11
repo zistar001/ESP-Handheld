@@ -126,20 +126,23 @@ static void key_handler(key_id_t key, bool pressed) {
                     break;
                 }
 
-                /* A: PTT — press=speak, release=stop. No voice → Enter */
+                /* A: short=Enter/toggle, hold>500ms=toggle voice on/off */
                 if (key == KEY_A) {
-                    if (pressed && kbd_screen_is_enabled()) {
-                        if (wifi_audio_voice_start() == ESP_OK)
-                            { lvgl_lock(); kbd_screen_set_voice_active(true); lvgl_unlock(); }
-                    } else if (!pressed) {
+                    static TickType_t a_tick = 0;
+                    if (pressed) {
+                        a_tick = xTaskGetTickCount();
+                    } else {
                         if (wifi_audio_is_streaming()) {
                             wifi_audio_voice_stop();
+                            lvgl_lock(); kbd_screen_set_voice_active(false); lvgl_unlock();
+                        } else if ((xTaskGetTickCount() - a_tick) > pdMS_TO_TICKS(500) && kbd_screen_is_enabled()) {
+                            if (wifi_audio_voice_start() == ESP_OK)
+                                { lvgl_lock(); kbd_screen_set_voice_active(true); lvgl_unlock(); }
+                        } else if (kbd_screen_is_enabled()) {
+                            ble_hid_send_key(0, 0x28);
+                        } else {
+                            lvgl_lock(); kbd_screen_select(); lvgl_unlock();
                         }
-                        bool toggle = !kbd_screen_is_enabled();
-                        lvgl_lock();
-                        kbd_screen_set_voice_active(false);
-                        if (toggle) kbd_screen_select();
-                        lvgl_unlock();
                     }
                     break;
                 }
