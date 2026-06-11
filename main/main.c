@@ -174,6 +174,18 @@ static void key_handler(key_id_t key, bool pressed) {
                     }
                     break;
                 }
+                /* → key: hold>500ms toggle voice (same as Kbd) */
+                if (key == KEY_RIGHT) {
+                    static TickType_t r_tick = 0;
+                    if (pressed) r_tick = xTaskGetTickCount();
+                    else if ((xTaskGetTickCount() - r_tick) > pdMS_TO_TICKS(500)) {
+                        if (wifi_audio_is_streaming()) {
+                            wifi_audio_voice_stop();
+                        } else {
+                            wifi_audio_voice_start();
+                        }
+                    }
+                }
                 if (!pressed) break;
                 if (airmouse_screen_mouse_enabled()) {
                     /* Mouse ON: A=left click, B=right click, UI nav still works */

@@ -203,7 +203,13 @@ void home_screen_update_weather(const char *city, const char *desc,
         lv_label_set_text(range_lbl, buf);
     }
     if (deco_lbl && icon) {
-        lv_label_set_text(deco_lbl, LV_SYMBOL_OK);
+        /* Map Chinese weather to Unicode symbol for the decoration */
+        const char *wsym = "\xE2\x98\x80"; /* ☀ default sun */
+        if (strstr(icon, "雨")) wsym = "\xE2\x98\x94";   /* ☔ rain */
+        else if (strstr(icon, "雪")) wsym = "\xE2\x9D\x84"; /* ❄ snow */
+        else if (strstr(icon, "云")) wsym = "\xE2\x9B\x85"; /* ⛅ cloudy */
+        else if (strstr(icon, "阴")) wsym = "\xE2\x98\x81"; /* ☁ overcast */
+        lv_label_set_text(deco_lbl, wsym);
     }
 }
 
