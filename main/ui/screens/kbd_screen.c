@@ -1,5 +1,6 @@
 #include "kbd_screen.h"
 #include "modules/pc_remote/ble_hid.h"
+#include "ui/components/status_bar.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -38,16 +39,19 @@ lv_obj_t *kbd_screen_create(void) {
     lv_obj_set_style_bg_color(scr, BG, 0);
     lv_obj_set_style_pad_all(scr, 0, 0);
 
+    /* Status bar */
+    status_bar_create(scr);
+
     lv_obj_t *title = lv_label_create(scr);
     lv_label_set_text(title, "Keyboard");
     lv_obj_set_style_text_color(title, WHITE, 0);
     lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
-    lv_obj_set_pos(title, 15, 20);
+    lv_obj_set_pos(title, 15, 36);
 
     /* Kbd toggle button */
     kbd_btn = lv_btn_create(scr);
     lv_obj_set_size(kbd_btn, 200, 40);
-    lv_obj_set_pos(kbd_btn, 20, 55);
+    lv_obj_set_pos(kbd_btn, 20, 71);
     lv_obj_set_style_radius(kbd_btn, 8, 0);
     lv_obj_t *lbl = lv_label_create(kbd_btn);
     lv_label_set_text(lbl, "Kbd: OFF");
@@ -57,7 +61,7 @@ lv_obj_t *kbd_screen_create(void) {
     /* Voice state button */
     voice_btn = lv_btn_create(scr);
     lv_obj_set_size(voice_btn, 200, 40);
-    lv_obj_set_pos(voice_btn, 20, 110);
+    lv_obj_set_pos(voice_btn, 20, 126);
     lv_obj_set_style_radius(voice_btn, 8, 0);
     lv_obj_t *vlbl = lv_label_create(voice_btn);
     lv_label_set_text(vlbl, "Voice: OFF");

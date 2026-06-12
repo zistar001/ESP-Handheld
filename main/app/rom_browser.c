@@ -4,6 +4,7 @@
 #include "bsp/sd_card.h"
 #include "bsp/st7789_driver.h"
 #include "ui/display_driver.h"
+#include "ui/components/status_bar.h"
 #include "esp_log.h"
 #include "lvgl.h"
 #include <dirent.h>
@@ -94,6 +95,9 @@ void rom_browser_enter(void) {
     lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x1a1a2e), 0);
+
+    /* Status bar */
+    status_bar_create(scr);
 
     lv_obj_t *title = lv_label_create(scr);
     if (n > 0) {

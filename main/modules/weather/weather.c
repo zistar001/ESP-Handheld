@@ -20,6 +20,7 @@ static const char *TAG = "WEATHER";
 #define WIFI_TIMEOUT_MS   30000
 #define HEFENG_HOST      "p23p3qvugk.re.qweatherapi.com"
 static TaskHandle_t s_weather_task = NULL;
+static int s_today_high = 0, s_today_low = 0;  /* cached from 3d response */
 
 /* ── Gzip decompression via zlib inflate ── */
 static char *gunzip(const void *src, size_t src_len) {
@@ -69,15 +70,27 @@ static void parse_weather(const char *body) {
     cJSON *code = cJSON_GetObjectItem(root, "code");
     const char *cs = cJSON_IsString(code) ? code->valuestring : NULL;
     if (!cs || strcmp(cs, "200")) { cJSON_Delete(root); return; }
+    /* Extract location name (priority: adm2 district > name city) */
+    const char *city = "\xe6\xb3\x89\xe5\xb7\x9e"; /* fallback: 泉州 */
+    cJSON *loc = cJSON_GetObjectItem(root, "location");
+    if (loc) {
+        cJSON *adm2 = cJSON_GetObjectItem(loc, "adm2");
+        cJSON *name = cJSON_GetObjectItem(loc, "name");
+        if (cJSON_IsString(adm2) && adm2->valuestring[0])
+            city = adm2->valuestring;               /* district/county */
+        else if (cJSON_IsString(name) && name->valuestring[0])
+            city = name->valuestring;
+    }
+
     cJSON *now = cJSON_GetObjectItem(root, "now");
     if (now) {
         cJSON *text = cJSON_GetObjectItem(now, "text");
         cJSON *temp = cJSON_GetObjectItem(now, "temp");
         if (text && temp) {
-            ESP_LOGI(TAG, "Weather: %s %sC", text->valuestring, temp->valuestring);
+            ESP_LOGI(TAG, "Weather: %s %d~%dC %s", city, s_today_low, s_today_high, text->valuestring);
             lvgl_lock();
             if (app_manager_get_state() == APP_STATE_LAUNCHER)
-                home_screen_update_weather("", text->valuestring, atoi(temp->valuestring), 0,0, text->valuestring);
+                home_screen_update_weather(city, text->valuestring, atoi(temp->valuestring), s_today_high, s_today_low, text->valuestring);
             lvgl_unlock();
         }
     }
@@ -85,12 +98,25 @@ static void parse_weather(const char *body) {
     if (d && cJSON_IsArray(d) && app_manager_get_state() == APP_STATE_LAUNCHER) {
         int n = cJSON_GetArraySize(d); if(n>3)n=3;
         lvgl_lock();
+        /* Update today's high/low from daily[0] */
+        if (n > 0) {
+            cJSON *d0 = cJSON_GetArrayItem(d, 0);
+            if (d0) {
+                cJSON *dhi = cJSON_GetObjectItem(d0, "tempMax");
+                cJSON *dlo = cJSON_GetObjectItem(d0, "tempMin");
+                if (dhi) s_today_high = atoi(dhi->valuestring);
+                if (dlo) s_today_low  = atoi(dlo->valuestring);
+                /* Refresh today's temp range on home screen */
+                home_screen_update_weather(NULL, NULL, 0, s_today_high, s_today_low, NULL);
+            }
+        }
         for(int i=0;i<n;i++){
             cJSON *day=cJSON_GetArrayItem(d,i); if(!day)continue;
-            cJSON *dt=cJSON_GetObjectItem(day,"textDay");
+            cJSON *fxDate=cJSON_GetObjectItem(day,"fxDate");
             cJSON *dmax=cJSON_GetObjectItem(day,"tempMax");
             cJSON *dmin=cJSON_GetObjectItem(day,"tempMin");
-            if(dt) home_screen_update_forecast(i,dt->valuestring,
+            const char *date_str = fxDate ? fxDate->valuestring : NULL;
+            home_screen_update_forecast(i, date_str,
                 dmax?atoi(dmax->valuestring):0, dmin?atoi(dmin->valuestring):0);
         }
         lvgl_unlock();

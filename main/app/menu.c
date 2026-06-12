@@ -1,6 +1,7 @@
 #include "menu.h"
 #include "app_manager.h"
 #include "ui/screens/menu_screen.h"
+#include "ui/components/status_bar.h"
 #include "esp_log.h"
 
 static const char *TAG = "MENU";

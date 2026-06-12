@@ -12,6 +12,8 @@
 #include "ui/screens/airmouse_screen.h"
 #include "ui/screens/kbd_screen.h"
 #include "ui/screens/ip_input.h"
+#include "ui/screens/fortune_screen.h"
+#include "ui/screens/liuren_screen.h"
 #include "ui/display_driver.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
@@ -28,8 +30,8 @@ static const app_entry_t apps[] = {
     { APP_ID_KEYBOARD, "Kbd", "K" },
     { APP_ID_MOUSE, "Mouse", "M" },
     { APP_ID_COUNTDOWN, "Timer", "T" },
-    { APP_ID_FORTUNE, "Coming", "F" },
-    { APP_ID_RECORDER, "Coming", "R" },
+    { APP_ID_FORTUNE,      "\xe8\xbf\x90\xe5\x8a\xbf",  "F" },     /* 运势 */
+    { APP_ID_RECORDER,     "\xe5\xbd\x95\xe9\x9f\xb3",  "R" },     /* 录音 */
     { APP_ID_SETTINGS, "Config", "S" },
 };
 
@@ -79,8 +81,12 @@ esp_err_t app_manager_launch(app_id_t id) {
             airmouse_screen_create();
             break;
         case APP_ID_FORTUNE:
+            ESP_LOGI(TAG, "Fortune (I Ching)");
+            fortune_screen_create();
+            break;
         case APP_ID_RECORDER:
-            ESP_LOGI(TAG, "Coming soon");
+            ESP_LOGI(TAG, "Liu Ren");
+            liuren_screen_create();
             break;
         case APP_ID_SETTINGS:
             ESP_LOGI(TAG, "Open settings");

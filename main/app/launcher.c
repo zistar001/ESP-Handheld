@@ -1,6 +1,7 @@
 #include "launcher.h"
 #include "app_manager.h"
 #include "ui/screens/home_screen.h"
+#include "ui/components/status_bar.h"
 #include "ui/display_driver.h"
 #include "modules/time_sync/time_sync.h"
 #include "modules/wifi_manager/wifi_manager.h"
@@ -19,27 +20,25 @@ static void launcher_update_task(void *arg) {
         vTaskDelay(pdMS_TO_TICKS(1000));
         tick++;
 
-        /* Only update when launcher screen is active — home screen objects exist */
         if (app_manager_get_state() != APP_STATE_LAUNCHER) continue;
 
         lvgl_lock();
-        /* Time — update every second */
         home_screen_update_time(time_sync_get_time_string(),
                                 time_sync_get_date_string());
 
-        /* WiFi — check every 5s */
         if (tick % 5 == 0) {
-            home_screen_update_wifi(wifi_manager_is_connected());
+            bool connected = wifi_manager_is_connected();
+            home_screen_update_wifi(connected);
+            status_bar_set_wifi(connected);
         }
 
-        /* Battery — check every 5s */
         if (tick % 5 == 0) {
             int pct = battery_monitor_get_percentage();
             bool charging = battery_monitor_is_charging();
             home_screen_update_battery(pct, charging);
+            status_bar_set_battery(pct, charging);
         }
 
-        /* Indoor AHT20 — check every 10s */
         if (tick % 10 == 0) {
             float t = 0, h = 0;
             if (aht20_read(&t, &h) == ESP_OK) {
@@ -56,7 +55,6 @@ void launcher_enter(void)
     home_screen_create();
     app_manager_set_state(APP_STATE_LAUNCHER);
 
-    /* Start periodic update task (only once) */
     static bool task_started = false;
     if (!task_started) {
         task_started = true;

@@ -4,6 +4,7 @@
 #include "modules/settings/settings_manager.h"
 #include "modules/wifi_manager/wifi_manager.h"
 #include "modules/pc_remote/wifi_audio.h"
+#include "ui/components/status_bar.h"
 #include "es8311_driver.h"
 #include <stdio.h>
 #include <string.h>
@@ -106,15 +107,18 @@ lv_obj_t *settings_screen_create(const settings_t *s) {
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x1a1a2e), 0);
     lv_obj_set_style_pad_all(scr, 0, 0);
 
+    /* Status bar */
+    status_bar_create(scr);
+
     lv_obj_t *title = lv_label_create(scr);
     lv_label_set_text(title, "Settings (B: Back)");
     lv_obj_set_style_text_color(title, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_set_pos(title, 10, 8);
+    lv_obj_set_pos(title, 10, 36);
 
     for (int i = 0; i < MAX_ITEMS; i++) {
         lv_obj_t *row = lv_obj_create(scr);
         lv_obj_set_size(row, 240, ITEM_H);
-        lv_obj_set_pos(row, 0, LIST_TOP + i * ITEM_H);
+        lv_obj_set_pos(row, 0, 63 + i * ITEM_H);
         lv_obj_set_style_bg_color(row, lv_color_hex(0x2a2a3e), 0);
         lv_obj_set_style_border_width(row, 0, 0);
         lv_obj_set_style_radius(row, 0, 0);
