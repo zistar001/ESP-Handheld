@@ -194,22 +194,60 @@ python gen_iching.py   # 从 YI64.md 重新生成 iching_data.c
 ## 番茄时钟（久坐提醒）
 
 ### 原理
-利用 IMU 检测手柄横置姿态。右侧躺（右边缘朝下）启动 30 分钟工作计时，左侧躺（左边缘朝下）启动 5 分钟休息计时。时间到后无蜂鸣（I2S 冲突问题待解决），但界面显示"时间到!"。
+利用 IMU 检测手柄横置姿态。左侧躺（`ay < -0.9`）启动 5 分钟休息计时，右侧躺（`ay > -0.9`）启动 30 分钟工作计时。时间到后界面显示"时间到!"。
+
+侧躺时屏幕自动旋转保持内容竖直：左躺用 MADCTL MV+MX，右躺用 MADCTL MV+MY，通过 `esp_lcd_panel_swap_xy/mirror` 实现硬件旋转，无撕裂。
 
 ### 操作
 
 | 操作 | 功能 |
 |------|------|
-| 右侧躺放置 1 秒 | 开始 30 分钟工作倒计时 |
 | 左侧躺放置 1 秒 | 开始 5 分钟休息倒计时 |
+| 右侧躺放置 1 秒 | 开始 30 分钟工作倒计时 |
 | START+B | 退出模块 |
 | START+A | 重置计时器，重新等待侧躺 |
 
 ### 倾斜检测逻辑
-- 读取加速度计 `ax`, `ay`, `az`
-- 条件：`|az| < 0.7`（非平放）且 `|ax| > 0.7` 或 `|ay| > 0.7`（侧躺）
+- 读取加速度计 `ay`
+- 左躺：`ay < -0.9` → `esp_lcd_panel_swap_xy(true)` + `mirror(true, false)`
+- 右躺：`ay > 0.9` → `esp_lcd_panel_swap_xy(true)` + `mirror(false, true)`
 - 消抖：连续 1 秒相同姿态才触发（`side_debounce >= 1`）
-- 运行中再次侧躺可切换工作/休息模式
+- 旋转后调用 `st7789_clear()` 清 GRAM + `lv_obj_invalidate()` 触发 LVGL 重绘
+
+### 位置补偿
+- 竖直：`lv_obj_center()` 正中间
+- 左躺/右躺：`lv_obj_align(LV_ALIGN_CENTER, 36, -28)`（向右 15%，向上 10%）
+
+## IMU 校准模块
+
+### 用途
+当 IMU 轴映射不准确或需要更高精度时，通过 4 个标准姿势（竖握/左侧躺/右侧躺/平放）各采样 20 组数据，校准各轴的重力向量方向。
+
+### 文件
+| 文件 | 说明 |
+|------|------|
+| `main/modules/imu/imu_calib.h` | 校准 API (save/load/detect) |
+| `main/modules/imu/imu_calib.c` | NVS 存储 + 向量角度匹配检测 |
+| `main/ui/screens/calib_screen.h/c` | 校准 UI |
+
+### 使用
+菜单 → IMU → 按 A 开始每个姿势采样（各 2 秒）→ 自动保存到 NVS。之后 `imu_calib_detect()` 通过计算当前读数与校准向量的夹角确定姿势，阈值默认为 0.5（≈ 60°）。无校准时回退到固定阈值 0.7g。
+
+## 屏幕旋转技术方案
+
+采用 **ST7789 硬件 MADCTL 旋转**（非 LVGL 软件 `sw_rotate`）：
+- 避免 `draw_buf_rotate` 分块刷新导致的撕裂
+- 不占用额外 RAM（`sw_rotate` 需要 `LV_DISP_ROT_MAX_BUF=10KB` 临时缓冲）
+- 通过 `esp_lcd_panel_swap_xy()` + `esp_lcd_panel_mirror()` 控制硬件寄存器
+- 旋转后调整 `esp_lcd_panel_set_gap(0,0)` 避免 gap 偏移错误
+
+### 关键文件
+`main/ui/screens/countdown_screen.c` 中的 `set_hw_rot()` 函数。
+
+## 调试指南
+- 串口日志：`TIMER` 标签输出 `ax= ay= az=` 及 `ROT` 状态
+- 重启常见原因：WiFi 驱动内存不足（`wifi:alloc eb fail`）→ 减少 LVGL 缓冲或增加 PSRAM
+- 旋转残留：`st7789_clear()` 从 PSRAM 分配 134KB 全屏黑像素一次刷新
 
 ## Useful Scripts
 

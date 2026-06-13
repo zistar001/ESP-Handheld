@@ -14,6 +14,7 @@
 #include "ui/screens/ip_input.h"
 #include "ui/screens/fortune_screen.h"
 #include "ui/screens/liuren_screen.h"
+#include "ui/screens/calib_screen.h"
 #include "ui/display_driver.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
@@ -159,6 +160,10 @@ esp_err_t app_manager_launch(app_id_t id) {
         case APP_ID_COUNTDOWN:
             ESP_LOGI(TAG, "Countdown timer");
             countdown_screen_create();
+            break;
+        case APP_ID_CALIB:
+            ESP_LOGI(TAG, "IMU Calibration");
+            calib_screen_create();
             break;
         case APP_ID_IP_INPUT:
             ESP_LOGI(TAG, "PC IP input");

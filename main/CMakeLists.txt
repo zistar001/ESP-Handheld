@@ -10,7 +10,8 @@ idf_component_register(
           "modules/audio/box_audio_codec.c" "modules/audio/es8311_driver.c" "modules/audio/es7210_driver.c"
           # Sensors
           "modules/sensor/aht20_driver.c"
-          "modules/imu/imu_driver.c"
+           "modules/imu/imu_driver.c"
+           "modules/imu/imu_calib.c"
           # Power
           "modules/power/battery_monitor.c"
           # Settings
@@ -37,8 +38,9 @@ idf_component_register(
           "ui/screens/airmouse_screen.c"
           "ui/screens/kbd_screen.c"
           "ui/screens/ip_input.c"
-          "ui/screens/fortune_screen.c"
-          "ui/screens/liuren_screen.c"
+           "ui/screens/fortune_screen.c"
+           "ui/screens/liuren_screen.c"
+           "ui/screens/calib_screen.c"
     INCLUDE_DIRS "."
                  "bsp"
                  "app"

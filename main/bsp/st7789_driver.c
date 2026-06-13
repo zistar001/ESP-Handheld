@@ -116,3 +116,17 @@ esp_err_t st7789_sleep_in(void)  { if (panel) return esp_lcd_panel_disp_on_off(p
 esp_err_t st7789_sleep_out(void) { if (panel) return esp_lcd_panel_disp_on_off(panel, true);  return ESP_ERR_INVALID_STATE; }
 esp_lcd_panel_handle_t st7789_get_panel(void) { return panel; }
 spi_host_device_t st7789_get_spi_host(void) { return BSP_LCD_HOST; }
+
+void st7789_clear(void) {
+    if (!panel) return;
+    /* 全屏黑色填充 (使用 PSRAM 避免占内部 RAM) */
+    size_t sz = ST7789_WIDTH * ST7789_HEIGHT * sizeof(uint16_t);
+    uint16_t *buf = heap_caps_malloc(sz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!buf) { buf = heap_caps_malloc(sz, MALLOC_CAP_8BIT); }
+    if (!buf) return;
+    memset(buf, 0, sz);
+    st7789_spi_lock();
+    esp_lcd_panel_draw_bitmap(panel, 0, 0, ST7789_WIDTH, ST7789_HEIGHT, buf);
+    st7789_spi_unlock();
+    free(buf);
+}

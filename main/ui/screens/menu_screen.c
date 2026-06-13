@@ -12,11 +12,11 @@
 #define CARD_START_Y  8
 #define ICON_SIZE     28
 
-static lv_obj_t *cards[7];
+static lv_obj_t *cards[8];
 static lv_obj_t *highlight;
 static lv_obj_t *scroll_cont;
 static int sel = 0;
-static int item_count = 7;
+static int item_count = 8;
 
 /* Pencil design: icon + Chinese label */
 static const struct { const char *icon; const char *label; app_id_t app; } items[] = {
@@ -27,6 +27,7 @@ static const struct { const char *icon; const char *label; app_id_t app; } items
     { LV_SYMBOL_OK,      "\xe8\xbf\x90\xe5\x8a\xbf",  APP_ID_FORTUNE },     /* 运势 */
     { LV_SYMBOL_AUDIO,   "\xe5\xb0\x8f\xe5\x85\xad\xe5\xa3\xac",  APP_ID_RECORDER },    /* 小六壬 */
     { LV_SYMBOL_SETTINGS,"\xe8\xae\xbe\xe7\xbd\xae",  APP_ID_SETTINGS },    /* 设置 */
+    { LV_SYMBOL_TINT,    "IMU",  APP_ID_CALIB },   /* 校准 */
 };
 
 static void card_cb(lv_event_t *e) {
@@ -42,7 +43,7 @@ lv_obj_t *menu_screen_create(void) {
     /* Reset static pointers */
     scroll_cont = NULL;
     highlight = NULL;
-    for (int i = 0; i < 7; i++) cards[i] = NULL;
+    for (int i = 0; i < 8; i++) cards[i] = NULL;
 
     /* Status bar */
     status_bar_create(scr);

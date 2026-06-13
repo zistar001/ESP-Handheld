@@ -30,6 +30,9 @@ void st7789_bus_release(void);
 void st7789_spi_lock(void);
 void st7789_spi_unlock(void);
 
+/* 清屏(全黑), 用于旋转前消除重影 */
+void st7789_clear(void);
+
 #ifdef __cplusplus
 }
 #endif
