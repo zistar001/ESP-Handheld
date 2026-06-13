@@ -19,6 +19,7 @@
 #include "ui/screens/airmouse_screen.h"
 #include "ui/screens/kbd_screen.h"
 #include "ui/screens/ip_input.h"
+#include "ui/screens/countdown_screen.h"
 
 /* App framework */
 #include "app/app_manager.h"
@@ -50,28 +51,6 @@ void settings_sync_global(void) {
     if (settings_load(&s) != ESP_OK) return;
     bsp_lcd_backlight_set(s.brightness);
     box_audio_set_volume(s.volume);
-}
-
-/* ================================================================
- * IMU task — read sensor periodically, log attitude for debugging
- * ================================================================ */
-static void imu_display_task(void *arg) {
-    imu_data_t imu;
-    TickType_t last_wake = xTaskGetTickCount();
-    while (1) {
-        if (imu_read(&imu) == ESP_OK) {
-            /* Compute pitch & roll from accelerometer */
-            float ax = imu.ax, ay = imu.ay, az = imu.az;
-            float pitch = atan2f(-ax, sqrtf(ay * ay + az * az)) * 57.29578f;
-            float roll  = atan2f(ay, az) * 57.29578f;
-
-            ESP_LOGD("IMU", "a=(%.2f,%.2f,%.2f)g g=(%.1f,%.1f,%.1f)dps p/r=%.0f/%.0f",
-                     imu.ax, imu.ay, imu.az,
-                     imu.gx, imu.gy, imu.gz,
-                     pitch, roll);
-        }
-        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(100)); /* 10 Hz */
-    }
 }
 
 /* ================================================================
@@ -205,6 +184,25 @@ static void key_handler(key_id_t key, bool pressed) {
                     default: break;
                 }
                 lvgl_unlock();
+            } else if (app_manager_get_current_app() == APP_ID_COUNTDOWN) {
+                static bool hold_start_t = false, hold_b_t = false, hold_a_t = false;
+                if (pressed) {
+                    if (key == KEY_START) hold_start_t = true;
+                    if (key == KEY_B) hold_b_t = true;
+                    if (key == KEY_A) hold_a_t = true;
+                } else {
+                    if (key == KEY_START) { hold_start_t = false; hold_a_t = false; }
+                    if (key == KEY_B) hold_b_t = false;
+                    if (key == KEY_A) hold_a_t = false;
+                }
+                if (hold_start_t && hold_b_t) {
+                    hold_start_t = hold_b_t = false;
+                    app_manager_return();
+                }
+                if (hold_start_t && hold_a_t) {
+                    hold_start_t = hold_a_t = false;
+                    countdown_screen_reset();
+                }
             } else if (app_manager_get_current_app() == APP_ID_FORTUNE && pressed) {
                 lvgl_lock();
                 switch (key) {
@@ -296,10 +294,8 @@ void app_main(void) {
     ret = imu_init();
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "IMU init failed (continuing)");
-    } else {
-        xTaskCreatePinnedToCore(imu_display_task, "imu", 3072, NULL, 3, NULL, 0);
-        ESP_LOGI(TAG, "IMU display task created");
-    }
+    } 
+    /* IMU is on-demand — air mouse / fortune / countdown call imu_read() directly */
 
     /* 8. Battery monitor (may fail due to ADC conflict) */
     ret = battery_monitor_init();

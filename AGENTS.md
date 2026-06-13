@@ -110,7 +110,7 @@ main/
     power/                  — Battery monitor
     settings/               — NVS settings
     time_sync/              — SNTP
-    iching/                 — I Ching hexagram data (iching_data.c/h)
+    iching/                 — I Ching + Liu Ren (iching_data.c/h, liuren_core.c/h)
   ui/
     display_driver.c        — LVGL init, double-buffer, mutex
     screens/                — home, menu, settings, countdown, airmouse, kbd, ip_input
@@ -163,6 +163,33 @@ python gen_iching.py   # 从 YI64.md 重新生成 iching_data.c
 ```
 
 需要在 `main/CMakeLists.txt` 中 `REQUIRES` 添加 `iching`，`INCLUDE_DIRS` 添加 `modules/iching`。
+
+## 小六壬掌诀模块
+
+### 原理
+
+小六壬将"大安、留连、速喜、赤口、小吉、空亡"六种卦象固定于左手六指节。推算方法：从寅位大安起正月，数至当月；从当月起初一，数至当日；从当日起子时，数至当前时辰。最终落位即为结果。
+
+### 如何使用
+
+1. 菜单 → 小六壬 → 进入手掌界面
+2. 按 **A** 键触发"掐指一算"
+3. 6神指节依次点亮（白色→杏黄色），循环3轮后停在结果位置
+4. 底部显示农历日期、时辰、卦名、断辞
+5. 按 **↑↓** 滚动查看完整断辞
+6. **B/START** 返回
+
+### 文件结构
+
+| 文件 | 说明 |
+|------|------|
+| `main/modules/iching/liuren_core.h` | 小六壬核心API |
+| `main/modules/iching/liuren_core.c` | 农历转换+时辰获取+推算逻辑 |
+| `main/ui/screens/liuren_screen.c/h` | 手掌指节UI + 老虎机动画 |
+
+### 农历数据
+
+内置 2024-2034 年农历数据表（春节日期、每月大小月、闰月信息）。`liuren_core.c` 中的 `solar_to_lunar()` 处理公历→农历转换。
 
 ## Useful Scripts
 
