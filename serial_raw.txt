@@ -1,0 +1,48 @@
+I (80053) LAUNCHER: enter
+I (82452) MENU: enter
+I (86173) APP_MGR: Launch: Timer
+I (86173) APP_MGR: Countdown timer
+I (88207) TIMER: ax=-0.03 ay=-0.99 az=-0.04
+I (89211) TIMER: ax=0.03 ay=-0.98 az=-0.14
+I (90229) TIMER: ax=-0.04 ay=-1.01 az=-0.06
+I (91241) TIMER: ax=-0.87 ay=-0.03 az=-0.51
+I (91241) TIMER: ROTATION -> 3 (was 0)
+I (92292) TIMER: ax=-0.13 ay=-0.16 az=-1.07
+I (92293) TIMER: ROTATION -> 0 (was 3)
+I (93329) TIMER: ax=0.03 ay=-0.01 az=-1.06
+I (94340) TIMER: ax=-0.39 ay=0.93 az=-0.06
+I (95351) TIMER: ax=-0.09 ay=1.02 az=0.03
+I (96362) TIMER: ax=-0.73 ay=-0.13 az=-0.66
+I (96363) TIMER: ROTATION -> 3 (was 0)
+I (97415) TIMER: ax=0.23 ay=-0.05 az=-0.96
+I (97416) TIMER: ROTATION -> 0 (was 3)
+I (98453) TIMER: ax=-0.94 ay=0.14 az=0.01
+I (98453) TIMER: ROTATION -> 3 (was 0)
+I (99506) TIMER: ax=-0.87 ay=-0.31 az=-0.16
+I (100523) TIMER: ax=-0.14 ay=-1.02 az=-0.11
+I (100523) TIMER: ROTATION -> 0 (was 3)
+I (101560) TIMER: ax=-0.79 ay=0.11 az=-0.37
+I (101561) TIMER: ROTATION -> 3 (was 0)
+I (102612) TIMER: ax=0.05 ay=-0.05 az=-1.10
+I (102613) TIMER: ROTATION -> 0 (was 3)
+I (103650) TIMER: ax=-0.23 ay=-0.13 az=-1.04
+I (104660) TIMER: ax=-0.99 ay=-0.25 az=0.04
+I (104661) TIMER: ROTATION -> 3 (was 0)
+I (105713) TIMER: ax=-0.07 ay=-1.02 az=-0.06
+I (105714) TIMER: ROTATION -> 0 (was 3)
+I (106751) TIMER: ax=-0.04 ay=-0.99 az=-0.08
+I (107761) TIMER: ax=0.00 ay=-0.99 az=-0.06
+I (108773) TIMER: ax=-0.16 ay=-1.01 az=-0.21
+I (109783) TIMER: ax=-0.99 ay=0.02 az=-0.29
+I (109784) TIMER: ROTATION -> 3 (was 0)
+I (110836) TIMER: ax=-0.14 ay=-0.01 az=-0.88
+I (110837) TIMER: ROTATION -> 0 (was 3)
+I (111873) TIMER: ax=-0.20 ay=-0.08 az=-1.08
+I (112884) TIMER: ax=-1.01 ay=0.01 az=-0.05
+I (112885) TIMER: ROTATION -> 3 (was 0)
+I (113937) TIMER: ax=-0.07 ay=0.56 az=0.11
+I (113937) TIMER: ROTATION -> 0 (was 3)
+I (114973) TIMER: ax=-0.09 ay=0.99 az=-0.09
+I (115984) TIMER: ax=-0.13 ay=1.05 az=-0.12
+I (116996) TIMER: ax=-0.99 ay=-0.25 az=-0.21
+I (116996) TIMER: ROTATION -> 3 (was 0)

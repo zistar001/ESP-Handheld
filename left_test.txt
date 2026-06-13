@@ -1,0 +1,20 @@
+I (96) boot:  6 assets           Unknown data     01 82 00c10000I (149504) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (150509) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (151512) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (152516) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (153520) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (154524) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (155528) TIMER: ax=0.02 ay=-0.99 az=-0.09
+I (156532) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (157536) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (158540) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (159544) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (160548) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (161552) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (162556) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (163561) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (164564) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (165568) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (166572) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (167576) TIMER: ax=0.02 ay=-0.99 az=-0.10
+I (168581) TIMER: ax=0.02 ay=-0.99 az=-0.10

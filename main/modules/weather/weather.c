@@ -90,13 +90,13 @@ static void parse_weather(const char *body) {
             ESP_LOGI(TAG, "Weather: %s %d~%dC %s", city, s_today_low, s_today_high, text->valuestring);
             lvgl_lock();
             if (app_manager_get_state() == APP_STATE_LAUNCHER)
-                home_screen_update_weather(city, text->valuestring, atoi(temp->valuestring), s_today_high, s_today_low, text->valuestring);
+                home_screen_update_weather(city, text->valuestring, atoi(temp->valuestring), s_today_high, s_today_low, NULL);
             lvgl_unlock();
         }
     }
     cJSON *d = cJSON_GetObjectItem(root, "daily");
     if (d && cJSON_IsArray(d) && app_manager_get_state() == APP_STATE_LAUNCHER) {
-        int n = cJSON_GetArraySize(d); if(n>3)n=3;
+        int n = cJSON_GetArraySize(d); if(n>4)n=4;
         lvgl_lock();
         /* Update today's high/low from daily[0] */
         if (n > 0) {
@@ -106,18 +106,20 @@ static void parse_weather(const char *body) {
                 cJSON *dlo = cJSON_GetObjectItem(d0, "tempMin");
                 if (dhi) s_today_high = atoi(dhi->valuestring);
                 if (dlo) s_today_low  = atoi(dlo->valuestring);
-                /* Refresh today's temp range on home screen */
-                home_screen_update_weather(NULL, NULL, 0, s_today_high, s_today_low, NULL);
+                /* Update range only (temp unchanged) */
+                home_screen_update_weather(NULL, NULL, -999, s_today_high, s_today_low, NULL);
             }
         }
-        for(int i=0;i<n;i++){
+        for(int i=1;i<n&&i<4;i++){  /* skip today, show 3 future days */
             cJSON *day=cJSON_GetArrayItem(d,i); if(!day)continue;
             cJSON *fxDate=cJSON_GetObjectItem(day,"fxDate");
             cJSON *dmax=cJSON_GetObjectItem(day,"tempMax");
             cJSON *dmin=cJSON_GetObjectItem(day,"tempMin");
+            cJSON *dtext=cJSON_GetObjectItem(day,"textDay");
             const char *date_str = fxDate ? fxDate->valuestring : NULL;
-            home_screen_update_forecast(i, date_str,
-                dmax?atoi(dmax->valuestring):0, dmin?atoi(dmin->valuestring):0);
+            home_screen_update_forecast(i-1, date_str,
+                dmax?atoi(dmax->valuestring):0, dmin?atoi(dmin->valuestring):0,
+                dtext ? dtext->valuestring : NULL);
         }
         lvgl_unlock();
     }
@@ -187,7 +189,7 @@ static void weather_task(void *arg) {
             vTaskDelay(pdMS_TO_TICKS(3000));
             for (int r=0;r<3;r++){ if(wf("/v7/weather/now")==0)break; vTaskDelay(pdMS_TO_TICKS(5000)); }
             vTaskDelay(pdMS_TO_TICKS(2000));
-            for (int r=0;r<3;r++){ if(wf("/v7/weather/3d")==0)break; vTaskDelay(pdMS_TO_TICKS(5000)); }
+            for (int r=0;r<3;r++){ if(wf("/v7/weather/7d")==0)break; vTaskDelay(pdMS_TO_TICKS(5000)); }
         }
         vTaskDelay(pdMS_TO_TICKS(WEATHER_INTERVAL_SEC*1000));
     }

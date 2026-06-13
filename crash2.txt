@@ -1,0 +1,90 @@
+I (96) boot:  6 assets           Unknown data     01 82 00c10000I (7315) WifiStation: Found AP: ChinaNet_Q6, BSSID: 22:48:5c:f0:4e:12, RSSI: -32, Channel: 1, Authmode: 4
+I (7315) WifiStation: Found AP: ChinaNet_Q6, BSSID: f4:a5:9d:24:93:98, RSSI: -54, Channel: 1, Authmode: 4
+I (7323) WifiStation: Found AP: ChinaNet_Q6, BSSID: 62:2a:8b:2d:8e:12, RSSI: -70, Channel: 1, Authmode: 4
+W (7332) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (7414) wifi:new:<1,1>, old:<1,0>, ap:<255,255>, sta:<1,1>, prof:1, snd_ch_cfg:0x0
+I (7415) wifi:state: init -> auth (0xb0)
+I (7430) wifi:state: auth -> assoc (0x0)
+I (7441) wifi:state: assoc -> run (0x10)
+I (7464) wifi:connected with ChinaNet_Q6, aid = 2, channel 1, 40U, bssid = 22:48:5c:f0:4e:12
+I (7465) wifi:security: WPA2-PSK, phy: bgn, rssi: -50, cipher(pairwise:0x3, group:0x3), pmf:0
+I (7470) wifi:pm start, type: 0
+
+I (7473) wifi:dp: 1, bi: 102400, li: 10, scale listen interval from 1024000 us to 1024000 us
+I (7481) wifi:set rx beacon pti, rx_bcn_pti: 14, bcn_timeout: 25000, mt_pti: 14, mt_time: 10000
+I (7490) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (8593) esp_netif_handlers: sta ip: 192.168.2.79, mask: 255.255.255.0, gw: 192.168.2.1
+I (8593) WifiStation: Got IP: 192.168.2.79
+I (8593) WIFI_BRIDGE: WiFi connected: ChinaNet_Q6
+I (8598) WIFI_AUDIO: PC IP rebuilt: 192.168.2.29
+I (8992) MENU: enter
+I (11044) APP_MGR: Launch: Timer
+I (11044) APP_MGR: Countdown timer
+E (11602) transport_base: Failed to initialize new connection object
+E (11602) HTTP_CLIENT: Connection failed, sock < 0
+E (11603) WEATHER: HTTP: ESP_ERR_HTTP_CONNECT
+I (13079) TIMER: ax=0.04 ay=0.94 az=-0.06
+I (13080) TIMER: ROT 1
+I (14123) TIMER: ax=0.05 ay=0.99 az=0.01
+I (15143) TIMER: ax=0.06 ay=0.98 az=0.01
+I (16159) TIMER: ax=0.00 ay=1.01 az=-0.03
+E (16606) transport_base: Failed to initialize new connection object
+E (16606) HTTP_CLIENT: Connection failed, sock < 0
+E (16607) WEATHER: HTTP: ESP_ERR_HTTP_CONNECT
+I (17175) TIMER: ax=-0.97 ay=0.09 az=-0.29
+I (17175) TIMER: ROT 0
+I (18210) TIMER: ax=-0.94 ay=-0.24 az=-0.37
+I (19221) TIMER: ax=0.09 ay=-0.92 az=-0.00
+I (19222) TIMER: ROT 3
+I (20264) TIMER: ax=-0.01 ay=-0.99 az=-0.12
+I (21280) TIMER: ax=-0.05 ay=-0.99 az=-0.14
+E (21610) transport_base: Failed to initialize new connection object
+E (21610) HTTP_CLIENT: Connection failed, sock < 0
+E (21611) WEATHER: HTTP: ESP_ERR_HTTP_CONNECT
+I (22297) TIMER: ax=-0.85 ay=-0.21 az=-0.23
+I (22298) TIMER: ROT 0
+I (23334) TIMER: ax=-1.00 ay=0.07 az=-0.30
+I (24346) TIMER: ax=-0.01 ay=1.01 az=0.02
+I (24347) TIMER: ROT 1
+I (25391) TIMER: ax=0.03 ay=0.99 az=0.08
+I (26408) TIMER: ax=-0.01 ay=1.01 az=0.02
+I (27424) TIMER: ax=-0.95 ay=0.17 az=-0.29
+I (27425) TIMER: ROT 0
+I (28460) TIMER: ax=-0.99 ay=-0.04 az=-0.52
+W (28614) wifi:m f null
+
+E (28615) transport_base: Failed to initialize new connection object
+E (28615) HTTP_CLIENT: Connection failed, sock < 0
+E (28616) WEATHER: HTTP: ESP_ERR_HTTP_CONNECT
+I (29473) TIMER: ax=0.14 ay=-0.96 az=0.08
+I (29474) TIMER: ROT 3
+I (30517) TIMER: ax=0.07 ay=-1.00 az=-0.07
+I (31533) TIMER: ax=-0.03 ay=-1.08 az=-0.16
+I (32547) TIMER: ax=-0.96 ay=-0.07 az=-0.26
+I (32548) TIMER: ROT 0
+I (33583) TIMER: ax=0.01 ay=1.00 az=0.24
+I (33584) TIMER: ROT 1
+E (33620) transport_base: Failed to initialize new connection object
+E (33620) HTTP_CLIENT: Connection failed, sock < 0
+E (33621) WEATHER: HTTP: ESP_ERR_HTTP_CONNECT
+I (34633) TIMER: ax=-0.03 ay=0.99 az=0.06
+I (35648) TIMER: ax=-0.18 ay=0.99 az=-0.08
+I (36557) wifi:<ba-add>idx:0 (ifx:0, 22:48:5c:f0:4e:12), tid:0, ssn:1, winSize:64
+I (36558) TIME_SYNC: SNTP sync done: 2026-06-13 16:16:35
+I (36664) TIMER: ax=-0.97 ay=-0.12 az=-0.26
+I (36664) TIMER: ROT 0
+I (37699) TIMER: ax=-0.15 ay=-1.16 az=-0.11
+I (37700) TIMER: ROT 3
+E (38624) transport_base: Failed to initialize new connection object
+E (38625) HTTP_CLIENT: Connection failed, sock < 0
+E (38625) WEATHER: HTTP: ESP_ERR_HTTP_CONNECT
+I (38743) TIMER: ax=-0.09 ay=-0.98 az=-0.07
+I (39758) TIMER: ax=-0.36 ay=-0.72 az=-0.02
+I (39759) TIMER: ROT 0
+I (40794) TIMER: ax=-0.97 ay=-0.04 az=-0.11
+I (41807) TIMER: ax=0.03 ay=1.06 az=0.13
+I (41807) TIMER: ROT 1
+I (42852) TIMER: ax=-0.04 ay=0.99 az=0.10
+I (43866) TIMER: ax=-0.32 ay=1.05 az=0.04
+I (44881) TIMER: ax=-0.97 ay=-0.07 az=-0.29
+I (44882) TIMER: ROT 0

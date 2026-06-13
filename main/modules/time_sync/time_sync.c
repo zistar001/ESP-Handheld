@@ -40,7 +40,7 @@ static void on_time_synced(struct timeval *tv) {
     }
 
     snprintf(s_time_buf, sizeof(s_time_buf), "%02d:%02d", ti.tm_hour, ti.tm_min);
-    snprintf(s_date_buf, sizeof(s_date_buf), "%04d/%02d/%02d",
+    snprintf(s_date_buf, sizeof(s_date_buf), "%04d-%02d-%02d",
              ti.tm_year + 1900, ti.tm_mon + 1, ti.tm_mday);
 }
 
@@ -73,7 +73,7 @@ static bool restore_from_nvs(void) {
     struct tm ti;
     localtime_r(&now, &ti);
     snprintf(s_time_buf, sizeof(s_time_buf), "%02d:%02d", ti.tm_hour, ti.tm_min);
-    snprintf(s_date_buf, sizeof(s_date_buf), "%04d/%02d/%02d",
+    snprintf(s_date_buf, sizeof(s_date_buf), "%04d-%02d-%02d",
              ti.tm_year + 1900, ti.tm_mon + 1, ti.tm_mday);
 
     struct timeval tv = { .tv_sec = now, .tv_usec = 0 };
@@ -110,7 +110,7 @@ const char *time_sync_get_time_string(void) {
             struct tm ti;
             localtime_r(&now, &ti);
             snprintf(s_time_buf, sizeof(s_time_buf), "%02d:%02d", ti.tm_hour, ti.tm_min);
-            snprintf(s_date_buf, sizeof(s_date_buf), "%04d/%02d/%02d",
+            snprintf(s_date_buf, sizeof(s_date_buf), "%04d-%02d-%02d",
                      ti.tm_year + 1900, ti.tm_mon + 1, ti.tm_mday);
         }
     }
@@ -125,7 +125,7 @@ const char *time_sync_get_date_string(void) {
             struct tm ti;
             localtime_r(&now, &ti);
             snprintf(s_time_buf, sizeof(s_time_buf), "%02d:%02d", ti.tm_hour, ti.tm_min);
-            snprintf(s_date_buf, sizeof(s_date_buf), "%04d/%02d/%02d",
+            snprintf(s_date_buf, sizeof(s_date_buf), "%04d-%02d-%02d",
                      ti.tm_year + 1900, ti.tm_mon + 1, ti.tm_mday);
         }
     }

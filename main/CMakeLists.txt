@@ -31,7 +31,8 @@ idf_component_register(
           # UI
           "ui/display_driver.c"
           "ui/components/status_bar.c"
-          "ui/components/weather_icon.c"
+           "ui/components/weather_icon.c"
+           "ui/components/weather_icons_data.c"
           "ui/screens/home_screen.c" "ui/screens/menu_screen.c"
           "ui/screens/settings_screen.c"
           "ui/screens/countdown_screen.c"

@@ -1,0 +1,58 @@
+WARNING: The IDF_PYTHON_ENV_PATH is missing in environmental variables!
+--- Warning: GDB cannot open serial ports accessed as COMx
+--- Using \\.\COM7 instead...
+--- esp-idf-monitor 1.9.0 on \\.\COM7 115200
+--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+--- 0x4037ebbe: esp_cpu_wait_for_intr at D:/Espressif/frameworks/esp-idf-v5.5.4/components/esp_hw_support/cpu.c:64
+--- 0x403c8700: _stext at ??:?
+--- 0x403c8924: call_start_cpu0 at D:/Espressif/frameworks/esp-idf-v5.5.4/components/bootloader/subproject/main/bootloader_start.c:27
+Traceback (most recent call last):
+  File "D:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf.py", line 934, in <module>
+    main()
+  File "D:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf.py", line 813, in main
+    cli(argv, prog_name=PROG, complete_var=SHELL_COMPLETE_VAR)
+  File "C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Lib\site-packages\click\core.py", line 1161, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Lib\site-packages\click\core.py", line 1082, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Lib\site-packages\click\core.py", line 1729, in invoke
+    return _process_result(rv)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Lib\site-packages\click\core.py", line 1666, in _process_result
+    value = ctx.invoke(self._result_callback, value, **ctx.params)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Lib\site-packages\click\core.py", line 788, in invoke
+    return __callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf.py", line 709, in execute_tasks
+    task(ctx, global_args, task.action_args)
+  File "D:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf.py", line 239, in __call__
+    self.callback(self.name, context, global_args, **action_args)
+  File "D:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf_py_actions\serial_ext.py", line 195, in monitor
+    RunTool(
+  File "D:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf_py_actions\tools.py", line 340, in __call__
+    process, stderr_output_file, stdout_output_file = asyncio.run(self.run_command(self.args, env_copy))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncio\runners.py", line 190, in run
+  File "asyncio\runners.py", line 118, in run
+  File "asyncio\base_events.py", line 653, in run_until_complete
+  File "D:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf_py_actions\tools.py", line 399, in run_command
+    await asyncio.gather(
+  File "D:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf_py_actions\tools.py", line 501, in read_and_write_stream
+    output_converter.write(output)
+  File "C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Lib\site-packages\esp_idf_monitor\base\ansi_color_converter.py", line 132, in write
+    self._output_write(b)
+  File "C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Lib\site-packages\esp_idf_monitor\base\ansi_color_converter.py", line 73, in _output_write
+    self.output.write(self.decode_buffer.decode())  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2713' in position 0: illegal multibyte sequence
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x000001CCAE3199E0>
+Traceback (most recent call last):
+  File "asyncio\base_subprocess.py", line 126, in __del__
+  File "asyncio\base_subprocess.py", line 104, in close
+  File "asyncio\proactor_events.py", line 109, in close
+  File "asyncio\base_events.py", line 761, in call_soon
+  File "asyncio\base_events.py", line 519, in _check_closed
+RuntimeError: Event loop is closed
