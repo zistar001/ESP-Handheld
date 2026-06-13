@@ -23,6 +23,7 @@ idf_component_register(
           "modules/wifi_manager/wifi_manager.c" "modules/wifi_manager/wifi_bridge.cpp"
            # I Ching
           "modules/iching/iching_data.c"
+          "modules/iching/liuren_core.c"
           "modules/xiaozhi/xiaozhi_wrapper.c"
           # PC Remote (BLE HID + air mouse + WiFi audio)
           "modules/pc_remote/ble_hid.c" "modules/pc_remote/air_mouse.c" "modules/pc_remote/wifi_audio.c"

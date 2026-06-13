@@ -15,6 +15,7 @@
 #include "ui/display_driver.h"
 #include "ui/screens/settings_screen.h"
 #include "ui/screens/fortune_screen.h"
+#include "ui/screens/liuren_screen.h"
 #include "ui/screens/airmouse_screen.h"
 #include "ui/screens/kbd_screen.h"
 #include "ui/screens/ip_input.h"
@@ -210,6 +211,17 @@ static void key_handler(key_id_t key, bool pressed) {
                     case KEY_UP:    fortune_screen_navigate(-1); break;
                     case KEY_DOWN:  fortune_screen_navigate(1);  break;
                     case KEY_A:     fortune_screen_select();     break;
+                    case KEY_B:
+                    case KEY_START: app_manager_return(); break;
+                    default: break;
+                }
+                lvgl_unlock();
+            } else if (app_manager_get_current_app() == APP_ID_RECORDER && pressed) {
+                lvgl_lock();
+                switch (key) {
+                    case KEY_UP:    liuren_screen_navigate(-1); break;
+                    case KEY_DOWN:  liuren_screen_navigate(1);  break;
+                    case KEY_A:     liuren_screen_calculate(); break;
                     case KEY_B:
                     case KEY_START: app_manager_return(); break;
                     default: break;

@@ -25,7 +25,7 @@ static const struct { const char *icon; const char *label; app_id_t app; } items
     { LV_SYMBOL_GPS,     "\xe9\xbc\xa0\xe6\xa0\x87",  APP_ID_MOUSE },       /* 鼠标 */
     { LV_SYMBOL_BELL,    "\xe9\x97\xb9\xe9\x92\x9f",  APP_ID_COUNTDOWN },   /* 闹钟 */
     { LV_SYMBOL_OK,      "\xe8\xbf\x90\xe5\x8a\xbf",  APP_ID_FORTUNE },     /* 运势 */
-    { LV_SYMBOL_AUDIO,   "\xe5\xbd\x95\xe9\x9f\xb3",  APP_ID_RECORDER },    /* 录音 */
+    { LV_SYMBOL_AUDIO,   "\xe5\xb0\x8f\xe5\x85\xad\xe5\xa3\xac",  APP_ID_RECORDER },    /* 小六壬 */
     { LV_SYMBOL_SETTINGS,"\xe8\xae\xbe\xe7\xbd\xae",  APP_ID_SETTINGS },    /* 设置 */
 };
 

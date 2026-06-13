@@ -31,7 +31,7 @@ static const app_entry_t apps[] = {
     { APP_ID_MOUSE, "Mouse", "M" },
     { APP_ID_COUNTDOWN, "Timer", "T" },
     { APP_ID_FORTUNE,      "\xe8\xbf\x90\xe5\x8a\xbf",  "F" },     /* 运势 */
-    { APP_ID_RECORDER,     "\xe5\xbd\x95\xe9\x9f\xb3",  "R" },     /* 录音 */
+    { APP_ID_RECORDER,     "\xe5\xb0\x8f\xe5\x85\xad\xe5\xa3\xac",  "R" },     /* 小六壬 */
     { APP_ID_SETTINGS, "Config", "S" },
 };
 
@@ -85,7 +85,7 @@ esp_err_t app_manager_launch(app_id_t id) {
             fortune_screen_create();
             break;
         case APP_ID_RECORDER:
-            ESP_LOGI(TAG, "Liu Ren");
+            ESP_LOGI(TAG, "Liu Ren / Xiao Liu Ren");
             liuren_screen_create();
             break;
         case APP_ID_SETTINGS:
