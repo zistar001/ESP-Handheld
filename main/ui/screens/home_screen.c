@@ -191,7 +191,7 @@ void home_screen_update_weather(const char *city, const char *desc, int temp, in
     s_cached_data_valid = true;
     if (city_lbl && city) lv_label_set_text(city_lbl, city);
     if (desc_lbl && desc) lv_label_set_text(desc_lbl, desc);
-    if (temp_lbl) { snprintf(buf, 64, "%d", temp); lv_label_set_text(temp_lbl, buf); }
+    if (temp_lbl && temp > -50) { snprintf(buf, 64, "%d", temp); lv_label_set_text(temp_lbl, buf); }
     if (range_lbl && (temp_high || temp_low)) { snprintf(buf, 64, "%d~%d\xC2\xB0""C", temp_low, temp_high); lv_label_set_text(range_lbl, buf); }
 }
 

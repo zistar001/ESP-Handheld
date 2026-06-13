@@ -21,7 +21,8 @@ idf_component_register(
           "modules/weather/weather.c"
           # WiFi
           "modules/wifi_manager/wifi_manager.c" "modules/wifi_manager/wifi_bridge.cpp"
-          # XiaoZhi wrapper
+           # I Ching
+          "modules/iching/iching_data.c"
           "modules/xiaozhi/xiaozhi_wrapper.c"
           # PC Remote (BLE HID + air mouse + WiFi audio)
           "modules/pc_remote/ble_hid.c" "modules/pc_remote/air_mouse.c" "modules/pc_remote/wifi_audio.c"
@@ -51,9 +52,11 @@ idf_component_register(
                  "modules/wifi_manager"
                  "modules/xiaozhi"
                  "modules/pc_remote"
+                 "modules/iching"
                  "ui"
                  "ui/components"
                  "ui/screens"
+                 "modules/iching"
     REQUIRES driver esp_timer spi_flash nvs_flash fatfs sdmmc app_update esp_partition bt esp_hid esp_adc
              esp_lcd nes_core espressif__esp_codec_dev lvgl
              esp_wifi esp_event esp_netif esp_http_client json
