@@ -15,6 +15,9 @@
 #include "ui/screens/fortune_screen.h"
 #include "ui/screens/liuren_screen.h"
 #include "ui/screens/calib_screen.h"
+#include "ui/screens/record_screen.h"
+#include "ui/screens/home_screen.h"
+#include "ui/screens/home_screen.h"
 #include "ui/display_driver.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
@@ -164,6 +167,16 @@ esp_err_t app_manager_launch(app_id_t id) {
         case APP_ID_CALIB:
             ESP_LOGI(TAG, "IMU Calibration");
             calib_screen_create();
+            break;
+        case APP_ID_XIAOZHI: {
+            ESP_LOGI(TAG, "Switch to XiaoZhi AI");
+            const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
+            if (p) { esp_ota_set_boot_partition(p); esp_restart(); }
+            break;
+        }
+        case APP_ID_RECORD:
+            ESP_LOGI(TAG, "Voice Recorder");
+            record_screen_create();
             break;
         case APP_ID_IP_INPUT:
             ESP_LOGI(TAG, "PC IP input");

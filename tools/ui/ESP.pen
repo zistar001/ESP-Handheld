@@ -1,0 +1,3550 @@
+{
+  "version": "2.13",
+  "children": [
+    {
+      "type": "frame",
+      "id": "Jjm49",
+      "x": 0,
+      "y": 0,
+      "name": "Status Bar",
+      "reusable": true,
+      "width": 240,
+      "height": 28,
+      "fill": "#0A0A0A",
+      "layout": "none",
+      "children": [
+        {
+          "type": "path",
+          "id": "upoWf",
+          "x": 44,
+          "y": 7,
+          "name": "WiFi",
+          "geometry": "M2 3q6-3 12 0m-9 3q3-3 6 0m-3 3l1 0",
+          "viewBox": [
+            0,
+            0,
+            16,
+            12
+          ],
+          "width": 16,
+          "height": 12,
+          "stroke": "#FFFFFFCC",
+          "strokeWidth": 1.5
+        },
+        {
+          "type": "path",
+          "id": "uvqe7",
+          "x": 98,
+          "y": 6,
+          "name": "BT",
+          "geometry": "M5 1l0 14m0-14l-4 4m4 6l-4 5m4-8l4-3m-4 3l4 3",
+          "viewBox": [
+            0,
+            0,
+            10,
+            16
+          ],
+          "width": 10,
+          "height": 16,
+          "stroke": "#FFFFFFCC",
+          "strokeWidth": 1.5
+        },
+        {
+          "type": "frame",
+          "id": "Yyu0M",
+          "x": 150,
+          "y": 5,
+          "name": "Battery",
+          "gap": 3,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "path",
+              "id": "AjV37",
+              "name": "Bat",
+              "geometry": "M2 0l15 0 0 12-15 0z m17 3l0 6",
+              "viewBox": [
+                0,
+                0,
+                22,
+                12
+              ],
+              "width": 22,
+              "height": 12,
+              "stroke": "#FFFFFFCC",
+              "strokeWidth": 1
+            },
+            {
+              "type": "text",
+              "id": "C8M3M",
+              "name": "Pct",
+              "fill": "#FFFFFFCC",
+              "content": "80%",
+              "fontFamily": "Montserrat",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "X1fn1",
+      "x": 280,
+      "y": 0,
+      "name": "App Card",
+      "reusable": true,
+      "width": 96,
+      "height": 68,
+      "fill": "#FF5C00",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "gap": 4,
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "text",
+          "id": "jdO9n",
+          "name": "Label",
+          "fill": "#FFFFFF",
+          "content": "Label",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "srR5y",
+          "name": "Icon Box",
+          "width": 28,
+          "height": 28,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "polygon",
+              "polygonCount": 3,
+              "id": "j0pe3",
+              "name": "Shape",
+              "rotation": 90,
+              "fill": "#FFFFFF",
+              "width": 20,
+              "height": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "VNrSs",
+      "x": 436,
+      "y": 0,
+      "name": "Home Screen",
+      "clip": true,
+      "width": 240,
+      "height": 280,
+      "fill": "#0A0A0A",
+      "layout": "none",
+      "children": [
+        {
+          "id": "byyyf",
+          "type": "ref",
+          "ref": "Jjm49",
+          "name": "Status Bar",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "text",
+          "id": "b4nVeU",
+          "x": 15,
+          "y": 34,
+          "name": "Time",
+          "fill": "#FFFFFF",
+          "content": "12:34",
+          "fontFamily": "Montserrat",
+          "fontSize": 48,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "ps711",
+          "x": 39,
+          "y": 93,
+          "name": "Date",
+          "fill": "#999999",
+          "content": "2026-06-11",
+          "fontFamily": "Montserrat",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "Zcffe",
+          "x": 154,
+          "y": 19,
+          "name": "Weather Deco",
+          "opacity": 0.1,
+          "fill": "#FF5C00",
+          "textGrowth": "fixed-width-height",
+          "width": 77,
+          "height": 88,
+          "content": "☀",
+          "fontFamily": "Montserrat",
+          "fontSize": 64,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "DWOhw",
+          "x": 18,
+          "y": 106,
+          "name": "Temperature",
+          "fill": "#FF5C00",
+          "content": "28",
+          "fontFamily": "Montserrat",
+          "fontSize": 48,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "S204o",
+          "x": 77,
+          "y": 118,
+          "name": "Unit",
+          "fill": "#999999",
+          "content": "°C",
+          "fontFamily": "Montserrat",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "XYz6K",
+          "x": 80,
+          "y": 138,
+          "name": "Weather Desc",
+          "fill": "#999999",
+          "content": "多云",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "zkDBJ",
+          "x": 164,
+          "y": 116,
+          "name": "City",
+          "fill": "#FFFFFFCC",
+          "content": "上海",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "HEDeP",
+          "x": 127,
+          "y": 141,
+          "name": "Temp Range",
+          "fill": "#999999",
+          "content": "↑30°C  ↓22°C",
+          "fontFamily": "Montserrat",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "qwjiU",
+          "x": 36,
+          "y": 171,
+          "name": "Fore Icon 1",
+          "fill": "#FF5C00",
+          "content": "☀",
+          "fontFamily": "Montserrat",
+          "fontSize": 24,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "UBN1F",
+          "x": 33,
+          "y": 201,
+          "name": "Fore Temp 1",
+          "fill": "#FFFFFFAA",
+          "content": "30°C",
+          "fontFamily": "Montserrat",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "uQLf3",
+          "x": 33,
+          "y": 217,
+          "name": "Fore Day 1",
+          "fill": "#FFFFFF88",
+          "content": "今天",
+          "fontFamily": "Montserrat",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "D5kmNs",
+          "x": 106,
+          "y": 171,
+          "name": "Fore Icon 2",
+          "fill": "#FF5C00",
+          "content": "☀",
+          "fontFamily": "Montserrat",
+          "fontSize": 24,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "DgW9r",
+          "x": 103,
+          "y": 201,
+          "name": "Fore Temp 2",
+          "fill": "#FFFFFFAA",
+          "content": "30°C",
+          "fontFamily": "Montserrat",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "vOoOS",
+          "x": 105,
+          "y": 217,
+          "name": "Fore Day 2",
+          "fill": "#FFFFFF88",
+          "content": "明天",
+          "fontFamily": "Montserrat",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "e0azjW",
+          "x": 176,
+          "y": 171,
+          "name": "Fore Icon 3",
+          "fill": "#FF5C00",
+          "content": "☀",
+          "fontFamily": "Montserrat",
+          "fontSize": 24,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "TOoPz",
+          "x": 173,
+          "y": 201,
+          "name": "Fore Temp 3",
+          "fill": "#FFFFFFAA",
+          "content": "30°C",
+          "fontFamily": "Montserrat",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "tkenT",
+          "x": 176,
+          "y": 217,
+          "name": "Fore Day 3",
+          "fill": "#FFFFFF88",
+          "content": "后天",
+          "fontFamily": "Montserrat",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "id": "mNX7K",
+          "x": 131,
+          "y": 248,
+          "name": "Separator",
+          "fill": "#FFFFFF20",
+          "width": 4,
+          "height": 20
+        },
+        {
+          "type": "text",
+          "id": "EhP8z",
+          "x": 34,
+          "y": 245,
+          "name": "Indoor Label",
+          "fill": "#999999",
+          "content": "室内",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "qNO8R",
+          "x": 76,
+          "y": 248,
+          "name": "Indoor Temp",
+          "fill": "#FF5C00",
+          "content": "26.5°C",
+          "fontFamily": "Montserrat",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "w74xKy",
+          "x": 150,
+          "y": 248,
+          "name": "Indoor Hum",
+          "fill": "#FF5C00",
+          "content": "65%",
+          "fontFamily": "Montserrat",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "XQ40b",
+      "x": 736,
+      "y": 0,
+      "name": "Menu Screen",
+      "clip": true,
+      "width": 240,
+      "height": 280,
+      "fill": "#0A0A0A",
+      "layout": "none",
+      "children": [
+        {
+          "id": "SQ1OT",
+          "type": "ref",
+          "ref": "Jjm49",
+          "name": "Status Bar",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "frame",
+          "id": "SOERK",
+          "x": 0,
+          "y": 28,
+          "name": "Card Container",
+          "clip": true,
+          "width": 240,
+          "height": 252,
+          "fill": "#0A0A0A",
+          "layout": "none",
+          "children": [
+            {
+              "id": "zGh2T",
+              "type": "ref",
+              "ref": "X1fn1",
+              "name": "游戏 Card",
+              "x": 10,
+              "y": 8,
+              "descendants": {
+                "jdO9n": {
+                  "content": "游戏"
+                },
+                "srR5y": {
+                  "children": [
+                    {
+                      "type": "polygon",
+                      "polygonCount": 3,
+                      "id": "JiPSG",
+                      "name": "Play",
+                      "rotation": 90,
+                      "fill": "#FFFFFF",
+                      "width": 20,
+                      "height": 22
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "C1iDw",
+              "type": "ref",
+              "ref": "X1fn1",
+              "name": "键盘 Card",
+              "x": 118,
+              "y": 8,
+              "descendants": {
+                "jdO9n": {
+                  "content": "键盘"
+                },
+                "srR5y": {
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "Q8B4fJ",
+                      "name": "Kbd",
+                      "fill": "#FFFFFF",
+                      "width": 22,
+                      "height": 14
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "X1umI",
+              "type": "ref",
+              "ref": "X1fn1",
+              "name": "鼠标 Card",
+              "x": 10,
+              "y": 88,
+              "descendants": {
+                "jdO9n": {
+                  "content": "鼠标"
+                },
+                "srR5y": {
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "Y81Yto",
+                      "name": "Mouse",
+                      "fill": "#FFFFFF",
+                      "width": 12,
+                      "height": 18
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "WPxVs",
+              "type": "ref",
+              "ref": "X1fn1",
+              "name": "闹钟 Card",
+              "x": 118,
+              "y": 88,
+              "descendants": {
+                "jdO9n": {
+                  "content": "闹钟"
+                },
+                "srR5y": {
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "Gzq2Y",
+                      "name": "Clock",
+                      "innerRadius": 0.55,
+                      "fill": "#FFFFFF",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "DYqxg",
+              "type": "ref",
+              "ref": "X1fn1",
+              "name": "运势 Card",
+              "x": 10,
+              "y": 168,
+              "descendants": {
+                "jdO9n": {
+                  "content": "运势"
+                },
+                "srR5y": {
+                  "children": [
+                    {
+                      "type": "polygon",
+                      "polygonCount": 5,
+                      "id": "P6N2d",
+                      "name": "Star",
+                      "fill": "#FFFFFF",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "YKdkK",
+              "type": "ref",
+              "ref": "X1fn1",
+              "name": "录音 Card",
+              "x": 118,
+              "y": 168,
+              "descendants": {
+                "jdO9n": {
+                  "content": "录音"
+                },
+                "srR5y": {
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "nagpv",
+                      "name": "Record",
+                      "fill": "#FFFFFF",
+                      "width": 14,
+                      "height": 14
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "MHd8V",
+              "type": "ref",
+              "ref": "X1fn1",
+              "name": "设置 Card",
+              "x": 10,
+              "y": 248,
+              "descendants": {
+                "jdO9n": {
+                  "content": "设置"
+                },
+                "srR5y": {
+                  "children": [
+                    {
+                      "type": "polygon",
+                      "polygonCount": 8,
+                      "id": "OEeJo",
+                      "name": "Gear",
+                      "fill": "#FFFFFF",
+                      "width": 22,
+                      "height": 22
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "HmAim",
+      "x": 1036,
+      "y": 0,
+      "name": "Settings Screen",
+      "clip": true,
+      "width": 240,
+      "height": 280,
+      "fill": "#1a1a2e",
+      "layout": "none",
+      "children": [
+        {
+          "type": "text",
+          "id": "RDs0q",
+          "x": 10,
+          "y": 8,
+          "name": "Title",
+          "fill": "#FFFFFF",
+          "content": "Settings (B: Back)",
+          "fontFamily": "Montserrat",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "sAflm",
+          "x": 0,
+          "y": 35,
+          "name": "Volume Row",
+          "width": 240,
+          "height": 36,
+          "fill": "#FF5C00",
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "ty7AH",
+              "x": 12,
+              "y": 11,
+              "name": "Name",
+              "fill": "#FFFFFF",
+              "content": "Volume",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "fmD0P",
+              "x": 160,
+              "y": 11,
+              "name": "Value",
+              "fill": "#999999",
+              "content": "80%",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "Y2HFbv",
+              "x": 225,
+              "y": 11,
+              "name": "Arrow",
+              "fill": "#666666",
+              "content": ">",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "lj02p",
+          "x": 0,
+          "y": 71,
+          "name": "Brightness Row",
+          "width": 240,
+          "height": 36,
+          "fill": "#2a2a3e",
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "Gkvy4",
+              "x": 12,
+              "y": 11,
+              "name": "Name",
+              "fill": "#FFFFFF",
+              "content": "Brightness",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "prlMy",
+              "x": 160,
+              "y": 11,
+              "name": "Value",
+              "fill": "#999999",
+              "content": "70%",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "O7hNO",
+              "x": 225,
+              "y": 11,
+              "name": "Arrow",
+              "fill": "#666666",
+              "content": ">",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Hyo1B",
+          "x": 0,
+          "y": 107,
+          "name": "WiFi Row",
+          "width": 240,
+          "height": 36,
+          "fill": "#2a2a3e",
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "LiKaS",
+              "x": 12,
+              "y": 11,
+              "name": "Name",
+              "fill": "#FFFFFF",
+              "content": "WiFi",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "onERO",
+              "x": 160,
+              "y": 11,
+              "name": "Value",
+              "fill": "#999999",
+              "content": "MyHomeNet",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "Cu9tW",
+              "x": 225,
+              "y": 11,
+              "name": "Arrow",
+              "fill": "#666666",
+              "content": ">",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "yD31x",
+          "x": 0,
+          "y": 143,
+          "name": "PC IP Row",
+          "width": 240,
+          "height": 36,
+          "fill": "#2a2a3e",
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "iYVBz",
+              "x": 12,
+              "y": 11,
+              "name": "Name",
+              "fill": "#FFFFFF",
+              "content": "PC IP",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "hBvvE",
+              "x": 160,
+              "y": 11,
+              "name": "Value",
+              "fill": "#999999",
+              "content": "192.168.1.100",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "Nmljx",
+              "x": 225,
+              "y": 11,
+              "name": "Arrow",
+              "fill": "#666666",
+              "content": ">",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Gup0L",
+          "x": 0,
+          "y": 179,
+          "name": "Sleep Row",
+          "width": 240,
+          "height": 36,
+          "fill": "#2a2a3e",
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "CmfB0",
+              "x": 12,
+              "y": 11,
+              "name": "Name",
+              "fill": "#FFFFFF",
+              "content": "Sleep",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "o0owu",
+              "x": 160,
+              "y": 11,
+              "name": "Value",
+              "fill": "#999999",
+              "content": "ON 300s",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "Lvw5F",
+              "x": 225,
+              "y": 11,
+              "name": "Arrow",
+              "fill": "#666666",
+              "content": ">",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "DnOvO",
+          "x": 0,
+          "y": 215,
+          "name": "About Row",
+          "width": 240,
+          "height": 36,
+          "fill": "#2a2a3e",
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "pwTVe",
+              "x": 12,
+              "y": 11,
+              "name": "Name",
+              "fill": "#FFFFFF",
+              "content": "About",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "Knjju",
+              "x": 160,
+              "y": 11,
+              "name": "Value",
+              "fill": "#999999",
+              "content": "v1.0",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "A2woN",
+              "x": 225,
+              "y": 11,
+              "name": "Arrow",
+              "fill": "#666666",
+              "content": ">",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "HnkQ0",
+      "x": 1336,
+      "y": 0,
+      "name": "Countdown Screen",
+      "clip": true,
+      "width": 240,
+      "height": 280,
+      "fill": "#0A0A0A",
+      "layout": "none",
+      "children": [
+        {
+          "id": "c4OgI",
+          "type": "ref",
+          "ref": "Jjm49",
+          "name": "Status Bar",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "frame",
+          "id": "qIjZf",
+          "x": 0,
+          "y": 32,
+          "name": "Tab Bar",
+          "width": 240,
+          "height": 32,
+          "children": [
+            {
+              "type": "frame",
+              "id": "j2pGbE",
+              "name": "闹钟 Tab",
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "#FF5C00",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "CAMzL",
+                  "name": "Tab Label",
+                  "fill": "#FFFFFF",
+                  "content": "闹钟",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "P9I0Ql",
+              "name": "番茄 Tab",
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "#333333",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "I2pcG",
+                  "name": "Tab Label",
+                  "fill": "#FFFFFF",
+                  "content": "番茄",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "HOyEC",
+          "x": 0,
+          "y": 60,
+          "name": "Current Time",
+          "fill": "#FFFFFF",
+          "textGrowth": "fixed-width",
+          "width": 240,
+          "content": "07:30",
+          "textAlign": "center",
+          "fontFamily": "Montserrat",
+          "fontSize": 40,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "Dw9Wp",
+          "x": 0,
+          "y": 115,
+          "name": "Set Alarm Label",
+          "fill": "#999999",
+          "textGrowth": "fixed-width",
+          "width": 240,
+          "content": "设定闹钟",
+          "textAlign": "center",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "uOXbW",
+          "x": 35,
+          "y": 132,
+          "name": "Time Selector",
+          "width": 170,
+          "height": 32,
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "C4kQvm",
+              "name": "Minus Btn",
+              "width": 36,
+              "height": 32,
+              "fill": "#333333",
+              "cornerRadius": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "lfdxv",
+                  "name": "Minus Label",
+                  "fill": "#FFFFFFCC",
+                  "content": "−",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 20,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "KjvnW",
+              "name": "Time Value",
+              "fill": "#FFFFFF",
+              "content": "07:30",
+              "fontFamily": "Montserrat",
+              "fontSize": 28,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "L1canA",
+              "name": "Plus Btn",
+              "width": 36,
+              "height": 32,
+              "fill": "#333333",
+              "cornerRadius": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "JJ2By",
+                  "name": "Plus Label",
+                  "fill": "#FFFFFFCC",
+                  "content": "+",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 20,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "R0Dsjb",
+          "x": 20,
+          "y": 175,
+          "name": "Repeat Row",
+          "width": 200,
+          "height": 28,
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "ypARC",
+              "name": "Repeat Label",
+              "fill": "#FFFFFF",
+              "content": "重复",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "haIJ5",
+              "name": "Repeat Right",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "g3jcci",
+                  "name": "Repeat Value",
+                  "fill": "#999999",
+                  "content": "一次性",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "PZWKi",
+                  "name": "Repeat Arrow",
+                  "fill": "#999999",
+                  "content": ">",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "re61p",
+          "x": 20,
+          "y": 205,
+          "name": "Toggle Row",
+          "width": 200,
+          "height": 28,
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "oXn7M",
+              "name": "Toggle Label",
+              "fill": "#FFFFFF",
+              "content": "闹钟",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "Xu8XO",
+              "name": "Toggle Pill",
+              "width": 44,
+              "height": 24,
+              "fill": "#FF5C00",
+              "cornerRadius": 12,
+              "padding": 2,
+              "justifyContent": "end",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "G9TtmL",
+                  "name": "Toggle Knob",
+                  "width": 20,
+                  "height": 20,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "TEdo8",
+          "x": 20,
+          "y": 240,
+          "name": "Save Button",
+          "width": 200,
+          "height": 36,
+          "fill": "#FF5C00",
+          "cornerRadius": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "A1vCh",
+              "name": "Save Label",
+              "fill": "#FFFFFF",
+              "content": "保存",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "S77s6u",
+          "x": 0,
+          "y": 0,
+          "name": "Pomodoro Content",
+          "enabled": false,
+          "width": 240,
+          "height": 280,
+          "children": [
+            {
+              "type": "text",
+              "id": "umotQ",
+              "name": "Timer Display",
+              "fill": "#FF5C00",
+              "textGrowth": "fixed-width",
+              "width": 240,
+              "content": "25:00",
+              "textAlign": "center",
+              "fontFamily": "Montserrat",
+              "fontSize": 48,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "HGum1",
+              "name": "Quick Select",
+              "width": 200,
+              "height": 28,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "nQrlj",
+                  "name": "25min Btn",
+                  "width": 56,
+                  "height": 28,
+                  "fill": "#FF5C00",
+                  "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wQt0d",
+                      "name": "Label",
+                      "fill": "#FFFFFF",
+                      "content": "25分",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EdPDd",
+                  "name": "5min Btn",
+                  "width": 56,
+                  "height": 28,
+                  "fill": "#333333",
+                  "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "WTBwp",
+                      "name": "Label",
+                      "fill": "#FFFFFF",
+                      "content": "5分",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gLYCH",
+                  "name": "15min Btn",
+                  "width": 56,
+                  "height": 28,
+                  "fill": "#333333",
+                  "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "pzdOC",
+                      "name": "Label",
+                      "fill": "#FFFFFF",
+                      "content": "15分",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "c2sOzU",
+              "name": "Tomato Count",
+              "fill": "#999999",
+              "textGrowth": "fixed-width",
+              "width": 240,
+              "content": "已进行 0 个番茄",
+              "textAlign": "center",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "nEBs6",
+              "name": "Start Button",
+              "width": 120,
+              "height": 44,
+              "fill": "#FF5C00",
+              "cornerRadius": 22,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "i6M5g7",
+                  "name": "Start Label",
+                  "fill": "#FFFFFF",
+                  "content": "开始",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mnIys",
+              "name": "Reset Button",
+              "width": 80,
+              "height": 32,
+              "fill": "#333333",
+              "cornerRadius": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "QZxP9",
+                  "name": "Reset Label",
+                  "fill": "#FFFFFFCC",
+                  "content": "重置",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "MV21N",
+      "x": 1636,
+      "y": 0,
+      "name": "Air Mouse Screen",
+      "clip": true,
+      "width": 240,
+      "height": 280,
+      "fill": "#0A0A0A",
+      "layout": "none",
+      "children": [
+        {
+          "id": "THTTz",
+          "type": "ref",
+          "ref": "Jjm49",
+          "name": "Status Bar",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "text",
+          "id": "V9eS1",
+          "x": 15,
+          "y": 34,
+          "name": "Title",
+          "fill": "#FFFFFF",
+          "content": "Mouse",
+          "fontFamily": "Montserrat",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "W4aas7",
+          "x": 20,
+          "y": 60,
+          "name": "Toggle",
+          "width": 200,
+          "height": 40,
+          "fill": "#333333",
+          "cornerRadius": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "jfKs6",
+              "name": "Toggle Label",
+              "fill": "#FFFFFF",
+              "content": "Mouse: OFF",
+              "fontFamily": "Montserrat",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "IOZDs",
+          "x": 20,
+          "y": 115,
+          "name": "Sensitivity",
+          "fill": "#AAAAAA",
+          "content": "Sensitivity:",
+          "fontFamily": "Montserrat",
+          "fontSize": 14,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "MDYVM",
+          "x": 20,
+          "y": 138,
+          "name": "Low Btn",
+          "width": 58,
+          "height": 32,
+          "fill": "#333333",
+          "cornerRadius": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "ctYML",
+              "name": "Low Label",
+              "fill": "#FFFFFF",
+              "content": "Low",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "HWACC",
+          "x": 88,
+          "y": 138,
+          "name": "Mid Btn",
+          "width": 58,
+          "height": 32,
+          "fill": "#FF5C00",
+          "cornerRadius": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "nFUnp",
+              "name": "Mid Label",
+              "fill": "#FFFFFF",
+              "content": "Mid",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "sCaQR",
+          "x": 156,
+          "y": 138,
+          "name": "High Btn",
+          "width": 58,
+          "height": 32,
+          "fill": "#333333",
+          "cornerRadius": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "OVXRB",
+              "name": "High Label",
+              "fill": "#FFFFFF",
+              "content": "High",
+              "fontFamily": "Montserrat",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "JVIHY",
+          "x": 16,
+          "y": 195,
+          "name": "Key Map",
+          "fill": "#999999",
+          "textGrowth": "fixed-width",
+          "width": 210,
+          "content": "Key Map:\nA = Left Click\nB = Right Click\n→ = Voice\nSTART+B = Exit",
+          "fontFamily": "Montserrat",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "smfzs",
+      "x": 1936,
+      "y": 1,
+      "name": "Keyboard Screen",
+      "clip": true,
+      "width": 240,
+      "height": 280,
+      "fill": "#0A0A0A",
+      "layout": "none",
+      "children": [
+        {
+          "id": "noXCY",
+          "type": "ref",
+          "ref": "Jjm49",
+          "name": "Status Bar",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "text",
+          "id": "vX4D8",
+          "x": 15,
+          "y": 34,
+          "name": "Title",
+          "fill": "#FFFFFF",
+          "content": "Keyboard",
+          "fontFamily": "Montserrat",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "r3JpH7",
+          "x": 20,
+          "y": 60,
+          "name": "Kbd Toggle",
+          "width": 200,
+          "height": 40,
+          "fill": "#333333",
+          "cornerRadius": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "bKln7",
+              "name": "Kbd Label",
+              "fill": "#FFFFFF",
+              "content": "Kbd: OFF",
+              "fontFamily": "Montserrat",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "D6laK",
+          "x": 20,
+          "y": 115,
+          "name": "Voice Toggle",
+          "width": 200,
+          "height": 40,
+          "fill": "#333333",
+          "cornerRadius": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "zG6fV",
+              "name": "Voice Label",
+              "fill": "#FFFFFF",
+              "content": "Voice: Hold A",
+              "fontFamily": "Montserrat",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "BMKLH",
+          "x": 20,
+          "y": 185,
+          "name": "Key Map",
+          "fill": "#999999",
+          "textGrowth": "fixed-width",
+          "width": 200,
+          "content": "Keys (Kbd ON):\nA = Enter  B = ESC\nArrows = Move\nHold A = Voice (PTT)\nSTART+B = Exit",
+          "fontFamily": "Montserrat",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Hxzn4",
+      "x": 436,
+      "y": 304,
+      "name": "Weather Large / Sunny",
+      "reusable": true,
+      "width": 64,
+      "height": 64,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "P0upbu",
+          "x": 16,
+          "y": 16,
+          "name": "Core",
+          "fill": "#FFB800",
+          "width": 32,
+          "height": 32
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "AKLuz",
+          "x": 52,
+          "y": 26,
+          "name": "R Right",
+          "fill": "#FFB800",
+          "width": 10,
+          "height": 8
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "hsEsT",
+          "x": 28,
+          "y": 50,
+          "name": "R Bottom",
+          "fill": "#FFB800",
+          "width": 8,
+          "height": 10
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "tPQcr",
+          "x": 2,
+          "y": 26,
+          "name": "R Left",
+          "fill": "#FFB800",
+          "width": 10,
+          "height": 8
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "ESF77",
+          "x": 28,
+          "y": 2,
+          "name": "R Top",
+          "fill": "#FFB800",
+          "width": 8,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "pkX9j",
+      "x": 508,
+      "y": 304,
+      "name": "Weather Large / Cloudy",
+      "reusable": true,
+      "width": 64,
+      "height": 44,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "K5tAQU",
+          "x": 8,
+          "y": 16,
+          "name": "C1",
+          "fill": "#BBBBBB",
+          "width": 22,
+          "height": 22
+        },
+        {
+          "type": "ellipse",
+          "id": "F2i6u",
+          "x": 22,
+          "y": 6,
+          "name": "C2",
+          "fill": "#BBBBBB",
+          "width": 28,
+          "height": 28
+        },
+        {
+          "type": "ellipse",
+          "id": "uzCuo",
+          "x": 38,
+          "y": 16,
+          "name": "C3",
+          "fill": "#BBBBBB",
+          "width": 22,
+          "height": 22
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 9,
+          "id": "ntozS",
+          "x": 8,
+          "y": 26,
+          "name": "Base",
+          "fill": "#BBBBBB",
+          "width": 52,
+          "height": 18
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "f5pi9J",
+      "x": 580,
+      "y": 304,
+      "name": "Weather Large / Partly Cloudy",
+      "reusable": true,
+      "width": 64,
+      "height": 48,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "ch5ws",
+          "x": 0,
+          "y": 6,
+          "name": "Sun",
+          "fill": "#FFB800",
+          "width": 28,
+          "height": 28
+        },
+        {
+          "type": "ellipse",
+          "id": "c1YSq5",
+          "x": 18,
+          "y": 20,
+          "name": "P1",
+          "fill": "#BBBBBB",
+          "width": 20,
+          "height": 20
+        },
+        {
+          "type": "ellipse",
+          "id": "f4mKLG",
+          "x": 30,
+          "y": 12,
+          "name": "P2",
+          "fill": "#BBBBBB",
+          "width": 26,
+          "height": 26
+        },
+        {
+          "type": "ellipse",
+          "id": "nGt48",
+          "x": 40,
+          "y": 20,
+          "name": "P3",
+          "fill": "#BBBBBB",
+          "width": 20,
+          "height": 20
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 9,
+          "id": "Gnkem",
+          "x": 18,
+          "y": 28,
+          "name": "Base",
+          "fill": "#BBBBBB",
+          "width": 42,
+          "height": 18
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "QfR5Y",
+      "x": 652,
+      "y": 304,
+      "name": "Weather Large / Rainy",
+      "reusable": true,
+      "width": 64,
+      "height": 56,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "qTe1p",
+          "x": 8,
+          "y": 4,
+          "name": "C1",
+          "fill": "#5B9BD5",
+          "width": 22,
+          "height": 22
+        },
+        {
+          "type": "ellipse",
+          "id": "YMwWc",
+          "x": 22,
+          "y": 0,
+          "name": "C2",
+          "fill": "#5B9BD5",
+          "width": 28,
+          "height": 28
+        },
+        {
+          "type": "ellipse",
+          "id": "f25Yf",
+          "x": 38,
+          "y": 4,
+          "name": "C3",
+          "fill": "#5B9BD5",
+          "width": 22,
+          "height": 22
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 7,
+          "id": "PwTFG",
+          "x": 8,
+          "y": 16,
+          "name": "Base",
+          "fill": "#5B9BD5",
+          "width": 52,
+          "height": 14
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2,
+          "id": "Kbf4O",
+          "x": 18,
+          "y": 36,
+          "name": "R1",
+          "fill": "#5B9BD5",
+          "width": 4,
+          "height": 14
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2,
+          "id": "EFl6b",
+          "x": 30,
+          "y": 34,
+          "name": "R2",
+          "fill": "#5B9BD5",
+          "width": 4,
+          "height": 14
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2,
+          "id": "rwg49",
+          "x": 42,
+          "y": 36,
+          "name": "R3",
+          "fill": "#5B9BD5",
+          "width": 4,
+          "height": 14
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "fQhvT",
+      "x": 724,
+      "y": 304,
+      "name": "Weather Large / Storm",
+      "reusable": true,
+      "width": 64,
+      "height": 56,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "mb1eW",
+          "x": 8,
+          "y": 4,
+          "name": "C1",
+          "fill": "#FFB800",
+          "width": 22,
+          "height": 22
+        },
+        {
+          "type": "ellipse",
+          "id": "D3mcJF",
+          "x": 22,
+          "y": 0,
+          "name": "C2",
+          "fill": "#FFB800",
+          "width": 28,
+          "height": 28
+        },
+        {
+          "type": "ellipse",
+          "id": "p7TzYX",
+          "x": 38,
+          "y": 4,
+          "name": "C3",
+          "fill": "#FFB800",
+          "width": 22,
+          "height": 22
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 7,
+          "id": "jciTY",
+          "x": 8,
+          "y": 16,
+          "name": "Base",
+          "fill": "#FFB800",
+          "width": 52,
+          "height": 14
+        },
+        {
+          "type": "polygon",
+          "polygonCount": 3,
+          "id": "I8IXy",
+          "x": 24,
+          "y": 32,
+          "name": "Bolt",
+          "fill": "#FFB800",
+          "width": 14,
+          "height": 24
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "sWe9w",
+      "x": 796,
+      "y": 304,
+      "name": "Weather Large / Snow",
+      "reusable": true,
+      "width": 48,
+      "height": 48,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "AvdQ1",
+          "x": 22,
+          "y": 2,
+          "name": "V",
+          "fill": "#AAD4FF",
+          "width": 5,
+          "height": 44
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "odxaG",
+          "x": 2,
+          "y": 22,
+          "name": "H",
+          "fill": "#AAD4FF",
+          "width": 44,
+          "height": 5
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "Ejyoc",
+          "x": 12,
+          "y": 8,
+          "name": "D1",
+          "rotation": 45,
+          "fill": "#AAD4FF",
+          "width": 5,
+          "height": 34
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "tQ5LS",
+          "x": 30,
+          "y": 8,
+          "name": "D2",
+          "rotation": -45,
+          "fill": "#AAD4FF",
+          "width": 5,
+          "height": 34
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "oCmbn",
+      "x": 852,
+      "y": 304,
+      "name": "Weather Large / Foggy",
+      "reusable": true,
+      "width": 56,
+      "height": 36,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "PlhQZ",
+          "x": 2,
+          "y": 2,
+          "name": "F1",
+          "fill": "#888888",
+          "width": 52,
+          "height": 8
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "BIcq5",
+          "x": 8,
+          "y": 14,
+          "name": "F2",
+          "fill": "#888888",
+          "width": 40,
+          "height": 8
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "b2irC",
+          "x": 2,
+          "y": 26,
+          "name": "F3",
+          "fill": "#888888",
+          "width": 52,
+          "height": 8
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "w7Xif",
+      "x": 916,
+      "y": 304,
+      "name": "Weather Large / Windy",
+      "reusable": true,
+      "width": 56,
+      "height": 40,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "ZCnJZ",
+          "x": 10,
+          "y": 2,
+          "name": "W1",
+          "fill": "#BBBBBB",
+          "width": 44,
+          "height": 8
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "dbL0i",
+          "x": 2,
+          "y": 16,
+          "name": "W2",
+          "fill": "#BBBBBB",
+          "width": 36,
+          "height": 8
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "hjydK",
+          "x": 14,
+          "y": 30,
+          "name": "W3",
+          "fill": "#BBBBBB",
+          "width": 32,
+          "height": 8
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "K3SM1",
+      "x": 436,
+      "y": 452,
+      "name": "Weather Small / Sunny",
+      "reusable": true,
+      "width": 24,
+      "height": 24,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "f11sb",
+          "x": 6,
+          "y": 6,
+          "name": "Core",
+          "fill": "#FFB800",
+          "width": 12,
+          "height": 12
+        },
+        {
+          "type": "ellipse",
+          "id": "n45vt",
+          "x": 0,
+          "y": 0,
+          "name": "R",
+          "innerRadius": 0.45,
+          "fill": "#FFB800",
+          "width": 24,
+          "height": 24
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "dY2u9",
+      "x": 472,
+      "y": 452,
+      "name": "Weather Small / Cloudy",
+      "reusable": true,
+      "width": 28,
+      "height": 20,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "u3gZR",
+          "x": 0,
+          "y": 8,
+          "name": "C1",
+          "fill": "#BBBBBB",
+          "width": 10,
+          "height": 10
+        },
+        {
+          "type": "ellipse",
+          "id": "RbPPR",
+          "x": 7,
+          "y": 3,
+          "name": "C2",
+          "fill": "#BBBBBB",
+          "width": 14,
+          "height": 14
+        },
+        {
+          "type": "ellipse",
+          "id": "XKO0s",
+          "x": 16,
+          "y": 8,
+          "name": "C3",
+          "fill": "#BBBBBB",
+          "width": 10,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "kDMzA",
+      "x": 508,
+      "y": 452,
+      "name": "Weather Small / Partly Cloudy",
+      "reusable": true,
+      "width": 28,
+      "height": 22,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "m8ARG2",
+          "x": 0,
+          "y": 2,
+          "name": "Sun",
+          "fill": "#FFB800",
+          "width": 12,
+          "height": 12
+        },
+        {
+          "type": "ellipse",
+          "id": "YH2QE",
+          "x": 8,
+          "y": 12,
+          "name": "P1",
+          "fill": "#BBBBBB",
+          "width": 10,
+          "height": 10
+        },
+        {
+          "type": "ellipse",
+          "id": "t3f4tI",
+          "x": 16,
+          "y": 8,
+          "name": "P2",
+          "fill": "#BBBBBB",
+          "width": 12,
+          "height": 12
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Pewpl",
+      "x": 544,
+      "y": 452,
+      "name": "Weather Small / Rainy",
+      "reusable": true,
+      "width": 24,
+      "height": 24,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "pt5Ap",
+          "x": 0,
+          "y": 2,
+          "name": "C1",
+          "fill": "#5B9BD5",
+          "width": 8,
+          "height": 8
+        },
+        {
+          "type": "ellipse",
+          "id": "D6aktO",
+          "x": 6,
+          "y": 0,
+          "name": "C2",
+          "fill": "#5B9BD5",
+          "width": 12,
+          "height": 12
+        },
+        {
+          "type": "ellipse",
+          "id": "OEhdQ",
+          "x": 14,
+          "y": 2,
+          "name": "C3",
+          "fill": "#5B9BD5",
+          "width": 8,
+          "height": 8
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 1,
+          "id": "soR4q",
+          "x": 8,
+          "y": 14,
+          "name": "R1",
+          "fill": "#5B9BD5",
+          "width": 2,
+          "height": 7
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 1,
+          "id": "Z1z0i6",
+          "x": 13,
+          "y": 13,
+          "name": "R2",
+          "fill": "#5B9BD5",
+          "width": 2,
+          "height": 7
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 1,
+          "id": "qYJ2p",
+          "x": 18,
+          "y": 14,
+          "name": "R3",
+          "fill": "#5B9BD5",
+          "width": 2,
+          "height": 7
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "R7Y3c",
+      "x": 576,
+      "y": 452,
+      "name": "Weather Small / Storm",
+      "reusable": true,
+      "width": 24,
+      "height": 26,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "gPKTG",
+          "x": 0,
+          "y": 2,
+          "name": "C1",
+          "fill": "#FFB800",
+          "width": 8,
+          "height": 8
+        },
+        {
+          "type": "ellipse",
+          "id": "uGKZW",
+          "x": 6,
+          "y": 0,
+          "name": "C2",
+          "fill": "#FFB800",
+          "width": 12,
+          "height": 12
+        },
+        {
+          "type": "ellipse",
+          "id": "bPi7u",
+          "x": 14,
+          "y": 2,
+          "name": "C3",
+          "fill": "#FFB800",
+          "width": 8,
+          "height": 8
+        },
+        {
+          "type": "polygon",
+          "polygonCount": 3,
+          "id": "G1RvL",
+          "x": 9,
+          "y": 12,
+          "name": "Bolt",
+          "fill": "#FFB800",
+          "width": 6,
+          "height": 14
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "qQzpt",
+      "x": 608,
+      "y": 452,
+      "name": "Weather Small / Snow",
+      "reusable": true,
+      "width": 24,
+      "height": 24,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "cornerRadius": 1.5,
+          "id": "mjvEA",
+          "x": 10,
+          "y": 1,
+          "name": "V",
+          "fill": "#AAD4FF",
+          "width": 3,
+          "height": 22
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 1.5,
+          "id": "cFvzp",
+          "x": 1,
+          "y": 10,
+          "name": "H",
+          "fill": "#AAD4FF",
+          "width": 22,
+          "height": 3
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 1.5,
+          "id": "kgAgk",
+          "x": 5,
+          "y": 4,
+          "name": "D1",
+          "rotation": 45,
+          "fill": "#AAD4FF",
+          "width": 3,
+          "height": 16
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 1.5,
+          "id": "Pk0bN",
+          "x": 15,
+          "y": 4,
+          "name": "D2",
+          "rotation": -45,
+          "fill": "#AAD4FF",
+          "width": 3,
+          "height": 16
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "B68Jn",
+      "x": 640,
+      "y": 452,
+      "name": "Weather Small / Foggy",
+      "reusable": true,
+      "width": 28,
+      "height": 22,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "CmuP4",
+          "x": 1,
+          "y": 2,
+          "name": "F1",
+          "fill": "#888888",
+          "width": 26,
+          "height": 5
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "Nct7C",
+          "x": 4,
+          "y": 9,
+          "name": "F2",
+          "fill": "#888888",
+          "width": 20,
+          "height": 5
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "oPDQY",
+          "x": 1,
+          "y": 16,
+          "name": "F3",
+          "fill": "#888888",
+          "width": 26,
+          "height": 5
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "oPDPq",
+      "x": 676,
+      "y": 452,
+      "name": "Weather Small / Windy",
+      "reusable": true,
+      "width": 28,
+      "height": 22,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "CDmFr",
+          "x": 4,
+          "y": 2,
+          "name": "W1",
+          "fill": "#BBBBBB",
+          "width": 24,
+          "height": 5
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "srbO4",
+          "x": 0,
+          "y": 9,
+          "name": "W2",
+          "fill": "#BBBBBB",
+          "width": 18,
+          "height": 5
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 2.5,
+          "id": "F0jQtk",
+          "x": 6,
+          "y": 16,
+          "name": "W3",
+          "fill": "#BBBBBB",
+          "width": 16,
+          "height": 5
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "ivApj",
+      "x": 2206,
+      "y": 1,
+      "name": "Fortune Screen",
+      "clip": true,
+      "width": 240,
+      "height": 280,
+      "fill": "#0A0A0A",
+      "layout": "none",
+      "children": [
+        {
+          "id": "q10sCN",
+          "type": "ref",
+          "ref": "Jjm49",
+          "name": "Status Bar",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "text",
+          "id": "M0tfY",
+          "x": 10,
+          "y": 34,
+          "name": "Title",
+          "fill": "#FFFFFF",
+          "content": "易经六爻",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 18,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "H4X75",
+          "x": 10,
+          "y": 60,
+          "name": "Instruction",
+          "fill": "#999999",
+          "content": "点击摇卦",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "d4B0g",
+          "x": 30,
+          "y": 75,
+          "name": "上爻 Line",
+          "fill": "#FF5C00",
+          "width": 180,
+          "height": 10
+        },
+        {
+          "type": "text",
+          "id": "a305R",
+          "x": 210,
+          "y": 73,
+          "name": "上爻 Label",
+          "fill": "#999999",
+          "content": "上",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "udRlA",
+          "x": 30,
+          "y": 93,
+          "name": "五爻 Line",
+          "fill": "#FF5C00",
+          "width": 180,
+          "height": 10
+        },
+        {
+          "type": "text",
+          "id": "zyGN2",
+          "x": 210,
+          "y": 91,
+          "name": "五爻 Label",
+          "fill": "#999999",
+          "content": "五",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "pef09",
+          "x": 30,
+          "y": 111,
+          "name": "四爻 Line",
+          "fill": "#FF5C00",
+          "width": 180,
+          "height": 10
+        },
+        {
+          "type": "text",
+          "id": "gQaAX",
+          "x": 210,
+          "y": 109,
+          "name": "四爻 Label",
+          "fill": "#999999",
+          "content": "四",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "SKM4C",
+          "x": 30,
+          "y": 129,
+          "name": "三爻 L",
+          "fill": "#FF5C00",
+          "width": 80,
+          "height": 10
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "U55G3I",
+          "x": 130,
+          "y": 129,
+          "name": "三爻 R",
+          "fill": "#FF5C00",
+          "width": 80,
+          "height": 10
+        },
+        {
+          "type": "text",
+          "id": "LtoPP",
+          "x": 210,
+          "y": 127,
+          "name": "三爻 Label",
+          "fill": "#999999",
+          "content": "三",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "p7pQ9V",
+          "x": 30,
+          "y": 147,
+          "name": "二爻 Line",
+          "fill": "#FF5C00",
+          "width": 180,
+          "height": 10
+        },
+        {
+          "type": "text",
+          "id": "c5BYP",
+          "x": 210,
+          "y": 145,
+          "name": "二爻 Label",
+          "fill": "#999999",
+          "content": "二",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "vefed",
+          "x": 30,
+          "y": 165,
+          "name": "初爻 L",
+          "fill": "#FF5C00",
+          "width": 80,
+          "height": 10
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "QbT7g",
+          "x": 130,
+          "y": 165,
+          "name": "初爻 R",
+          "fill": "#FF5C00",
+          "width": 80,
+          "height": 10
+        },
+        {
+          "type": "text",
+          "id": "tur4o",
+          "x": 210,
+          "y": 163,
+          "name": "初爻 Label",
+          "fill": "#999999",
+          "content": "初",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "n62OS9",
+          "x": 30,
+          "y": 235,
+          "name": "Shake Btn",
+          "width": 180,
+          "height": 36,
+          "fill": "#FF5C00",
+          "cornerRadius": 18,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Q4Hb2",
+              "name": "Shake Label",
+              "fill": "#FFFFFF",
+              "content": "摇卦",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "AMhUQ",
+      "x": 2476,
+      "y": 1,
+      "name": "Liu Ren Screen",
+      "clip": true,
+      "width": 240,
+      "height": 280,
+      "fill": "#0A0A0A",
+      "layout": "none",
+      "children": [
+        {
+          "id": "vvGX0",
+          "type": "ref",
+          "ref": "Jjm49",
+          "name": "Status Bar",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "text",
+          "id": "XrEe2",
+          "x": 10,
+          "y": 34,
+          "name": "Title",
+          "fill": "#FFFFFF",
+          "content": "小六壬",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 18,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "wwKJf",
+          "x": 30,
+          "y": 70,
+          "name": "留连 Frame",
+          "width": 50,
+          "height": 60,
+          "fill": "#1A1A2E",
+          "cornerRadius": 6,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "q3oxHA",
+              "name": "Label",
+              "fill": "#FFFFFF",
+              "content": "留连",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "QPnQ7",
+          "x": 30,
+          "y": 130,
+          "name": "大安 Frame",
+          "width": 50,
+          "height": 60,
+          "fill": "#2A1A1E",
+          "cornerRadius": 6,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "k5tuPu",
+              "name": "Label",
+              "fill": "#FFFFFF",
+              "content": "大安",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "qnvst",
+          "x": 95,
+          "y": 55,
+          "name": "速喜 Frame",
+          "width": 50,
+          "height": 60,
+          "fill": "#1A2E1A",
+          "cornerRadius": 6,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "hNR6N",
+              "name": "Label",
+              "fill": "#FFFFFF",
+              "content": "速喜",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "TlkGN",
+          "x": 95,
+          "y": 115,
+          "name": "空亡 Frame",
+          "width": 50,
+          "height": 60,
+          "fill": "#2E1A1A",
+          "cornerRadius": 6,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "yHshv",
+              "name": "Label",
+              "fill": "#FFFFFF",
+              "content": "空亡",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "UUHHA",
+          "x": 160,
+          "y": 70,
+          "name": "赤口 Frame",
+          "width": 50,
+          "height": 60,
+          "fill": "#2E2E1A",
+          "cornerRadius": 6,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "TOuv3",
+              "name": "Label",
+              "fill": "#FFFFFF",
+              "content": "赤口",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "oqef0",
+          "x": 160,
+          "y": 130,
+          "name": "小吉 Frame",
+          "width": 50,
+          "height": 60,
+          "fill": "#1A2E2E",
+          "cornerRadius": 6,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "nvnfW",
+              "name": "Label",
+              "fill": "#FFFFFF",
+              "content": "小吉",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "Y3cqf",
+          "x": 30,
+          "y": 200,
+          "name": "Palm Label",
+          "fill": "#FFFFFF",
+          "content": "食指        中指        无名指",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 10,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "E6Ytbf",
+          "x": 10,
+          "y": 225,
+          "name": "Order",
+          "fill": "#999999",
+          "content": "大安>留连>速喜>赤口>小吉>空亡",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 9,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "n7z5LS",
+          "x": 10,
+          "y": 238,
+          "name": "Desc1",
+          "fill": "#FF5C00",
+          "content": "大安: 大吉  留连: 拖延",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 9,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "SgtU5",
+          "x": 10,
+          "y": 250,
+          "name": "Desc2",
+          "fill": "#FF5C00",
+          "content": "速喜: 喜事  赤口: 争执",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 9,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "UUNHJ",
+          "x": 10,
+          "y": 262,
+          "name": "Desc3",
+          "fill": "#FF5C00",
+          "content": "小吉: 好结果  空亡: 大不利",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 9,
+          "fontWeight": "normal"
+        }
+      ]
+    }
+  ],
+  "themes": {
+    "Mode": [
+      "Light",
+      "Dark"
+    ]
+  },
+  "variables": {
+    "--sidebar": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E7E8E5"
+        },
+        {
+          "value": "#18181b",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--sidebar-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#666666"
+        },
+        {
+          "value": "#fafafa",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--sidebar-primary": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#18181b"
+        },
+        {
+          "value": "#18181b",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--sidebar-primary-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#fafafa"
+        },
+        {
+          "value": "#fafafa",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--sidebar-border": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#CBCCC9"
+        },
+        {
+          "value": "#ffffff1a",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--sidebar-accent": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#CBCCC9"
+        },
+        {
+          "value": "#2a2a30",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--sidebar-accent-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#18181b"
+        },
+        {
+          "value": "#fafafa",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--sidebar-ring": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#71717a"
+        },
+        {
+          "value": "#71717a",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--background": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#F2F3F0"
+        },
+        {
+          "value": "#111111",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#111111"
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--card": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FFFFFF"
+        },
+        {
+          "value": "#1A1A1A",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--card-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#111111"
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--popover": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FFFFFF"
+        },
+        {
+          "value": "#1A1A1A",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--popover-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#111111"
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--primary": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FF8400"
+        },
+        {
+          "value": "#FF8400",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--primary-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#111111"
+        },
+        {
+          "value": "#111111",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--secondary": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E7E8E5"
+        },
+        {
+          "value": "#2E2E2E",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--secondary-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#111111"
+        },
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--muted": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#F2F3F0"
+        },
+        {
+          "value": "#2E2E2E",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--muted-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#666666"
+        },
+        {
+          "value": "#B8B9B6",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--accent": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#F2F3F0"
+        },
+        {
+          "value": "#111111",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--accent-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#111111"
+        },
+        {
+          "value": "#F2F3F0",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--destructive": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#D93C15"
+        },
+        {
+          "value": "#FF5C33",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--border": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#CBCCC9"
+        },
+        {
+          "value": "#2E2E2E",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--input": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#CBCCC9"
+        },
+        {
+          "value": "#2E2E2E",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--ring": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#666666"
+        },
+        {
+          "value": "#666666",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--white": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "--black": {
+      "type": "color",
+      "value": "#000000"
+    },
+    "--font-primary": {
+      "type": "string",
+      "value": "JetBrains Mono"
+    },
+    "--font-secondary": {
+      "type": "string",
+      "value": "Geist"
+    },
+    "--radius-none": {
+      "type": "number",
+      "value": 0
+    },
+    "--radius-pill": {
+      "type": "number",
+      "value": 999
+    },
+    "--color-success": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#DFE6E1"
+        },
+        {
+          "value": "#222924",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--color-success-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#004D1A"
+        },
+        {
+          "value": "#B6FFCE",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--color-warning": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E9E3D8"
+        },
+        {
+          "value": "#291C0F",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--color-warning-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#804200"
+        },
+        {
+          "value": "#FF8400",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--color-error": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E5DCDA"
+        },
+        {
+          "value": "#24100B",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--color-error-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#8C1C00"
+        },
+        {
+          "value": "#FF5C33",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--color-info": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#DFDFE6"
+        },
+        {
+          "value": "#222229",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--color-info-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#000066"
+        },
+        {
+          "value": "#B2B2FF",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--radius-m": {
+      "type": "number",
+      "value": 16
+    }
+  }
+}

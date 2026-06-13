@@ -12,22 +12,24 @@
 #define CARD_START_Y  8
 #define ICON_SIZE     28
 
-static lv_obj_t *cards[8];
+static lv_obj_t *cards[10];
 static lv_obj_t *highlight;
 static lv_obj_t *scroll_cont;
 static int sel = 0;
-static int item_count = 8;
+static int item_count = 10;
 
 /* Pencil design: icon + Chinese label */
 static const struct { const char *icon; const char *label; app_id_t app; } items[] = {
     { LV_SYMBOL_PLAY,    "\xe6\xb8\xb8\xe6\x88\x8f",  APP_ID_NES },         /* 游戏 */
+    { LV_SYMBOL_EYE_OPEN,"\xe5\xb0\x8f\xe6\x99\xba",  APP_ID_XIAOZHI },    /* 小智 */
     { LV_SYMBOL_KEYBOARD,"\xe9\x94\xae\xe7\x9b\x98",  APP_ID_KEYBOARD },    /* 键盘 */
     { LV_SYMBOL_GPS,     "\xe9\xbc\xa0\xe6\xa0\x87",  APP_ID_MOUSE },       /* 鼠标 */
-    { LV_SYMBOL_BELL,    "\xe9\x97\xb9\xe9\x92\x9f",  APP_ID_COUNTDOWN },   /* 闹钟 */
-    { LV_SYMBOL_OK,      "\xe8\xbf\x90\xe5\x8a\xbf",  APP_ID_FORTUNE },     /* 运势 */
-    { LV_SYMBOL_AUDIO,   "\xe5\xb0\x8f\xe5\x85\xad\xe5\xa3\xac",  APP_ID_RECORDER },    /* 小六壬 */
+    { LV_SYMBOL_REFRESH, "\xe5\x8d\xa0\xe5\x8d\x9c",  APP_ID_FORTUNE },     /* 占卜 */
+    { LV_SYMBOL_LOOP,    "\xe5\xb0\x8f\xe5\x85\xad\xe5\xa3\xac",  APP_ID_RECORDER },    /* 小六壬 */
+    { LV_SYMBOL_BELL,    "\xe8\xae\xa1\xe6\x97\xb6",  APP_ID_COUNTDOWN },   /* 计时 */
+    { LV_SYMBOL_SAVE,    "\xe5\xbd\x95\xe9\x9f\xb3",  APP_ID_RECORD },     /* 录音 */
+    { LV_SYMBOL_SHUFFLE, "IMU",  APP_ID_CALIB },     /* IMU */
     { LV_SYMBOL_SETTINGS,"\xe8\xae\xbe\xe7\xbd\xae",  APP_ID_SETTINGS },    /* 设置 */
-    { LV_SYMBOL_TINT,    "IMU",  APP_ID_CALIB },   /* 校准 */
 };
 
 static void card_cb(lv_event_t *e) {
@@ -43,15 +45,12 @@ lv_obj_t *menu_screen_create(void) {
     /* Reset static pointers */
     scroll_cont = NULL;
     highlight = NULL;
-    for (int i = 0; i < 8; i++) cards[i] = NULL;
+    for (int i = 0; i < 10; i++) cards[i] = NULL;
 
     /* Status bar */
     status_bar_create(scr);
 
     /* Scrollable container for cards - Pencil: y=28, height=252 */
-    int rows = (item_count + GRID_COLS - 1) / GRID_COLS;
-    int content_h = CARD_START_Y + rows * (CARD_H + GAP) + 20;
-
     scroll_cont = lv_obj_create(scr);
     lv_obj_set_size(scroll_cont, 240, 252);
     lv_obj_set_pos(scroll_cont, 0, 28);
@@ -61,7 +60,7 @@ lv_obj_t *menu_screen_create(void) {
     lv_obj_set_style_pad_all(scroll_cont, 0, 0);
     lv_obj_set_scroll_dir(scroll_cont, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(scroll_cont, LV_SCROLLBAR_MODE_ON);
-    lv_obj_set_content_height(scroll_cont, content_h);
+    /* NOT setting content_height — children beyond 252px bounds enable scroll */
 
     /* Selection highlight */
     highlight = lv_obj_create(scroll_cont);
@@ -123,12 +122,15 @@ void menu_screen_navigate(int dx, int dy) {
     }
     if (sel < 0) sel = 0;
     if (sel >= item_count) sel = item_count - 1;
-    if (sel != old_sel && highlight) {
+    if (sel != old_sel && highlight && scroll_cont) {
         int col = sel % GRID_COLS;
         int row = sel / GRID_COLS;
         int x = (240 - GRID_COLS * CARD_W - GAP) / 2 + col * (CARD_W + GAP);
         int y = CARD_START_Y + row * (CARD_H + GAP);
         lv_obj_set_pos(highlight, x - 2, y - 2);
+        int sy = y - 40;
+        if (sy < 0) sy = 0;
+        lv_obj_scroll_to_y(scroll_cont, sy, LV_ANIM_ON);
     }
 }
 

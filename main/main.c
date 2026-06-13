@@ -21,6 +21,7 @@
 #include "ui/screens/ip_input.h"
 #include "ui/screens/countdown_screen.h"
 #include "ui/screens/calib_screen.h"
+#include "ui/screens/record_screen.h"
 
 /* App framework */
 #include "app/app_manager.h"
@@ -229,6 +230,13 @@ static void key_handler(key_id_t key, bool pressed) {
             } else if (app_manager_get_current_app() == APP_ID_CALIB) {
                 if (!pressed && key == KEY_A) {
                     lvgl_lock(); calib_screen_trigger(); lvgl_unlock();
+                }
+                if (!pressed && (key == KEY_B || key == KEY_START)) {
+                    lvgl_lock(); app_manager_return(); lvgl_unlock();
+                }
+            } else if (app_manager_get_current_app() == APP_ID_RECORD) {
+                if (!pressed && key == KEY_A) {
+                    lvgl_lock(); record_screen_toggle(); lvgl_unlock();
                 }
                 if (!pressed && (key == KEY_B || key == KEY_START)) {
                     lvgl_lock(); app_manager_return(); lvgl_unlock();

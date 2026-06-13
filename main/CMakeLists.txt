@@ -42,6 +42,7 @@ idf_component_register(
            "ui/screens/fortune_screen.c"
            "ui/screens/liuren_screen.c"
            "ui/screens/calib_screen.c"
+           "ui/screens/record_screen.c"
     INCLUDE_DIRS "."
                  "bsp"
                  "app"
