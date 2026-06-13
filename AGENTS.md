@@ -2,7 +2,7 @@
 
 ## What This Is
 
-ESP32-S3 handheld device firmware — NES emulator + LVGL UI + weather + BLE remote + WiFi audio + dual-firmware with XiaoZhi AI. ESP-IDF v5.5.4 C project.
+ESP32-S3 handheld device firmware — NES emulator + LVGL UI + weather + BLE remote + WiFi audio + dual-firmware with XiaoZhi AI + I Ching fortune divination. ESP-IDF v5.5.4 C project.
 
 Entry point: `main/main.c`. Project name: `esp_handheld`.
 
@@ -110,6 +110,7 @@ main/
     power/                  — Battery monitor
     settings/               — NVS settings
     time_sync/              — SNTP
+    iching/                 — I Ching hexagram data (iching_data.c/h)
   ui/
     display_driver.c        — LVGL init, double-buffer, mutex
     screens/                — home, menu, settings, countdown, airmouse, kbd, ip_input
@@ -128,6 +129,40 @@ components/
 - GCC 14+ requires `%zu` for `size_t`, explicit `#include <cstring>` in C++.
 - Component dependencies are in `main/CMakeLists.txt` REQUIRES list — add new modules there.
 - `#include` paths use the INCLUDE_DIRS listed in `main/CMakeLists.txt` (relative to `main/`).
+
+## I Ching Fortune Module
+
+### How It Works
+
+1. Menu → 运势 → 6 项选择（运势/事业/经商/求名/婚恋/决策）
+2. 选择后进入摇卦界面，IMU 自动检测上下摇动
+3. 强烈摇晃 3+ 次 = 生成一爻（随机阳/阴）
+4. 从下到上依次显示，共6爻完成卦象
+5. 根据 `YI64.md` 数据计算卦名、卦辞、大象、所选事项解读
+
+### 文件结构
+
+| 文件 | 说明 |
+|------|------|
+| `main/modules/iching/iching_data.h` | 卦象数据结构 |
+| `main/modules/iching/iching_data.c` | 64卦完整数据（从YI64.md生成） |
+| `main/ui/screens/fortune_screen.c/h` | 选择→摇卦→结果显示 UI |
+| `YI64.md` | 64卦原文数据源 |
+
+### 关键参数
+
+- 摇动阈值：Y轴加速度偏离1g > 0.6g 算一次摇晃
+- 摇动冷却：每爻间600ms不接收新摇晃
+- 生成新卦象后可滚动查看完整卦辞（↑↓键）
+- B/START 返回
+
+### 生成卦象数据
+
+```bash
+python gen_iching.py   # 从 YI64.md 重新生成 iching_data.c
+```
+
+需要在 `main/CMakeLists.txt` 中 `REQUIRES` 添加 `iching`，`INCLUDE_DIRS` 添加 `modules/iching`。
 
 ## Useful Scripts
 
