@@ -163,11 +163,16 @@ components/
 ## App State Machine (app_manager)
 
 ```
-Launcher (home screen) ──[START]──→ Menu (3-column grid)
+Launcher (home screen) ──[START]──→ Menu (2-column grid)
 Menu ──[A select]──→ Running (app: NES/settings/BLE/etc.)
 Running ──[B/START]──→ Menu
 Menu ──[B/START]──→ Launcher
 ```
+
+**Menu screen:**
+- 2-column grid, 10 app cards with icon + label. Selection highlight = 3px golden border (`0xFFBB00`) + 7% fill tint + glow shadow.
+- Navigation stops at grid edges (no column wrapping).
+- Returning from an app remembers the last selected card position.
 
 ## NES Emulator Architecture
 
@@ -228,19 +233,39 @@ Uses `78/esp-wifi-connect` v3.1.4 (C++, bridged to C via `wifi_bridge.cpp`). Sof
 
 Menu → 运势 → 6 selections (general/ career/ business/ fame/ love/ decision) → shake device (IMU) to generate hexagram lines.
 
-- Shake threshold: Y-axis acceleration deviates from 1g by >0.6g
-- Cooldown: 600ms between lines
-- 6 lines from bottom to top = complete hexagram
-- Result shows hexagram name, judgment, great image, and specific interpretation
+## Screen Layout
+
+**Phase 0 (category select):** 6 buttons (30px height, step 36px) fit without scrolling. Title "选择占卜事项" centered.
+
+**Phase 1 (shaking):** Category name + "心念专一，摇动起卦" centered at top. Yao lines grow from bottom up, evenly distributed across the vertical space (~y=77 to y=252, leaving 10% bottom margin). Each line is 12px tall with 23px gap.
+
+**Phase 2 (result):** "心念专一，摇动起卦" replaced by centered "第X卦 卦名". Compact hexagram (60px wide ≈ 25% screen, 4px lines, 3px gaps) at y=120 upward. Below: scrollable judgment text left-aligned. Navigation UP/DOWN scrolls the text.
+
+## Shake Detection
+
+- Threshold: Y-axis deviates from 1g by >0.6g, rest below 0.2g
+- 3 strong shakes = 1 yao (random bits from `esp_random()`)
+- Cooldown: 600ms between generated lines
+
+## Critical: Hexagram ID Mapping
+
+`g_iching[]` is in **King Wen order** (1=乾, 2=坤, …, 64=未济), NOT binary order. The `get_hexagram_id()` function computes a binary index `(upper<<3)|lower` using Fu Xi trigram numbering (top line = bit 0, bottom line = bit 2). The `binary_to_index[64]` table translates binary→King Wen array index.
+
+```
+lower = s_yao[2] | (s_yao[1]<<1) | (s_yao[0]<<2);  // top=bit0, bottom=bit2
+upper = s_yao[5] | (s_yao[4]<<1) | (s_yao[3]<<2);
+```
 
 **Files:**
-- `modules/iching/iching_data.c/h` — 64 hexagrams data (generated from `YI64.md`)
+- `modules/iching/iching_data.c/h` — 64 hexagrams data + `binary_to_index[]` mapping
 - `ui/screens/fortune_screen.c/h` — Selection → shake → result UI
 
-**Regenerate data:**
+**Regenerate hexagram data:**
 ```bash
 python gen_iching.py   # from YI64.md → iching_data.c
 ```
+
+**If regenerating, also rebuild binary_to_index[]** — see the mapping formula above.
 
 # Xiao Liu Ren (小六壬)
 
