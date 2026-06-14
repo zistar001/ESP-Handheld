@@ -246,6 +246,10 @@ static void shake_task(void *arg) {
                         clear_all_lines();
                         draw_shake_yao();
                         if (s_yao_count >= 6) {
+                            /* 延迟0.5秒让用户看清最后一爻再显示结果 */
+                            lvgl_unlock();
+                            vTaskDelay(pdMS_TO_TICKS(500));
+                            lvgl_lock();
                             draw_compact_hexagram();
                             show_result();
                             s_shaking = false;

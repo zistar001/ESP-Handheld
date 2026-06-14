@@ -269,13 +269,22 @@ python gen_iching.py   # from YI64.md → iching_data.c
 
 # Xiao Liu Ren (小六壬)
 
-Menu → 小六壬 → palm interface → press **A** to trigger. 6 spirit positions on finger joints light up in sequence (white → apricot yellow), cycling 3 rounds, stopping at the result. Bottom shows lunar date, time, hexagram name, and judgment.
+Menu → 小六壬 → palm interface → press **A** to trigger. 6 spirit positions on finger joints light up in sequence (white → yellow), cycling 3 rounds, stopping at the result.
+
+**Screen layout:**
+- Title "小六壬" at top. White segments form a palm shape with spirit names (大安/留连/速喜/赤口/小吉/空亡) centered vertically within each segment. Finger names (大拇/食指/中指/无名/小) alongside.
+- Below the palm: 3 centered explanation lines + "掐指一算" button.
+- After animation: 0.5s delay, then palm is replaced by a compact view: only the result spirit name centered at top, with full scrollable judgment text below (lunar date, hexagram name, meaning, interpretation).
+
+**Animation:** Segments light in cycle order (大安→留连→速喜→赤口→小吉→空亡), 3 rounds at 60ms, final stop at 80ms per position. Final result highlighted.
 
 **Files:**
 - `modules/iching/liuren_core.c/h` — Lunar calendar conversion + time acquisition + divination logic
 - `ui/screens/liuren_screen.c/h` — Palm finger UI + slot-machine animation
 
 Lunar data table built-in for 2024–2034 (Spring Festival dates, month lengths, leap months).
+
+**Static pointer safety:** All object pointers (segments, labels, scroll container) must be reset on `liuren_screen_create()` because the old screen is deleted on exit, leaving dangling pointers. Missing a reset causes a crash on the second invocation.
 
 # Countdown / Pomodoro (番茄时钟)
 
