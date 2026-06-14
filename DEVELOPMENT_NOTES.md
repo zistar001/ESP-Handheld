@@ -301,6 +301,10 @@ Additionally, all LVGL operations were called from the `key_driver_scan_task` (p
 - **根因：** `game_task` 调了 `esp_task_wdt_add(NULL)` 但没调 `esp_task_wdt_delete(NULL)`。任务自删除后 WDT 仍等它喂狗→5秒超时刷屏，可能触发 panic 重启。
 - **修复：** 加入 `wdt_added` 标记，只在成功订阅后才在 `vTaskDelete(NULL)` 前调用 `esp_task_wdt_delete(NULL)`。
 
+**10. ROM 列表上下无黑边，进游戏后残留列表内容**
+- **根因：** NES 画面 240x240 在 240x280 屏幕上居中显示，上下 20px 区域仍显示 ROM 列表内容（LVGL 暂停后 GRAM 未更新）。
+- **修复：** ROM 列表高度改为 224px（上下各留 28px 黑边），背景色设为纯黑。
+
 ---
 
 ## Git Branches
