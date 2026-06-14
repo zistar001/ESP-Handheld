@@ -186,7 +186,11 @@ static void key_handler(key_id_t key, bool pressed) {
                     case KEY_DOWN:  settings_screen_navigate(1);  break;
                     case KEY_A:     settings_screen_select();     break;
                     case KEY_B:
-                    case KEY_START: app_manager_return(); break;
+                    case KEY_START:
+                        /* In sub-screen: back to list; in list: exit settings */
+                        if (!settings_screen_back())
+                            app_manager_return();
+                        break;
                     default: break;
                 }
                 lvgl_unlock();

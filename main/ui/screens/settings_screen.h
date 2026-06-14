@@ -8,3 +8,4 @@ uint8_t settings_screen_get_volume(void);
 uint8_t settings_screen_get_brightness(void);
 void settings_screen_navigate(int dir);
 void settings_screen_select(void);
+bool settings_screen_back(void);
