@@ -25,6 +25,8 @@ static lv_obj_t *s_shake_lines[6][2];   /* yao lines during shaking (phase 1) */
 static lv_obj_t *s_hex_lines[6][2];     /* compact hexagram (phase 2) */
 static lv_obj_t *s_cat_btns[6];
 static lv_obj_t *s_judgment_label = NULL;
+static lv_obj_t *s_inst_label = NULL;       /* "心念专一，摇动起卦" — hidden in result phase */
+static lv_obj_t *s_result_title = NULL;     /* "第X卦 XXX" — shown only in result phase */
 static TaskHandle_t s_shake_task = NULL;
 static bool s_shaking = false;
 static int s_phase = 0;         /* 0=select, 1=shaking, 2=result */
@@ -35,21 +37,22 @@ static int shake_cycle = 0;
 /* === Layout constants === */
 
 /* Phase 0: category buttons — 6 items fit without scrolling */
-#define CAT_BTN_H   32
-#define CAT_STEP    38          /* 32 + 6px gap */
-#define CAT_START_Y 48
+#define CAT_BTN_H   30
+#define CAT_STEP    36          /* 30 + 6px gap */
+#define CAT_START_Y 54          /* below centered title (y=34, 16px height + 4px gap) */
 
-/* Phase 1: shaking yao lines — grow from bottom up */
+/* Phase 1: shaking yao lines — evenly distributed from below text to bottom 10% */
 #define YAO_W       180
-#define YAO_H       8
-#define YAO_GAP     5
-#define YAO_BASE_Y  252         /* lowest line y, leave ~28px (10%) bottom margin */
+#define YAO_H       12
+#define YAO_GAP     23
+#define YAO_BASE_Y  252         /* lowest line y, leaves ~28px (10%) bottom margin */
+                                 /* top of highest line ≈ 252 - 5×35 = 77, just below text */
 
-/* Phase 2: compact hexagram — ~25% of screen width */
+/* Phase 2: compact hexagram — ~25% of screen width, positioned up high */
 #define HEX_W       60
-#define HEX_H       5
+#define HEX_H       4
 #define HEX_GAP     3
-#define HEX_BASE_Y  248         /* lowest line y of compact hexagram */
+#define HEX_BASE_Y  120         /* lowest line y, leaves space below for scrollable text */
 
 /* Shake detection */
 static const float SHAKE_THRESHOLD = 0.6f;
@@ -127,9 +130,14 @@ static void draw_compact_hexagram(void) {
  *  I Ching logic — get hexagram ID, show result
  * ================================================================ */
 static int get_hexagram_id(void) {
-    int lower = s_yao[0] | (s_yao[1] << 1) | (s_yao[2] << 2);
-    int upper = s_yao[3] | (s_yao[4] << 1) | (s_yao[5] << 2);
-    return (upper << 3) | lower;
+    /* Fu Xi trigram numbering: TOP line = bit 0, BOTTOM line = bit 2.
+     * s_yao[0]=bottom line, s_yao[2]=top of lower trigram, etc. */
+    int lower = s_yao[2] | (s_yao[1] << 1) | (s_yao[0] << 2);
+    int upper = s_yao[5] | (s_yao[4] << 1) | (s_yao[3] << 2);
+    int binary = (upper << 3) | lower;
+    /* g_iching[] is in King Wen order, not binary order */
+    if (binary < 0 || binary >= 64) return 0;
+    return binary_to_index[binary];
 }
 
 static void show_result(void) {
@@ -149,20 +157,35 @@ static void show_result(void) {
     static char buf[600];
     const char *cat_names[] = {"运势", "事业", "经商", "求名", "婚恋", "决策"};
     snprintf(buf, sizeof(buf),
-        "第%d卦 %s\n%s\n《象》曰：%s\n大象：%s\n%s：%s",
-        id + 1, h->name, h->gua_ci, h->xiang, h->daxiang,
+        "%s\n《象》曰：%s\n大象：%s\n%s：%s",
+        h->gua_ci, h->xiang, h->daxiang,
         cat_names[s_category], advice ? advice : "");
 
-    /* Remove old shake lines, show compact hexagram instead */
+    /* Remove old shake lines */
     for (int i = 0; i < 6; i++) {
         if (s_shake_lines[i][0]) { lv_obj_del(s_shake_lines[i][0]); s_shake_lines[i][0] = NULL; }
         if (s_shake_lines[i][1]) { lv_obj_del(s_shake_lines[i][1]); s_shake_lines[i][1] = NULL; }
     }
 
+    /* Hide shake-phase instruction, show hexagram title in its place */
+    if (s_inst_label) lv_obj_add_flag(s_inst_label, LV_OBJ_FLAG_HIDDEN);
+
+    char title_buf[64];
+    snprintf(title_buf, sizeof(title_buf), "第%d卦 %s", id + 1, h->name);
+    if (!s_result_title) {
+        s_result_title = lv_label_create(s_scr);
+        lv_obj_set_style_text_color(s_result_title, COLOR_ORANGE, 0);
+        lv_obj_set_style_text_font(s_result_title, &lv_font_simsun_16_cjk, 0);
+        lv_obj_set_width(s_result_title, 240);
+        lv_obj_set_style_text_align(s_result_title, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_align(s_result_title, LV_ALIGN_TOP_MID, 0, 58);
+    }
+    lv_label_set_text(s_result_title, title_buf);
+
     /* Create scrollable result area below the compact hexagram */
-    int hex_bottom = HEX_BASE_Y + HEX_H;  /* bottom of compact hexagram area */
+    int hex_bottom = HEX_BASE_Y + HEX_H;
     int cont_y = hex_bottom + 8;
-    int cont_h = 280 - cont_y - 8;        /* leave 8px bottom margin */
+    int cont_h = 280 - cont_y - 8;
 
     lv_obj_t *cont = lv_obj_create(s_scr);
     lv_obj_set_size(cont, 240, cont_h);
@@ -174,23 +197,13 @@ static void show_result(void) {
     lv_obj_set_scrollbar_mode(cont, LV_SCROLLBAR_MODE_AUTO);
     lv_obj_set_scroll_dir(cont, LV_DIR_VER);
 
-    /* Hexagram name + number centered */
-    char title_buf[64];
-    snprintf(title_buf, sizeof(title_buf), "第%d卦 %s  %s", id + 1, h->name, h->daxiang);
-    lv_obj_t *hex_title = lv_label_create(cont);
-    lv_label_set_text(hex_title, title_buf);
-    lv_obj_set_style_text_color(hex_title, COLOR_ORANGE, 0);
-    lv_obj_set_style_text_font(hex_title, &lv_font_simsun_16_cjk, 0);
-    lv_obj_set_width(hex_title, 220);
-    lv_obj_align(hex_title, LV_ALIGN_TOP_MID, 0, 0);
-
-    /* Full judgment text below */
+    /* Full judgment text — left-aligned */
     lv_obj_t *judgment = lv_label_create(cont);
     lv_label_set_text(judgment, buf);
     lv_obj_set_style_text_color(judgment, COLOR_ORANGE, 0);
     lv_obj_set_style_text_font(judgment, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_width(judgment, 220);
-    lv_obj_align(judgment, LV_ALIGN_TOP_MID, 0, 30);
+    lv_obj_set_pos(judgment, 10, 0);
 
     s_judgment_label = judgment;
 }
@@ -265,14 +278,14 @@ static void enter_shake_screen(void) {
     lv_obj_set_style_text_align(title, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 34);
 
-    /* Centered instruction */
-    lv_obj_t *inst = lv_label_create(s_scr);
-    lv_label_set_text(inst, "心念专一，摇动起卦");
-    lv_obj_set_style_text_color(inst, COLOR_GREY, 0);
-    lv_obj_set_style_text_font(inst, &lv_font_simsun_16_cjk, 0);
-    lv_obj_set_width(inst, 240);
-    lv_obj_set_style_text_align(inst, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_align(inst, LV_ALIGN_TOP_MID, 0, 58);
+    /* Centered instruction — hidden in result phase, replaced by s_result_title */
+    s_inst_label = lv_label_create(s_scr);
+    lv_label_set_text(s_inst_label, "心念专一，摇动起卦");
+    lv_obj_set_style_text_color(s_inst_label, COLOR_GREY, 0);
+    lv_obj_set_style_text_font(s_inst_label, &lv_font_simsun_16_cjk, 0);
+    lv_obj_set_width(s_inst_label, 240);
+    lv_obj_set_style_text_align(s_inst_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_align(s_inst_label, LV_ALIGN_TOP_MID, 0, 58);
 
     /* Initialize line pointers */
     for (int i = 0; i < 6; i++) {
@@ -280,6 +293,7 @@ static void enter_shake_screen(void) {
         s_hex_lines[i][0]   = s_hex_lines[i][1]   = NULL;
     }
     s_judgment_label = NULL;
+    s_result_title = NULL;
 
     lv_scr_load(s_scr);
     if (old) lv_obj_del(old);
@@ -296,9 +310,8 @@ static void enter_shake_screen(void) {
  * ================================================================ */
 static void cat_select_cb(lv_event_t *e) {
     s_category = (int)(intptr_t)lv_event_get_user_data(e);
-    lvgl_lock();
+    /* Called from LVGL event (already inside lvgl_lock) — don't lock again */
     enter_shake_screen();
-    lvgl_unlock();
 }
 
 /* ================================================================
@@ -331,9 +344,8 @@ void fortune_screen_select(void) {
     if (s_phase != 0) return;
     if (s_sel < 0 || s_sel > 5) return;
     s_category = s_sel;
-    lvgl_lock();
+    /* Called from key_handler (already inside lvgl_lock) — don't lock again */
     enter_shake_screen();
-    lvgl_unlock();
 }
 
 /* ================================================================

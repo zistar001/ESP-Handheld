@@ -16,4 +16,9 @@ typedef struct {
 
 extern const iching_hexagram_t g_iching[64];
 
+/* Binary (上卦<<3|下卦) → King Wen index (0-63) lookup.
+ * g_iching[] is arranged in King Wen order, not binary order,
+ * so binary_to_index[binary] gives the correct array index. */
+extern const unsigned char binary_to_index[64];
+
 #endif
