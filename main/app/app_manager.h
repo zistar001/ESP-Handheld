@@ -18,6 +18,7 @@ app_state_t app_manager_get_state(void);
 app_id_t app_manager_get_current_app(void);
 esp_err_t app_manager_launch(app_id_t id);
 void app_manager_return(void);
+void app_manager_set_return_to(app_id_t id);  /* next return goes to this app */
 void app_manager_wifi_action(void);  /* trigger WiFi reset/setup from key */
 const app_entry_t *app_manager_get_apps(void);
 int app_manager_get_app_count(void);

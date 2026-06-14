@@ -324,21 +324,28 @@ Position compensation: vertical = `lv_obj_center()`, tilted = `lv_obj_align(LV_A
 
 # Settings
 
-Settings screen (`ui/screens/settings_screen.c`) is a scrollable list. Items can launch sub-screens or adjust values directly.
+Settings screen (`ui/screens/settings_screen.c`) — full-screen list with 7 items, black background, each row bordered.
 
-**Current items (7):**
+**Items (7):**
 
-| # | Item | Status | Action |
-|---|------|--------|--------|
-| 1 | Volume | Stub | Adjust audio volume via UP/DOWN |
-| 2 | Brightness | Stub | Adjust LCD brightness via UP/DOWN |
-| 3 | WiFi | Done | Launches APP_ID_WIFI_SETUP (soft-AP config) |
-| 4 | PC IP | Done | Launches APP_ID_IP_INPUT (keyboard to enter IP) |
-| 5 | Sleep | Stub | Toggle + timeout adjustment |
-| 6 | IMU Calib | Done | Launches APP_ID_CALIB (calibration UI) |
-| 7 | About | Done | Launches APP_ID_ABOUT (system info) |
+| # | Item | Type | Action |
+|---|------|------|--------|
+| 1 | 音量 | Sub-screen | UP/DOWN调整 0-100%，A保存，`box_audio_set_volume()` |
+| 2 | 亮度 | Sub-screen | UP/DOWN调整 0-100%，A保存，`bsp_lcd_backlight_set()` |
+| 3 | WiFi配网 | App | Launches APP_ID_WIFI_SETUP (soft-AP config), B回到设置 |
+| 4 | 电脑IP | App | Launches APP_ID_IP_INPUT, B回到设置 |
+| 5 | 睡眠 | Sub-screen | A切换ON/OFF，UP/DOWN调整超时10-300s，B保存退出 |
+| 6 | IMU校准 | App | Launches APP_ID_CALIB, B回到设置 |
+| 7 | 关于 | App | Launches APP_ID_ABOUT, B回到设置 |
 
-**Stubs (Volume, Brightness, Sleep)** need sub-screen implementations.
+**Sub-screen pattern:**
+- `s_sub_mode` tracks which setting is active (1=音量, 2=亮度, 3=睡眠)
+- `show_sub_screen(title, hint)` creates simple centered UI with value display
+- `settings_screen_navigate()` adjusts value (UP=增大, DOWN=减小) when in sub-mode
+- `settings_screen_select()` saves to NVS + applies to hardware, then recreates list
+- `settings_screen_back()` exits sub-screen, saves sleep settings, returns to list
+
+**Return-to-settings:** WiFi/PCIP/IMU/About launch as full apps via `app_manager_launch()`. `app_manager_set_return_to(APP_ID_SETTINGS)` sets a flag so `app_manager_return()` goes back to settings instead of the main menu.
 
 # Debugging Guide
 

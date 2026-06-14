@@ -27,6 +27,7 @@
 static const char *TAG = "APP_MGR";
 static app_state_t state = APP_STATE_LAUNCHER;
 static app_id_t cur_app = APP_ID_NONE;
+static app_id_t s_return_to = APP_ID_NONE;  /* override return target */
 
 static const app_entry_t apps[] = {
     { APP_ID_NES, "NES", "1" },
@@ -42,6 +43,7 @@ void app_manager_init(void) { state = APP_STATE_LAUNCHER; cur_app = APP_ID_NONE;
 void app_manager_set_state(app_state_t s) { state = s; }
 app_state_t app_manager_get_state(void) { return state; }
 app_id_t app_manager_get_current_app(void) { return cur_app; }
+void app_manager_set_return_to(app_id_t id) { s_return_to = id; }
 
 static void wifi_do_reset(void) {
     ESP_LOGI(TAG, "WiFi reset + config mode");
@@ -221,6 +223,13 @@ void app_manager_return(void) {
             wifi_audio_voice_stop();
         }
         cur_app = APP_ID_NONE;
+        /* If a return target was set, go there instead of menu */
+        if (s_return_to != APP_ID_NONE) {
+            app_id_t target = s_return_to;
+            s_return_to = APP_ID_NONE;
+            app_manager_launch(target);
+            return;
+        }
         state = APP_STATE_MENU; menu_enter();
     } else if (state == APP_STATE_MENU) {
         state = APP_STATE_LAUNCHER; launcher_enter();
