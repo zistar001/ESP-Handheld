@@ -12,11 +12,11 @@
 #define CARD_START_Y  8
 #define ICON_SIZE     28
 
-static lv_obj_t *cards[10];
+static lv_obj_t *cards[8];
 static lv_obj_t *highlight;
 static lv_obj_t *scroll_cont;
 static int sel;
-static int item_count = 10;
+static int item_count = 8;
 
 #define HIGHLIGHT_COLOR  lv_color_hex(0xFFBB00)   /* Golden yellow — highly visible on dark bg */
 
@@ -29,8 +29,6 @@ static const struct { const char *icon; const char *label; app_id_t app; } items
     { LV_SYMBOL_REFRESH, "\xe5\x8d\xa0\xe5\x8d\x9c",  APP_ID_FORTUNE },     /* 占卜 */
     { LV_SYMBOL_LOOP,    "\xe5\xb0\x8f\xe5\x85\xad\xe5\xa3\xac",  APP_ID_RECORDER },    /* 小六壬 */
     { LV_SYMBOL_BELL,    "\xe8\xae\xa1\xe6\x97\xb6",  APP_ID_COUNTDOWN },   /* 计时 */
-    { LV_SYMBOL_SAVE,    "\xe5\xbd\x95\xe9\x9f\xb3",  APP_ID_RECORD },     /* 录音 */
-    { LV_SYMBOL_SHUFFLE, "IMU",  APP_ID_CALIB },     /* IMU */
     { LV_SYMBOL_SETTINGS,"\xe8\xae\xbe\xe7\xbd\xae",  APP_ID_SETTINGS },    /* 设置 */
 };
 

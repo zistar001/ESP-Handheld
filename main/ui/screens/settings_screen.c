@@ -11,7 +11,7 @@
 
 #define ITEM_H 36
 #define LIST_TOP 35
-#define MAX_ITEMS 8
+#define MAX_ITEMS 9
 
 typedef struct {
     const char *name;
@@ -37,6 +37,9 @@ static void enter_pc_ip(void) {
 }
 static void enter_about(void) {
     app_manager_launch(APP_ID_ABOUT);
+}
+static void enter_calib(void) {
+    app_manager_launch(APP_ID_CALIB);
 }
 
 static char g_val_buf[32];
@@ -79,6 +82,7 @@ static const settings_item_t items[MAX_ITEMS] = {
     { "WiFi",       get_wifi_val,    enter_wifi },
     { "PC IP",      get_pc_ip_val,   enter_pc_ip },
     { "Sleep",      get_sleep_val,   enter_sleep },
+    { "IMU Calib",  NULL,            enter_calib },
     { "About",      get_about_val,   enter_about },
 };
 
