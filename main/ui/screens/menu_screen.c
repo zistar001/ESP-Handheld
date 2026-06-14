@@ -15,8 +15,10 @@
 static lv_obj_t *cards[10];
 static lv_obj_t *highlight;
 static lv_obj_t *scroll_cont;
-static int sel = 0;
+static int sel;
 static int item_count = 10;
+
+#define HIGHLIGHT_COLOR  lv_color_hex(0xFFBB00)   /* Golden yellow — highly visible on dark bg */
 
 /* Pencil design: icon + Chinese label */
 static const struct { const char *icon; const char *label; app_id_t app; } items[] = {
@@ -42,7 +44,7 @@ lv_obj_t *menu_screen_create(void) {
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x0A0A0A), 0);
 
-    /* Reset static pointers */
+    /* Reset static pointers — keep sel to remember last selection across visits */
     scroll_cont = NULL;
     highlight = NULL;
     for (int i = 0; i < 10; i++) cards[i] = NULL;
@@ -62,14 +64,21 @@ lv_obj_t *menu_screen_create(void) {
     lv_obj_set_scrollbar_mode(scroll_cont, LV_SCROLLBAR_MODE_ON);
     /* NOT setting content_height — children beyond 252px bounds enable scroll */
 
-    /* Selection highlight */
+    /* Selection highlight — bright golden border + subtle fill */
     highlight = lv_obj_create(scroll_cont);
-    lv_obj_set_size(highlight, CARD_W + 4, CARD_H + 4);
-    lv_obj_set_style_border_color(highlight, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_set_style_border_width(highlight, 2, 0);
-    lv_obj_set_style_border_opa(highlight, LV_OPA_50, 0);
-    lv_obj_set_style_bg_opa(highlight, LV_OPA_0, 0);
-    lv_obj_set_pos(highlight, (240 - GRID_COLS * CARD_W - GAP) / 2 - 2, CARD_START_Y - 2);
+    lv_obj_set_size(highlight, CARD_W + 6, CARD_H + 6);
+    lv_obj_set_style_border_color(highlight, HIGHLIGHT_COLOR, 0);
+    lv_obj_set_style_border_width(highlight, 3, 0);
+    lv_obj_set_style_border_opa(highlight, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(highlight, HIGHLIGHT_COLOR, 0);
+    lv_obj_set_style_bg_opa(highlight, 18, 0);         /* 7% fill tint */
+    lv_obj_set_style_radius(highlight, CARD_R + 2, 0);
+    lv_obj_set_style_pad_all(highlight, 0, 0);
+    lv_obj_set_style_shadow_color(highlight, HIGHLIGHT_COLOR, 0);
+    lv_obj_set_style_shadow_opa(highlight, LV_OPA_40, 0);
+    lv_obj_set_style_shadow_width(highlight, 12, 0);
+    lv_obj_set_style_shadow_spread(highlight, 2, 0);
+    lv_obj_set_pos(highlight, (240 - GRID_COLS * CARD_W - GAP) / 2 - 3, CARD_START_Y - 3);
 
     /* Create cards - Pencil layout: 2 columns */
     for (int i = 0; i < item_count; i++) {
@@ -107,6 +116,18 @@ lv_obj_t *menu_screen_create(void) {
 
     lv_scr_load(scr);
 
+    /* If returning from an app, restore highlight to remembered position */
+    if (sel > 0 && highlight && scroll_cont) {
+        int col = sel % GRID_COLS;
+        int row = sel / GRID_COLS;
+        int x = (240 - GRID_COLS * CARD_W - GAP) / 2 + col * (CARD_W + GAP);
+        int y = CARD_START_Y + row * (CARD_H + GAP);
+        lv_obj_set_pos(highlight, x - 3, y - 3);
+        int sy = y - 40;
+        if (sy < 0) sy = 0;
+        lv_obj_scroll_to_y(scroll_cont, sy, LV_ANIM_OFF);
+    }
+
     /* Delete old screen AFTER loading new one */
     if (old) lv_obj_del(old);
 
@@ -116,18 +137,20 @@ lv_obj_t *menu_screen_create(void) {
 void menu_screen_navigate(int dx, int dy) {
     int old_sel = sel;
     if (dy != 0) {
-        sel += dy * GRID_COLS;
+        int new_sel = sel + dy * GRID_COLS;
+        if (new_sel < 0 || new_sel >= item_count) return;  /* At edge — don't wrap */
+        sel = new_sel;
     } else if (dx != 0) {
-        sel += dx;
+        int new_sel = sel + dx;
+        if (new_sel < 0 || new_sel >= item_count) return;  /* At edge — don't wrap */
+        sel = new_sel;
     }
-    if (sel < 0) sel = 0;
-    if (sel >= item_count) sel = item_count - 1;
     if (sel != old_sel && highlight && scroll_cont) {
         int col = sel % GRID_COLS;
         int row = sel / GRID_COLS;
         int x = (240 - GRID_COLS * CARD_W - GAP) / 2 + col * (CARD_W + GAP);
         int y = CARD_START_Y + row * (CARD_H + GAP);
-        lv_obj_set_pos(highlight, x - 2, y - 2);
+        lv_obj_set_pos(highlight, x - 3, y - 3);
         int sy = y - 40;
         if (sy < 0) sy = 0;
         lv_obj_scroll_to_y(scroll_cont, sy, LV_ANIM_ON);

@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **IMPORTANT: Never build from MSYS2/Mingw bash.** ESP-IDF detects `MSYSTEM` and refuses. Use cmd.exe or PowerShell.
 
+## One-Click Build+Flash
+
+Run `_bf.ps1` from PowerShell — builds with IDF v5.5.4, flashes full image to COM7.
+
 ## Canonical Build (PowerShell)
 
 ```powershell
@@ -13,10 +17,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 $env:MSYSTEM=''
 $env:IDF_PATH='D:\Espressif\frameworks\esp-idf-v5.5.4'
 $env:IDF_TOOLS_PATH='D:\Espressif\tools'
-$env:IDF_COMPONENT_MANAGER='1'
+$env:IDF_COMPONENT_MANAGER='0'   # set to '1' only when zlib/weather is needed
 # Add cmake, ninja, toolchain, python to PATH
 python $env:IDF_PATH\tools\idf.py build
 ```
+
+**Note:** `IDF_COMPONENT_MANAGER=1` is required for the weather module (zlib). Most builds don't need it — keep it at `0` for faster offline builds. See "Component Manager" in Critical Gotchas.
 
 ## Flash (must include ota_data_initial.bin)
 
@@ -38,6 +44,14 @@ python -m esptool --chip esp32s3 -p COM7 -b 921600 \
 python -m esptool --chip esp32s3 -p COM7 -b 921600 write_flash 0x10000 build/esp_handheld.bin
 ```
 
+## Flash SPIFFS assets partition
+
+```bash
+python -m esptool --chip esp32s3 -p COM7 -b 921600 write_flash 0xC10000 build/assets.bin
+```
+
+Build the SPIFFS image: `python $env:IDF_PATH/components/spiffs/spiffsgen.py 0x3F0000 assets/ build/assets.bin`
+
 ## Monitor
 
 ```bash
@@ -56,14 +70,19 @@ XiaoZhi source is at `xiaozhi-esp32-main/`, must be compiled with the same `part
 
 | Script | Purpose |
 |--------|---------|
-| `_build.ps1` | Build with IDF v5.4.1 |
-| `_flash.ps1` | Flash to COM3 |
+| `_bf.ps1` | **Primary** — build+flash (IDF v5.5.4, COM7) |
+| `_build.ps1` | Build only (IDF v5.4.1, COMPONENT_MANAGER=1 for zlib) |
+| `_build_v5_4.ps1` | Build only (IDF v5.4.1, no component manager) |
+| `_flash.ps1` | Full flash to COM3 (legacy, v5.4.1) |
+| `_flash_app.ps1` | App-only flash to COM3 (legacy) |
 | `_monitor.ps1` | 3-second serial read on COM3 |
-| `_verify.ps1` | Quick serial check |
+| `_verify.ps1` | Quick serial check on COM3 |
 | `_verify_weather.ps1` | Weather API verification |
 | `_setup_python_env.ps1` | Python environment setup |
 | `tools/pc_voice_receiver.py` | PC-side voice receiver (WiFi audio) |
 | `tools/send_ip.py` | Send IP to device |
+
+**Note:** There are TWO IDF versions in use — the project migrated from v5.4.1→v5.5.4. Legacy scripts target COM3/v5.4.1; primary scripts (`_bf.ps1`) target COM7/v5.5.4. Use `_bf.ps1` for new work.
 
 # Environment
 
