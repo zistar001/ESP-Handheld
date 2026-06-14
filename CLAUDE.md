@@ -170,7 +170,9 @@ Menu ──[B/START]──→ Launcher
 ```
 
 **Menu screen:**
-- 2-column grid, 10 app cards with icon + label. Selection highlight = 3px golden border (`0xFFBB00`) + 7% fill tint + glow shadow.
+- 2-column grid, 8 app cards (4 rows) with icon + label: 游戏, 小智, 键盘, 鼠标, 占卜, 小六壬, 计时, 设置.
+- IMU Calibration moved to Settings menu. Record app removed.
+- Selection highlight = 3px golden border (`0xFFBB00`) + 7% fill tint + glow shadow.
 - Navigation stops at grid edges (no column wrapping).
 - Returning from an app remembers the last selected card position.
 
@@ -319,6 +321,24 @@ Uses hardware MADCTL registers (NOT LVGL software `sw_rotate`):
 Key function: `set_hw_rot()` in `ui/screens/countdown_screen.c`.
 
 Position compensation: vertical = `lv_obj_center()`, tilted = `lv_obj_align(LV_ALIGN_CENTER, 36, -28)`.
+
+# Settings
+
+Settings screen (`ui/screens/settings_screen.c`) is a scrollable list. Items can launch sub-screens or adjust values directly.
+
+**Current items (7):**
+
+| # | Item | Status | Action |
+|---|------|--------|--------|
+| 1 | Volume | Stub | Adjust audio volume via UP/DOWN |
+| 2 | Brightness | Stub | Adjust LCD brightness via UP/DOWN |
+| 3 | WiFi | Done | Launches APP_ID_WIFI_SETUP (soft-AP config) |
+| 4 | PC IP | Done | Launches APP_ID_IP_INPUT (keyboard to enter IP) |
+| 5 | Sleep | Stub | Toggle + timeout adjustment |
+| 6 | IMU Calib | Done | Launches APP_ID_CALIB (calibration UI) |
+| 7 | About | Done | Launches APP_ID_ABOUT (system info) |
+
+**Stubs (Volume, Brightness, Sleep)** need sub-screen implementations.
 
 # Debugging Guide
 
