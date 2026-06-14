@@ -75,7 +75,11 @@ python -m esptool --chip esp32s3 -p COM7 -b 921600 \
 - Game logic uses fire-and-forget: notifies video_task, doesn't wait for SPI transfer. This keeps game at 60fps while display runs at ~38fps (SPI bottleneck).
 - PSRAM shadow buffer prevents tearing: game_task writes SCREENMEMORY, video_task reads s_shadow.
 - `nes_game_set_exit_callback()` must be called in `nes_start()` — the callback is set to NULL after each use.
+- **Exit flow (B+START):** game_task → `s_running=false` → cleanup → notify video_task. video_task sets `s_game_exit_pending=true`. Next key_handler call → `nes_wrapper_check_exit()` → `ui_display_set_nes_active(false)` + `app_manager_return()` → **menu is shown, NO restart**.
+- **CRITICAL:** `rom_browser_key()` must `lvgl_unlock()` before `nes_start()` — otherwise `ui_display_set_nes_active(true)` deadlocks on `lvgl_lock()` (FreeRTOS mutex is NOT recursive).
+- `esp_task_wdt_delete(NULL)` MUST be called before `vTaskDelete(NULL)` in game_task cleanup, otherwise WDT fires every 5s after exit.
 - Task WDT on Core 1 is expected (spin-wait starves idle task). `CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=n` suppresses it.
+- Supported mappers: 0,1,2,3,4,5,7,9,10,11,15,16,18,19,24,32,33,34,40,41,42,74+ (from nes_core mappers.h).
 
 ### SPI bus sharing
 

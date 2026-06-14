@@ -94,24 +94,12 @@ void rom_browser_enter(void) {
 
     lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x1a1a2e), 0);
-
-    /* Status bar */
-    status_bar_create(scr);
-
-    lv_obj_t *title = lv_label_create(scr);
-    if (n > 0) {
-        lv_label_set_text_fmt(title, "Select ROM (%d found)", n);
-    } else {
-        lv_label_set_text(title, "No ROMs found");
-    }
-    lv_obj_set_style_text_color(title, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0x0A0A0A), 0);
 
     if (n > 0) {
         s_list = lv_list_create(scr);
-        lv_obj_set_size(s_list, 220, 200);
-        lv_obj_align(s_list, LV_ALIGN_CENTER, 0, 10);
+        lv_obj_set_size(s_list, 240, 280);
+        lv_obj_align(s_list, LV_ALIGN_TOP_LEFT, 0, 0);
         lv_obj_set_style_bg_color(s_list, lv_color_hex(0x16213e), 0);
         lv_obj_set_style_border_width(s_list, 0, 0);
 
@@ -154,8 +142,13 @@ void rom_browser_key(key_id_t key, bool pressed) {
             break;
         case KEY_A:
             if (s_sel >= 0 && s_sel < s_rom_count) {
-                ESP_LOGI(TAG, "=== LAUNCHING NES: %s ===", s_roms[s_sel]);
+                lvgl_unlock(); /* must unlock before nes_start() — it calls
+                                * ui_display_set_nes_active(true) which takes
+                                * the same mutex, causing a deadlock */
+                ESP_LOGI(TAG, "=== DBG rom_browser: LAUNCHING %s ===", s_roms[s_sel]);
                 nes_start(s_roms[s_sel]);
+                ESP_LOGI(TAG, "=== DBG rom_browser: nes_start returned ===");
+                return; /* mutex was released above */
             }
             break;
         case KEY_B:

@@ -59,6 +59,9 @@ void settings_sync_global(void) {
  * Key handler — routes based on app_manager state
  * ================================================================ */
 static void key_handler(key_id_t key, bool pressed) {
+    /* Check if NES game has exited — runs in key_task context (Core 0, prio 5),
+     * safe for LVGL operations. No-op when no exit is pending. */
+    nes_wrapper_check_exit();
     app_state_t state = app_manager_get_state();
 
     switch (state) {
@@ -89,6 +92,8 @@ static void key_handler(key_id_t key, bool pressed) {
 
         case APP_STATE_RUNNING:
             if (app_manager_get_current_app() == APP_ID_NES) {
+                ESP_LOGD("MAIN", "DBG key->NES: key=%d pressed=%d game_running=%d",
+                         key, pressed, nes_is_running());
                 rom_browser_key(key, pressed);
             } else if (app_manager_get_current_app() == APP_ID_KEYBOARD) {
                 /* Keyboard HID app */
@@ -357,7 +362,6 @@ void app_main(void) {
 
     ESP_LOGI(TAG, "System ready. Idle loop.");
 
-    /* Idle: keep main task alive */
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

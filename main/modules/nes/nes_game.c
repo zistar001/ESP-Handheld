@@ -103,6 +103,8 @@ static void video_task(void *arg) {
 
     while (1) {
         xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY);
+        ESP_LOGI("NES_VID", "=== DBG vid wake: s_running=%d s_shadow=%p exit_cb=%p ===",
+                 s_running, (void*)s_shadow, (void*)s_exit_callback);
         if (!s_running || !s_shadow) {
             if (s_exit_callback) {
                 void (*cb)(void) = s_exit_callback;
@@ -178,8 +180,11 @@ static int load_rom_file(const char *path) {
 static void game_task(void *arg) {
     const char *rom_path = (const char *)arg;
     int quit_cd = 0;
+    bool wdt_added = false;  /* track WDT subscription for safe cleanup */
 
-    ESP_LOGI(TAG, "=== GAME: %s ===", rom_path);
+    ESP_LOGI(TAG, "=== DBG game_task ENTERED: %s ===", rom_path);
+    ESP_LOGI(TAG, "=== DBG s_abort=%d s_game_task=%p s_vid_task=%p ===",
+             s_abort, (void*)s_game_task, (void*)s_vid_task);
 
     box_audio_init_rate(DEFAULT_SAMPLERATE);
     box_audio_set_volume(80);
@@ -236,7 +241,9 @@ static void game_task(void *arg) {
 
     s_running = true;
     /* Subscribe this task to the watchdog (IDF v5.x new API) */
-    esp_task_wdt_add(NULL);
+    if (esp_task_wdt_add(NULL) == ESP_OK) {
+        wdt_added = true;
+    }
     /* Start audio timer at NES refresh rate */
     if (s_audio_timer) xTimerStart(s_audio_timer, 0);
     ESP_LOGI(TAG, "Running...");
@@ -310,6 +317,11 @@ done:
 
     ESP_LOGI(TAG, "Game over");
     xTaskNotify(s_vid_task, 0, eSetValueWithOverwrite);
+    /* Unsubscribe from task WDT before self-deleting — only if we
+     * actually subscribed (ROM loading may have failed before that). */
+    if (wdt_added) {
+        esp_task_wdt_delete(NULL);
+    }
     vTaskDelete(NULL);
 }
 
@@ -387,6 +399,13 @@ void nes_game_stop(void) {
         xSemaphoreTake(s_game_done_sem, pdMS_TO_TICKS(3000));
     }
     s_abort = false;
+}
+
+void nes_game_cleanup_video(void) {
+    if (s_vid_task) {
+        vTaskDelete(s_vid_task);
+        s_vid_task = NULL;
+    }
 }
 
 bool nes_game_is_running(void) {

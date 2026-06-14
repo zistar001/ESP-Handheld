@@ -21,13 +21,13 @@ void lvgl_unlock(void) {
 }
 
 void ui_display_set_nes_active(bool active) {
+    lvgl_lock();
     nes_active = active;
     if (!active) {
-        lvgl_lock();
         lv_obj_t *scr = lv_scr_act();
         if (scr) lv_obj_invalidate(scr);
-        lvgl_unlock();
     }
+    lvgl_unlock();
 }
 
 /* LVGL flush callback */

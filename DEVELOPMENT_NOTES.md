@@ -1,10 +1,9 @@
 # ESP_BSP — Development Notes
 
-**Last Updated:** 2026-06-09
+**Last Updated:** 2026-06-14
 **Current Branch:** codex/nofrendo-migration
-**Current Commit:** 2e39be7 (fix: home screen data persistence across navigation)
 **Build Status:** ✅ Compiles and flashes
-**Game Status:** ✅ NES playable, SD card working, exit/re-entry stable
+**Game Status:** ✅ NES playable, exit to menu (no reboot), WDT clean
 
 ---
 
@@ -290,6 +289,18 @@ Additionally, all LVGL operations were called from the `key_driver_scan_task` (p
 - `size_t`要用`%zu`，C++需显式`#include <cstring>`
 - `file(TO_CMAKE_PATH)`需给空变量加引号
 
+**7. NES游戏退出触发系统重启（esp_restart）**
+- **根因：** `nes_wrapper.c` 的 `on_game_exit()` 回调直接调 `esp_restart()` 导致全系统重启。
+- **修复：** 回调只设 `s_game_exit_pending = true`，由 key_handler 在每次按键时检查标志（`nes_wrapper_check_exit()`），在 key_task 上下文中安全执行 LVGL 操作后 `app_manager_return()`→回到菜单。
+
+**8. 进入游戏卡死（lvgl_lock 死锁）**
+- **根因：** `rom_browser_key()` 在持有 `lvgl_lock` 时调用 `nes_start()` → `ui_display_set_nes_active(true)` 再次获取同一 mutex。FreeRTOS 的 mutex 不可递归→死锁。
+- **修复：** KEY_A 分支先 `lvgl_unlock()` 再 `nes_start()`，用 `return` 跳过后续 `lvgl_unlock()`。
+
+**9. 退出后 Task WDT 刷屏/可致 panic**
+- **根因：** `game_task` 调了 `esp_task_wdt_add(NULL)` 但没调 `esp_task_wdt_delete(NULL)`。任务自删除后 WDT 仍等它喂狗→5秒超时刷屏，可能触发 panic 重启。
+- **修复：** 加入 `wdt_added` 标记，只在成功订阅后才在 `vTaskDelete(NULL)` 前调用 `esp_task_wdt_delete(NULL)`。
+
 ---
 
 ## Git Branches
@@ -297,10 +308,11 @@ Additionally, all LVGL operations were called from the `key_driver_scan_task` (p
 | Branch | HEAD | Description |
 |--------|------|-------------|
 | master | e9ed773 | Original NES module (incomplete CMakeLists.txt) |
-| codex/nofrendo-migration | 723029e | Current: full UI + working game module |
+| codex/nofrendo-migration | (current) | Full UI + working NES + exit to menu |
 
 ### Commit History
 ```
+(HEAD) — fix: NES game exit → menu (no restart), WDT cleanup, lvgl_lock deadlock fix
 2e39be7 — Home screen data persistence (cache + restore)
 2f58353 — Weather gzip via zlib, memory optimizations
 5a073cb — Ignore .claude/ and managed_components/

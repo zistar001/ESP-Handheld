@@ -12,8 +12,11 @@ esp_err_t nes_game_init(void);
 /* Start a game with the given ROM path. Creates game_task on Core 1. */
 void nes_game_start(const char *rom_path);
 
-/* Signal the running game to quit, block until game task finishes. */
+/* Stop the running game */
 void nes_game_stop(void);
+
+/* Delete the video task (must be called after game stops) */
+void nes_game_cleanup_video(void);
 
 /* Returns true if a NES game is currently running. */
 bool nes_game_is_running(void);

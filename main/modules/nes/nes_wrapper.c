@@ -1,24 +1,34 @@
 #include "nes_wrapper.h"
 #include "nes_game.h"
+#include "app/app_manager.h"
 #include "ui/display_driver.h"
 #include "bsp/key_driver.h"
 #include "nes_port.h"
-#include "app/app_manager.h"
 
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 
 static const char *TAG = "NES_WRAP";
 
+/* Flag set by video_task callback, consumed by key_handler on next key event.
+ * This avoids LVGL operations inside video_task context entirely. */
+static volatile bool s_game_exit_pending = false;
+
 static void on_game_exit(void) {
-    ESP_LOGI(TAG, "Game exited, restoring LVGL");
+    /* Called from video_task context (Core 0) — do NOT touch LVGL here.
+     * Just flag it; the key handler will pick it up on the next key event. */
+    s_game_exit_pending = true;
+}
+
+/* Called at the top of key_handler — runs in key_task context (Core 0, prio 5),
+ * safe for LVGL operations. Returns true if exit was handled. */
+bool nes_wrapper_check_exit(void) {
+    if (!s_game_exit_pending) return false;
+    s_game_exit_pending = false;
+    ESP_LOGI(TAG, "Game over, returning to menu...");
     ui_display_set_nes_active(false);
-    /* Only transition if still in running state (may already be in menu
-     * if user pressed START during loading) */
-    if (app_manager_get_state() == APP_STATE_RUNNING) {
-        app_manager_return();
-    }
+    app_manager_return();
+    return true;
 }
 
 void nes_wrapper_init(void) {
@@ -36,11 +46,13 @@ void nes_start(const char *rom_path) {
         ESP_LOGW(TAG, "Game already running, stop first");
         return;
     }
-    ESP_LOGI(TAG, "Starting game: %s", rom_path);
+    ESP_LOGI(TAG, "=== DBG nes_start: %s ===", rom_path);
     /* Re-register exit callback (it's cleared after each use) */
     nes_game_set_exit_callback(on_game_exit);
     ui_display_set_nes_active(true);
+    ESP_LOGI(TAG, "=== DBG nes_start: calling nes_game_start ===");
     nes_game_start(rom_path);
+    ESP_LOGI(TAG, "=== DBG nes_start: returned ===");
 }
 
 void nes_stop(void) {
