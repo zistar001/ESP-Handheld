@@ -94,12 +94,15 @@ void rom_browser_enter(void) {
 
     lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x0A0A0A), 0);
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), 0);
 
     if (n > 0) {
+        /* 10% top/bottom black bars (28px each) — matches NES voff=20
+         * cropping, so when the game starts, leftover screen edges are
+         * black instead of showing ROM list artifacts. */
         s_list = lv_list_create(scr);
-        lv_obj_set_size(s_list, 240, 280);
-        lv_obj_align(s_list, LV_ALIGN_TOP_LEFT, 0, 0);
+        lv_obj_set_size(s_list, 240, 224);
+        lv_obj_set_pos(s_list, 0, 28);
         lv_obj_set_style_bg_color(s_list, lv_color_hex(0x16213e), 0);
         lv_obj_set_style_border_width(s_list, 0, 0);
 
