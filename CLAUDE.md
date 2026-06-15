@@ -404,6 +404,52 @@ Settings screen (`ui/screens/settings_screen.c`) — full-screen list with 7 ite
 
 **Return-to-settings:** WiFi/PCIP/IMU/About launch as full apps via `app_manager_launch()`. `app_manager_set_return_to(APP_ID_SETTINGS)` sets a flag so `app_manager_return()` goes back to settings instead of the main menu.
 
+# Weather Module
+
+Weather data from HeFeng API (`devapi.qweather.com`), fetched by `weather_task` in `main/modules/weather/weather.c`.
+
+## API Endpoints
+
+| Endpoint | Path | Data |
+|----------|------|------|
+| Current | `/v7/weather/now` | `now.text` (desc), `now.temp` |
+| 7-day | `/v7/weather/7d` | `daily[0]` (today high/low), `daily[1..3]` (forecast) |
+
+**Key:** `700cf8ab08774bf089e52d33b89aecf8`, **Location:** `101230501` (泉州), **Host:** `p23p3qvugk.re.qweatherapi.com`
+
+## Memory: cJSON on PSRAM
+
+The 7-day API response (~3.7KB JSON) creates a cJSON tree with 7+ daily objects, each with 20+ string fields. This tree **needs more memory than internal SRAM can provide** after WiFi/SSL/audio allocation. Without PSRAM, `cJSON_Parse()` returns NULL silently.
+
+**Fix in `weather.c`:** Custom allocators force cJSON to use PSRAM:
+```c
+void *cjson_malloc(size_t sz) { return heap_caps_malloc(sz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
+void cjson_free(void *p) { heap_caps_free(p); }
+cJSON_InitHooks(&hooks);
+```
+
+**Without `MALLOC_CAP_8BIT`**, `heap_caps_malloc` returns NULL and all weather data fails to load.
+
+## Cache & UI Flow
+
+Weather data is processed regardless of current screen (removed `APP_STATE_LAUNCHER` guard). When the home screen is recreated (e.g., returning from menu), `home_screen_create()` restores from static cache variables (`s_cached_*`). The big weather icon (`weather_icon_lbl`) must be explicitly restored from `s_cached_desc` — it's NOT updated automatically by the forecast data.
+
+## Icon Matching
+
+`weather_icon_from_desc()` / `weather_icon_get_img()` match Chinese text via `strstr()`:
+
+| Icon | Keyword (UTF-8) | Weather Text |
+|------|-----------------|-------------|
+| ☀️ Sunny | `晴` | 晴, 晴转多云 |
+| ⛅ Cloudy | `多`/`阴` | 多云, 阴 |
+| 🌧️ Rainy | `雨` | 小雨, 中雨, 大雨, 暴雨, 雷阵雨 |
+| ⛈️ Storm | `雷` | 雷阵雨 |
+| ❄️ Snow | `雪` | 小雪, 中雪, 大雪, 雨夹雪 |
+| 🌫️ Foggy | `雾` | 雾, 霾 |
+| 🌬️ Windy | `风` | 大风 |
+
+The `weather_icons_data.c` function checks in ORDER — first match wins (雨 before 雷, so "雷阵雨" matches rainy, not storm).
+
 # Debugging Guide
 
 - Serial log tags: `TIMER` prints `ax= ay= az=` and `ROT` status
