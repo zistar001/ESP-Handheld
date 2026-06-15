@@ -7,6 +7,8 @@
 #include "driver/i2c_master.h"
 #include "esp_codec_dev.h"
 #include "esp_codec_dev_defaults.h"
+#include <math.h>
+#include <string.h>
 
 static const char *TAG = "BOX_AUDIO";
 
@@ -274,6 +276,24 @@ esp_err_t box_audio_write(const int16_t *data, int samples)
     if (!s_inited || !s_out_dev) return ESP_ERR_INVALID_STATE;
     int ret = esp_codec_dev_write(s_out_dev, (void *)data, samples * sizeof(int16_t));
     return (ret == ESP_CODEC_DEV_OK) ? ESP_OK : ESP_FAIL;
+}
+
+/* 简单提示音（880Hz, 150ms） */
+#define BEEP_FREQ      880
+#define BEEP_DURATION  0.15f
+#define BEEP_VOLUME    6000
+
+void box_audio_beep(void)
+{
+    if (!s_inited || !s_out_dev) return;
+    int samples = (int)(s_sample_rate * BEEP_DURATION);
+    int16_t *buf = (int16_t *)heap_caps_malloc(samples * sizeof(int16_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (!buf) return;
+    for (int i = 0; i < samples; i++) {
+        buf[i] = (int16_t)(sinf(2.0f * M_PI * BEEP_FREQ * i / s_sample_rate) * BEEP_VOLUME);
+    }
+    box_audio_write(buf, samples);
+    heap_caps_free(buf);
 }
 
 void box_audio_set_volume(uint8_t vol)

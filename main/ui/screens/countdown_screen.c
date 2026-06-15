@@ -1,6 +1,7 @@
 #include "countdown_screen.h"
 #include "ui/display_driver.h"
 #include "modules/imu/imu_driver.h"
+#include "modules/audio/box_audio_codec.h"
 #include "bsp/st7789_driver.h"
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
@@ -99,7 +100,12 @@ static void on_tick(lv_timer_t *t) {
 
     if (!running) return;
     if (remaining > 0) { remaining--; update_display(); }
-    if (remaining == 0) { running = false; lv_timer_pause(timer); }
+    if (remaining == 0) {
+        running = false;
+        lv_timer_pause(timer);
+        if (time_lbl) lv_label_set_text(time_lbl, "\xE6\x97\xB6\xE9\x97\xB4\xE5\x88\xB0\x21");  /* 时间到! */
+        box_audio_beep();
+    }
 }
 
 lv_obj_t *countdown_screen_create(void) {
@@ -133,6 +139,10 @@ lv_obj_t *countdown_screen_create(void) {
 void countdown_screen_set_time(int m, int s) { total_sec = m*60+s; remaining = total_sec; update_display(); }
 void countdown_screen_set_state(bool run, int idx) { running = run; if(run)lv_timer_resume(timer); else lv_timer_pause(timer); }
 void countdown_screen_update(void) { update_display(); }
+
+bool countdown_screen_is_finished(void) {
+    return remaining == 0 && !running;
+}
 
 void countdown_screen_reset(void) {
     running = false;

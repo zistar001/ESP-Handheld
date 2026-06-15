@@ -44,6 +44,11 @@
 
 static const char *TAG = "MAIN";
 
+/* Sleep management */
+static bool s_sleeping = false;
+static TickType_t s_last_activity = 0;
+static uint8_t s_wake_brightness = 50;
+
 /* ================================================================
  * settings_sync_global — apply settings to hardware
  * ================================================================ */
@@ -58,6 +63,16 @@ void settings_sync_global(void) {
  * Key handler — routes based on app_manager state
  * ================================================================ */
 static void key_handler(key_id_t key, bool pressed) {
+    /* Activity tracking for sleep management */
+    if (pressed) {
+        s_last_activity = xTaskGetTickCount();
+        if (s_sleeping) {
+            s_sleeping = false;
+            settings_t cfg; settings_load(&cfg);
+            bsp_lcd_backlight_set(cfg.brightness);
+        }
+    }
+
     /* Check if NES game has exited — runs in key_task context (Core 0, prio 5),
      * safe for LVGL operations. No-op when no exit is pending. */
     nes_wrapper_check_exit();
@@ -195,23 +210,20 @@ static void key_handler(key_id_t key, bool pressed) {
                 }
                 lvgl_unlock();
             } else if (app_manager_get_current_app() == APP_ID_COUNTDOWN) {
-                static bool hold_start_t = false, hold_b_t = false, hold_a_t = false;
+                static bool hold_start_t = false, hold_b_t = false;
                 if (pressed) {
                     if (key == KEY_START) hold_start_t = true;
                     if (key == KEY_B) hold_b_t = true;
-                    if (key == KEY_A) hold_a_t = true;
                 } else {
-                    if (key == KEY_START) { hold_start_t = false; hold_a_t = false; }
+                    if (key == KEY_START) hold_start_t = false;
                     if (key == KEY_B) hold_b_t = false;
-                    if (key == KEY_A) hold_a_t = false;
+                    if (key == KEY_A && countdown_screen_is_finished()) {
+                        countdown_screen_reset();
+                    }
                 }
                 if (hold_start_t && hold_b_t) {
                     hold_start_t = hold_b_t = false;
                     app_manager_return();
-                }
-                if (hold_start_t && hold_a_t) {
-                    hold_start_t = hold_a_t = false;
-                    countdown_screen_reset();
                 }
             } else if (app_manager_get_current_app() == APP_ID_FORTUNE && pressed) {
                 lvgl_lock();
@@ -268,6 +280,26 @@ static void key_handler(key_id_t key, bool pressed) {
                 lvgl_unlock();
             }
             break;
+    }
+}
+
+/* ================================================================
+ * Power management task — 休眠监控（5s间隔）
+ * ================================================================ */
+static void pm_task(void *arg) {
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        if (s_sleeping) continue;
+        settings_t cfg;
+        if (settings_load(&cfg) != ESP_OK || !cfg.sleep_enabled) continue;
+        /* 计时运行时禁止休眠 */
+        if (app_manager_get_current_app() == APP_ID_COUNTDOWN) continue;
+        TickType_t now = xTaskGetTickCount();
+        if ((now - s_last_activity) > pdMS_TO_TICKS(cfg.sleep_timeout_sec * 1000)) {
+            s_sleeping = true;
+            bsp_lcd_backlight_set(0);
+            ESP_LOGI(TAG, "Sleep: backlight off (timeout=%ds)", cfg.sleep_timeout_sec);
+        }
     }
 }
 
@@ -353,7 +385,11 @@ void app_main(void) {
     key_driver_init(key_handler);
     xTaskCreatePinnedToCore(key_driver_scan_task, "key", 4096, NULL, 2, NULL, 0);
 
-    /* 16. App manager — shows launcher/home screen */
+    /* 16. Power management — sleep monitor */
+    s_last_activity = xTaskGetTickCount();
+    xTaskCreatePinnedToCore(pm_task, "pm", 2048, NULL, 1, NULL, 0);
+
+    /* 17. App manager — shows launcher/home screen */
     app_manager_init();
 
     ESP_LOGI(TAG, "System ready. Idle loop.");

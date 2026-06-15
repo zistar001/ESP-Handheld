@@ -183,16 +183,32 @@ void home_screen_update_time(const char *time_str, const char *date_str) {
     if (date_lbl) lv_label_set_text(date_lbl, date_str ? date_str : "");
 }
 
+/* 天气文字清洗 — 替换 SimSun 16 CJK 字库可能缺失的生僻字 */
+static void sanitize_weather_text(char *buf, size_t sz, const char *desc) {
+    if (!desc) { snprintf(buf, sz, "%s", "---"); return; }
+    /* Replace 霾 with 雾 (same icon category, 雾 is always in font) */
+    size_t len = strlen(desc);
+    if (len + 1 > sz) len = sz - 1;
+    memcpy(buf, desc, len);
+    buf[len] = '\0';
+    char *p = buf;
+    while ((p = strstr(p, "\xe9\x9c\xbe")) != NULL) {  /* 霾 UTF-8 */
+        p[0] = '\xe9'; p[1] = '\x9b'; p[2] = '\xbe';   /* → 雾 UTF-8 */
+    }
+}
+
 void home_screen_update_weather(const char *city, const char *desc, int temp, int temp_high, int temp_low, const char *icon) {
     char buf[64];
+    char clean_desc[64];
     if (temp > -500) s_cached_temp = temp;
     s_cached_high = temp_high; s_cached_low = temp_low;
     if (city) strncpy(s_cached_city, city, 31);
-    if (desc) strncpy(s_cached_desc, desc, 31);
+    sanitize_weather_text(clean_desc, sizeof(clean_desc), desc);
+    strncpy(s_cached_desc, clean_desc, 31);
     s_cached_data_valid = true;
     if (city_lbl && city) lv_label_set_text(city_lbl, city);
-    if (desc_lbl && desc) lv_label_set_text(desc_lbl, desc);
-    if (weather_icon_lbl) weather_icon_update(weather_icon_lbl, desc ? desc : icon, 96);
+    if (desc_lbl) lv_label_set_text(desc_lbl, clean_desc);
+    if (weather_icon_lbl) weather_icon_update(weather_icon_lbl, clean_desc[0] ? clean_desc : (icon ? icon : "晴"), 96);
     if (temp_lbl && temp > -500) { snprintf(buf, 64, "%d", temp); lv_label_set_text(temp_lbl, buf); }
     if (range_lbl && (temp_high || temp_low)) { snprintf(buf, 64, "%d~%d\xC2\xB0""C", temp_low, temp_high); lv_label_set_text(range_lbl, buf); }
 }

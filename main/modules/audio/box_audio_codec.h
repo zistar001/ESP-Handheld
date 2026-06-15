@@ -24,6 +24,7 @@ esp_err_t box_audio_read(int16_t *data, int samples);
 esp_err_t box_audio_write(const int16_t *data, int samples);
 void     box_audio_set_volume(uint8_t vol);    /* 0-100 */
 uint8_t  box_audio_get_volume(void);
+void     box_audio_beep(void);                 /* 880Hz 150ms 提示音 */
 void     box_audio_set_mic_gain(uint8_t db);   /* 0-37 dB */
 void     box_audio_stop(void);
 bool     box_audio_is_inited(void);
