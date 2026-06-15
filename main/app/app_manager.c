@@ -170,9 +170,16 @@ esp_err_t app_manager_launch(app_id_t id) {
             calib_screen_create();
             break;
         case APP_ID_XIAOZHI: {
-            ESP_LOGI(TAG, "Switch to XiaoZhi AI");
-            const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
-            if (p) { esp_ota_set_boot_partition(p); esp_restart(); }
+            const esp_partition_t *cur = esp_ota_get_running_partition();
+            const esp_partition_t *target = NULL;
+            if (cur && cur->subtype == ESP_PARTITION_SUBTYPE_APP_OTA_1) {
+                ESP_LOGI(TAG, "Switch back to factory (ESP_BSP)");
+                target = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+            } else {
+                ESP_LOGI(TAG, "Switch to XiaoZhi AI (ota_1)");
+                target = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
+            }
+            if (target) { esp_ota_set_boot_partition(target); esp_restart(); }
             break;
         }
         case APP_ID_IP_INPUT:

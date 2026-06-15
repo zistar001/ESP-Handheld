@@ -4,19 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Build & Flash
 
-**IMPORTANT: Never build from MSYS2/Mingw bash.** ESP-IDF detects `MSYSTEM` and refuses. Use cmd.exe or PowerShell.
+**IMPORTANT:** Never build from MSYS2/Mingw bash. ESP-IDF detects `MSYSTEM` and refuses. Use cmd.exe or PowerShell.
+
+## Portability (办公室 vs 家里)
+
+这个项目在两台电脑上开发（办公室和家里），IDF 安装路径不同。路径配置在 `idf_env.ps1` 中：
+
+```powershell
+# 办公室
+IDF_PATH       = 'D:\esp\v5.5.4\esp-idf'
+IDF_TOOLS_PATH = 'C:\Espressif\tools'
+
+# 家里
+IDF_PATH       = 'D:\Espressif\frameworks\esp-idf-v5.5.4'
+IDF_TOOLS_PATH = 'D:\Espressif\tools'
+```
+
+**使用 Claude Code 时：** 我会在编译前问你在哪个环境，自动选择对应路径。添加新环境只需在 `idf_env.ps1` 中增加一个条目。
 
 ## One-Click Build+Flash
 
 Run `_bf.ps1` from PowerShell — builds with IDF v5.5.4, flashes full image to COM7.
+
+如果使用 Claude Code 编译：我会先问你"在办公室还是在家里？"，然后使用对应的环境路径。
 
 ## Canonical Build (PowerShell)
 
 ```powershell
 # Set environment (adjust paths to match your IDF install)
 $env:MSYSTEM=''
-$env:IDF_PATH='D:\Espressif\frameworks\esp-idf-v5.5.4'
-$env:IDF_TOOLS_PATH='D:\Espressif\tools'
+$env:IDF_PATH='D:\esp\v5.5.4\esp-idf'
+$env:IDF_TOOLS_PATH='C:\Espressif\tools'
 $env:IDF_COMPONENT_MANAGER='0'   # set to '1' only when zlib/weather is needed
 # Add cmake, ninja, toolchain, python to PATH
 python $env:IDF_PATH\tools\idf.py build
@@ -70,6 +88,7 @@ XiaoZhi source is at `xiaozhi-esp32-main/`, must be compiled with the same `part
 
 | Script | Purpose |
 |--------|---------|
+| `_flash_dualsystem.ps1` | Flash both ESP_BSP + XiaoZhi (full dual-system) |
 | `_bf.ps1` | **Primary** — build+flash (IDF v5.5.4, COM7) |
 | `_build.ps1` | Build only (IDF v5.4.1, COMPONENT_MANAGER=1 for zlib) |
 | `_build_v5_4.ps1` | Build only (IDF v5.4.1, no component manager) |
@@ -86,14 +105,20 @@ XiaoZhi source is at `xiaozhi-esp32-main/`, must be compiled with the same `part
 
 # Environment
 
-| Variable | Value |
-|----------|-------|
-| IDF_PATH | `D:\Espressif\frameworks\esp-idf-v5.5.4` |
-| IDF_TOOLS_PATH | `D:\Espressif\tools` |
+**Dual-environment support (办公室 / 家里).** Before building, Claude Code must ask the user which location they are at, then set the correct paths.
+
+Paths are defined in `idf_env.ps1`. Building manually: uncomment the correct section.
+
+| Environment | IDF_PATH | IDF_TOOLS_PATH | Python |
+|-------------|----------|----------------|--------|
+| 🏢 办公室 | `D:\esp\v5.5.4\esp-idf` | `C:\Espressif\tools` (COM3) | `$IDF_TOOLS_PATH\python\v5.5.4\venv\Scripts\python.exe` |
+| 🏠 家里 | `D:\Espressif\frameworks\esp-idf-v5.5.4` | `D:\Espressif\tools` | `$IDF_TOOLS_PATH\python_env\idf5.5_py3.11_env\Scripts\python.exe` |
+
+| Common | Value |
+|--------|-------|
 | Target | `esp32s3` |
 | Serial port | COM7 |
 | Flash baud | 921600 |
-| Python venv | `C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe` |
 
 # Project Overview
 
@@ -110,7 +135,39 @@ ESP32-S3 handheld device firmware — NES emulator + LVGL UI + weather + BLE rem
 | ota_1 | 0x810000 | 4MB | XiaoZhi AI firmware |
 | assets | 0xC10000 | ~4MB | SPIFFS resources |
 
-System switching via `esp_ota_set_boot_partition()` + `esp_restart()`. In menu, selecting AI toggles: if running from factory/ota_0 → boot ota_1, if running from ota_1 → boot factory.
+System switching via `esp_ota_set_boot_partition()` + `esp_restart()`. Menu "小智" card toggles: running from factory/ota_0 → reboot into ota_1 (XiaoZhi), running from ota_1 → reboot into factory (ESP_BSP). In XiaoZhi, press START+B together to return to ESP_BSP.
+
+**WiFi sharing:** Both systems use the same `esp-wifi-connect` SsidManager component with NVS namespace `"wifi"`. WiFi credentials configured in either system are available to the other automatically.
+
+## Dual-System Operation
+
+### ESP_BSP → XiaoZhi
+- Menu → 小智 card → detects current partition and toggles: factory/ota_0→ota_1, ota_1→factory
+- Calls `esp_ota_set_boot_partition()` + `esp_restart()`
+
+### XiaoZhi → ESP_BSP
+- **START+B** (GPIO15+GPIO16) held for ~150ms → `ReturnToHandheld()` → reboots to factory
+
+### XiaoZhi Side Button Map
+
+| Physical Key | GPIO | XiaoZhi Function |
+|-------------|------|-----------------|
+| **A** | 17 | Push-to-Talk (hold to speak) |
+| **UP** | 5 | Volume + (click +10, long-press max) |
+| **DOWN** | 6 | Volume - (click -10) |
+| **START** | 15 | Combo: START+B = return to ESP_BSP |
+| **B** | 16 | Combo: START+B = return to ESP_BSP |
+| LEFT, RIGHT | 4, 7 | Unused |
+
+### Dual-System Build/Flash
+
+```powershell
+# Flash both firmwares at once
+.\_flash_dualsystem.ps1
+
+# Quick flash XiaoZhi only (after rebuilding)
+.\xiaozhi-esp32-main\_flash_fw.bat
+```
 
 # Code Architecture
 
@@ -132,7 +189,7 @@ main/
     power/              — Battery ADC monitor
     settings/           — NVS settings (9 fields)
     time_sync/          — SNTP + NVS backup
-    xiaozhi/            — Dual-firmware switch wrapper
+    xiaozhi/            — XiaoZhi AI partition switch (deleted, handled in app_manager)
     iching/             — I Ching + Xiao Liu Ren fortune divination
   ui/
     display_driver.c    — LVGL init, double-buffer, mutex

@@ -25,7 +25,6 @@ idf_component_register(
            # I Ching
           "modules/iching/iching_data.c"
           "modules/iching/liuren_core.c"
-          "modules/xiaozhi/xiaozhi_wrapper.c"
           # PC Remote (BLE HID + air mouse + WiFi audio)
           "modules/pc_remote/ble_hid.c" "modules/pc_remote/air_mouse.c" "modules/pc_remote/wifi_audio.c"
           # UI
@@ -55,7 +54,6 @@ idf_component_register(
                  "modules/time_sync"
                  "modules/weather"
                  "modules/wifi_manager"
-                 "modules/xiaozhi"
                  "modules/pc_remote"
                  "modules/iching"
                  "ui"

@@ -28,6 +28,11 @@
 
 #define AUDIO_INPUT_REFERENCE true
 
+/* Combo key pins: KEY_START (GPIO15) + KEY_B (GPIO16) held together returns to ESP_BSP */
+#define COMBO_PIN_START    GPIO_NUM_15
+#define COMBO_PIN_B        GPIO_NUM_16
+#define COMBO_DEBOUNCE_MS  150  /* ~3 samples at 50ms */
+
 LV_FONT_DECLARE(font_puhui_20_4);
 LV_FONT_DECLARE(font_awesome_20_4);
 
@@ -44,6 +49,7 @@ private:
     adc_cali_handle_t adc1_cali_handle_;
     bool adc_calibrated_;
     esp_timer_handle_t battery_timer_;
+    esp_timer_handle_t combo_timer_;
     int last_battery_voltage_;
     int last_battery_percentage_;
     bool led_on_ = false;
@@ -165,12 +171,6 @@ private:
             }
             codec->SetOutputVolume(volume);
             GetDisplay()->ShowNotification(Lang::Strings::VOLUME + std::to_string(volume)); });
-
-        volume_down_button_.OnLongPress([this]()
-                                        {
-            GetDisplay()->ShowNotification("Return to menu...");
-            vTaskDelay(pdMS_TO_TICKS(1500));
-            ReturnToHandheld(); });
     }
 
     void InitializeSt7789Display()
@@ -294,6 +294,29 @@ private:
         ESP_ERROR_CHECK(esp_timer_start_periodic(battery_timer_, 1000 * 1000)); // 微秒为单位
     }
 
+    // START+B 组合键定时器回调
+    static void ComboTimerCallback(void *arg)
+    {
+        GezipaiBoard *board = static_cast<GezipaiBoard *>(arg);
+        board->CheckComboKey();
+    }
+
+    // 检测 START+B 组合键（同时按下约150ms触发返回手持机）
+    void CheckComboKey()
+    {
+        static int combo_count = 0;
+        if (gpio_get_level(COMBO_PIN_START) == 0 && gpio_get_level(COMBO_PIN_B) == 0) {
+            combo_count++;
+            if (combo_count >= (COMBO_DEBOUNCE_MS / 50)) {
+                combo_count = 0;
+                ESP_LOGI(TAG, "START+B combo detected, returning to handheld");
+                ReturnToHandheld();  // calls esp_restart() — no return
+            }
+        } else {
+            combo_count = 0;
+        }
+    }
+
     // 读取电池电压(mV)
     int ReadBatteryVoltage()
     {
@@ -347,7 +370,7 @@ private:
 public:
     GezipaiBoard() : boot_button_(BOOT_BUTTON_GPIO),
                      volume_up_button_(VOLUME_UP_BUTTON_GPIO),
-                     volume_down_button_(VOLUME_DOWN_BUTTON_GPIO, false, 5000),
+                     volume_down_button_(VOLUME_DOWN_BUTTON_GPIO),
                      last_battery_voltage_(0), last_battery_percentage_(-1)
     {
         ESP_LOGI(TAG, "Initializing Gezipai Board");
@@ -376,12 +399,35 @@ public:
         // 启动定时器定
         InitializeTimer();
 
+        // 初始化组合键 GPIO（START+B 返回手持机）
+        gpio_config_t combo_io = {
+            .pin_bit_mask = (1ULL << COMBO_PIN_START) | (1ULL << COMBO_PIN_B),
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = GPIO_PULLUP_ENABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        gpio_config(&combo_io);
+
+        // 组合键检测定时器（50ms间隔）
+        esp_timer_create_args_t combo_timer_args = {
+            .callback = &ComboTimerCallback,
+            .arg = this,
+            .dispatch_method = ESP_TIMER_TASK,
+            .name = "combo_timer",
+            .skip_unhandled_events = false,
+        };
+        ESP_ERROR_CHECK(esp_timer_create(&combo_timer_args, &combo_timer_));
+        ESP_ERROR_CHECK(esp_timer_start_periodic(combo_timer_, 50 * 1000)); // 50ms
+
         GetBacklight()->RestoreBrightness();
     }
 
     ~GezipaiBoard()
     {
         // 停止定时器
+        esp_timer_stop(combo_timer_);
+        esp_timer_delete(combo_timer_);
         esp_timer_stop(battery_timer_);
         esp_timer_delete(battery_timer_);
 
