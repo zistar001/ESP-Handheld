@@ -1,12 +1,16 @@
 #include "weather.h"
 #include "modules/wifi_manager/wifi_manager.h"
-#include "app/app_manager.h"
 #include "ui/screens/home_screen.h"
 #include "ui/display_driver.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
 #include "cJSON.h"
+#include "esp_heap_caps.h"
+
+/* 让cJSON使用PSRAM，避免内部SRAM不足 */
+static void *cjson_malloc(size_t sz) { return heap_caps_malloc(sz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
+static void cjson_free(void *p) { heap_caps_free(p); }
 #include "zlib.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -65,8 +69,19 @@ static char *gunzip(const void *src, size_t src_len) {
 }
 
 static void parse_weather(const char *body) {
+    static bool hooks_set = false;
+    if (!hooks_set) {
+        cJSON_Hooks hooks = { cjson_malloc, cjson_free };
+        cJSON_InitHooks(&hooks);
+        hooks_set = true;
+    }
     cJSON *root = cJSON_Parse(body);
-    if (!root) { ESP_LOGW(TAG, "JSON"); return; }
+    if (!root) {
+        const char *err = cJSON_GetErrorPtr();
+        ESP_LOGW(TAG, "JSON fail len=%d err=%s", (int)strlen(body), err ? err : "?");
+        ESP_LOGW(TAG, "RAW: %.80s", body);
+        return;
+    }
     cJSON *code = cJSON_GetObjectItem(root, "code");
     const char *cs = cJSON_IsString(code) ? code->valuestring : NULL;
     if (!cs || strcmp(cs, "200")) { cJSON_Delete(root); return; }
@@ -89,14 +104,17 @@ static void parse_weather(const char *body) {
         if (text && temp) {
             ESP_LOGI(TAG, "Weather: %s %d~%dC %s", city, s_today_low, s_today_high, text->valuestring);
             lvgl_lock();
-            if (app_manager_get_state() == APP_STATE_LAUNCHER)
-                home_screen_update_weather(city, text->valuestring, atoi(temp->valuestring), s_today_high, s_today_low, NULL);
+            home_screen_update_weather(city, text->valuestring, atoi(temp->valuestring), s_today_high, s_today_low, NULL);
             lvgl_unlock();
         }
     }
     cJSON *d = cJSON_GetObjectItem(root, "daily");
-    if (d && cJSON_IsArray(d) && app_manager_get_state() == APP_STATE_LAUNCHER) {
+    if (d && cJSON_IsArray(d)) {
         int n = cJSON_GetArraySize(d); if(n>4)n=4;
+        ESP_LOGI(TAG, "Daily data: %d days, high=%s low=%s",
+            n,
+            n>0?cJSON_GetObjectItem(cJSON_GetArrayItem(d,0),"tempMax")->valuestring:"?",
+            n>0?cJSON_GetObjectItem(cJSON_GetArrayItem(d,0),"tempMin")->valuestring:"?");
         lvgl_lock();
         /* Update today's high/low from daily[0] */
         if (n > 0) {
@@ -106,6 +124,7 @@ static void parse_weather(const char *body) {
                 cJSON *dlo = cJSON_GetObjectItem(d0, "tempMin");
                 if (dhi) s_today_high = atoi(dhi->valuestring);
                 if (dlo) s_today_low  = atoi(dlo->valuestring);
+                ESP_LOGI(TAG, "Today range: %d~%dC", s_today_low, s_today_high);
                 /* Update range only (temp unchanged) */
                 home_screen_update_weather(NULL, NULL, -999, s_today_high, s_today_low, NULL);
             }
@@ -117,6 +136,9 @@ static void parse_weather(const char *body) {
             cJSON *dmin=cJSON_GetObjectItem(day,"tempMin");
             cJSON *dtext=cJSON_GetObjectItem(day,"textDay");
             const char *date_str = fxDate ? fxDate->valuestring : NULL;
+            ESP_LOGI(TAG, "Forecast[%d]: %s %s %s~%sC",
+                i-1, date_str, dtext?dtext->valuestring:"?",
+                dmin?dmin->valuestring:"?", dmax?dmax->valuestring:"?");
             home_screen_update_forecast(i-1, date_str,
                 dmax?atoi(dmax->valuestring):0, dmin?atoi(dmin->valuestring):0,
                 dtext ? dtext->valuestring : NULL);
@@ -143,6 +165,10 @@ static esp_err_t evt(esp_http_client_event_t *e) {
         }
         case HTTP_EVENT_ON_FINISH: {
             if (!s_resp || !s_resp_len) break;
+            ESP_LOGI(TAG, "Resp: len=%d gzip=%d first=0x%02X%02X%02X%02X",
+                (unsigned)s_resp_len,
+                (s_resp_len>=2 && s_resp[0]==0x1F && s_resp[1]==0x8B)?1:0,
+                (unsigned)s_resp[0],(unsigned)s_resp[1],(unsigned)s_resp[2],(unsigned)s_resp[3]);
             char *body = NULL;
             if (s_resp_len >= 2 && (unsigned char)s_resp[0]==0x1F && (unsigned char)s_resp[1]==0x8B) {
                 /* Try gzip decompression with larger output buffer */

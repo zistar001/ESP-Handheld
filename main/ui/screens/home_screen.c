@@ -164,6 +164,7 @@ lv_obj_t *home_screen_create(void) {
         if (date_lbl) lv_label_set_text(date_lbl, s_cached_date);
         if (city_lbl && *s_cached_city) lv_label_set_text(city_lbl, s_cached_city);
         if (desc_lbl && *s_cached_desc) lv_label_set_text(desc_lbl, s_cached_desc);
+        if (weather_icon_lbl && *s_cached_desc) weather_icon_update(weather_icon_lbl, s_cached_desc, 96);
         if (temp_lbl && s_cached_temp) { char buf[16]; snprintf(buf, 16, "%d", s_cached_temp); lv_label_set_text(temp_lbl, buf); }
         if (range_lbl && (s_cached_high || s_cached_low)) { char buf[32]; snprintf(buf, 32, "%d~%d\xC2\xB0""C", s_cached_low, s_cached_high); lv_label_set_text(range_lbl, buf); }
         if (indoor_temp && s_cached_indoor_temp) { char buf[16]; snprintf(buf, 16, "%.1f\xC2\xB0""C", s_cached_indoor_temp); lv_label_set_text(indoor_temp, buf); }
@@ -199,16 +200,18 @@ static void sanitize_weather_text(char *buf, size_t sz, const char *desc) {
 
 void home_screen_update_weather(const char *city, const char *desc, int temp, int temp_high, int temp_low, const char *icon) {
     char buf[64];
-    char clean_desc[64];
     if (temp > -500) s_cached_temp = temp;
     s_cached_high = temp_high; s_cached_low = temp_low;
     if (city) strncpy(s_cached_city, city, 31);
-    sanitize_weather_text(clean_desc, sizeof(clean_desc), desc);
-    strncpy(s_cached_desc, clean_desc, 31);
+    if (desc) {
+        char clean_desc[64];
+        sanitize_weather_text(clean_desc, sizeof(clean_desc), desc);
+        strncpy(s_cached_desc, clean_desc, 31);
+        if (desc_lbl) lv_label_set_text(desc_lbl, clean_desc);
+        if (weather_icon_lbl) weather_icon_update(weather_icon_lbl, clean_desc, 96);
+    }
     s_cached_data_valid = true;
     if (city_lbl && city) lv_label_set_text(city_lbl, city);
-    if (desc_lbl) lv_label_set_text(desc_lbl, clean_desc);
-    if (weather_icon_lbl) weather_icon_update(weather_icon_lbl, clean_desc[0] ? clean_desc : (icon ? icon : "晴"), 96);
     if (temp_lbl && temp > -500) { snprintf(buf, 64, "%d", temp); lv_label_set_text(temp_lbl, buf); }
     if (range_lbl && (temp_high || temp_low)) { snprintf(buf, 64, "%d~%d\xC2\xB0""C", temp_low, temp_high); lv_label_set_text(range_lbl, buf); }
 }

@@ -103,7 +103,6 @@ static void on_tick(lv_timer_t *t) {
     if (remaining == 0) {
         running = false;
         lv_timer_pause(timer);
-        if (time_lbl) lv_label_set_text(time_lbl, "\xE6\x97\xB6\xE9\x97\xB4\xE5\x88\xB0\x21");  /* 时间到! */
         box_audio_beep();
     }
 }

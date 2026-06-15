@@ -290,13 +290,17 @@ static void pm_task(void *arg) {
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(5000));
         if (s_sleeping) continue;
+
+        /* 加载设置 */
         settings_t cfg;
         if (settings_load(&cfg) != ESP_OK || !cfg.sleep_enabled) continue;
         /* 计时运行时禁止休眠 */
         if (app_manager_get_current_app() == APP_ID_COUNTDOWN) continue;
+
         TickType_t now = xTaskGetTickCount();
         if ((now - s_last_activity) > pdMS_TO_TICKS(cfg.sleep_timeout_sec * 1000)) {
             s_sleeping = true;
+            s_wake_brightness = cfg.brightness;
             bsp_lcd_backlight_set(0);
             ESP_LOGI(TAG, "Sleep: backlight off (timeout=%ds)", cfg.sleep_timeout_sec);
         }
@@ -387,7 +391,7 @@ void app_main(void) {
 
     /* 16. Power management — sleep monitor */
     s_last_activity = xTaskGetTickCount();
-    xTaskCreatePinnedToCore(pm_task, "pm", 2048, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(pm_task, "pm", 4096, NULL, 1, NULL, 0);
 
     /* 17. App manager — shows launcher/home screen */
     app_manager_init();
