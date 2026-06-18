@@ -6,43 +6,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **IMPORTANT:** Never build from MSYS2/Mingw bash. ESP-IDF detects `MSYSTEM` and refuses. Use cmd.exe or PowerShell.
 
-## Portability (办公室 vs 家里)
+## Environment (办公室 ↔ 家里)
 
-这个项目在两台电脑上开发（办公室和家里），IDF 安装路径不同。路径配置在 `idf_env.ps1` 中：
+Paths defined in `idf_env.ps1`. Before building, ask user which environment, then set paths accordingly.
 
-```powershell
-# 办公室
-IDF_PATH       = 'D:\esp\v5.5.4\esp-idf'
-IDF_TOOLS_PATH = 'C:\Espressif\tools'
+| Environment | IDF_PATH | IDF_TOOLS_PATH | COM Port |
+|-------------|----------|----------------|----------|
+| 🏢 办公室 | `D:\esp\v5.5.4\esp-idf` | `C:\Espressif\tools` | COM3 |
+| 🏠 家里 | `D:\Espressif\frameworks\esp-idf-v5.5.4` | `D:\Espressif\tools` | COM7 |
 
-# 家里
-IDF_PATH       = 'D:\Espressif\frameworks\esp-idf-v5.5.4'
-IDF_TOOLS_PATH = 'D:\Espressif\tools'
-```
-
-**使用 Claude Code 时：** 我会在编译前问你在哪个环境，自动选择对应路径。添加新环境只需在 `idf_env.ps1` 中增加一个条目。
-
-## One-Click Build+Flash
-
-Run `_bf.ps1` from PowerShell — builds with IDF v5.5.4, flashes full image to COM7.
-
-如果使用 Claude Code 编译：我会先问你"在办公室还是在家里？"，然后使用对应的环境路径。
+Common: target `esp32s3`, flash baud 921600.
 
 ## Canonical Build (PowerShell)
 
 ```powershell
-# Set environment (adjust paths to match your IDF install)
 $env:MSYSTEM=''
 $env:IDF_PATH='D:\esp\v5.5.4\esp-idf'
 $env:IDF_TOOLS_PATH='C:\Espressif\tools'
-$env:IDF_COMPONENT_MANAGER='0'   # set to '1' only when zlib/weather is needed
-# Add cmake, ninja, toolchain, python to PATH
+$env:IDF_COMPONENT_MANAGER='0'   # set to '1' only for weather (zlib)
+# Add cmake, ninja, toolchain, python to PATH (see _bf.ps1 for exact paths)
 python $env:IDF_PATH\tools\idf.py build
 ```
 
-**Note:** `IDF_COMPONENT_MANAGER=1` is required for the weather module (zlib). Most builds don't need it — keep it at `0` for faster offline builds. See "Component Manager" in Critical Gotchas.
+**Note:** `IDF_COMPONENT_MANAGER=1` is required only for the weather module (zlib). Most builds don't need it — keep `0` for faster offline builds.
 
-## Flash (must include ota_data_initial.bin)
+## One-Click Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `_bf.ps1` | **Primary** — build+flash (IDF v5.5.4, COM7) |
+| `_flash_dualsystem.ps1` | Flash both ESP_BSP + XiaoZhi (full dual-system) |
+| `_build.ps1` | Build only (IDF v5.4.1, COMPONENT_MANAGER=1) |
+| `_build_v5_4.ps1` | Build only (IDF v5.4.1, no component manager) |
+| `_flash.ps1` | Full flash to COM3 (legacy, v5.4.1) |
+| `_flash_app.ps1` | App-only flash to COM3 (legacy) |
+| `_monitor.ps1` | 3-second serial read on COM3 |
+| `_verify.ps1` | Quick serial check on COM3 |
+| `tools/pc_voice_receiver.py` | PC-side voice receiver (WiFi audio) |
+| `tools/send_ip.py` | Send IP to device |
+
+**Note:** There are TWO IDF versions — migrated from v5.4.1→v5.5.4. Legacy scripts target COM3/v5.4.1; primary scripts (`_bf.ps1`) target COM7/v5.5.4. Use `_bf.ps1` for new work.
+
+## Full Flash (must include ota_data_initial.bin)
 
 ```bash
 python -m esptool --chip esp32s3 -p COM7 -b 921600 \
@@ -56,19 +61,20 @@ python -m esptool --chip esp32s3 -p COM7 -b 921600 \
 
 **Without 0xd000 (ota_data_initial.bin), the device boots into XiaoZhi AI (ota_1) instead of factory.**
 
-## Flash app-only (quick iteration)
+## Quick Flash (app-only)
 
 ```bash
 python -m esptool --chip esp32s3 -p COM7 -b 921600 write_flash 0x10000 build/esp_handheld.bin
 ```
 
-## Flash SPIFFS assets partition
+## SPIFFS Assets
 
 ```bash
+# Build image
+python $env:IDF_PATH/components/spiffs/spiffsgen.py 0x3F0000 assets/ build/assets.bin
+# Flash
 python -m esptool --chip esp32s3 -p COM7 -b 921600 write_flash 0xC10000 build/assets.bin
 ```
-
-Build the SPIFFS image: `python $env:IDF_PATH/components/spiffs/spiffsgen.py 0x3F0000 assets/ build/assets.bin`
 
 ## Monitor
 
@@ -81,161 +87,161 @@ idf.py -p COM7 monitor   # 115200 baud, Ctrl+] to exit
 ```bash
 esptool.py -p COM7 -b 921600 write_flash 0x810000 build/xiaozhi.bin
 ```
+XiaoZhi source at `xiaozhi-esp32-main/`, must use the same `partitions.csv` (app linked at 0x810000).
 
-XiaoZhi source is at `xiaozhi-esp32-main/`, must be compiled with the same `partitions.csv` (position-dependent, app linked at 0x810000).
+---
 
-## Quick scripts
-
-| Script | Purpose |
-|--------|---------|
-| `_flash_dualsystem.ps1` | Flash both ESP_BSP + XiaoZhi (full dual-system) |
-| `_bf.ps1` | **Primary** — build+flash (IDF v5.5.4, COM7) |
-| `_build.ps1` | Build only (IDF v5.4.1, COMPONENT_MANAGER=1 for zlib) |
-| `_build_v5_4.ps1` | Build only (IDF v5.4.1, no component manager) |
-| `_flash.ps1` | Full flash to COM3 (legacy, v5.4.1) |
-| `_flash_app.ps1` | App-only flash to COM3 (legacy) |
-| `_monitor.ps1` | 3-second serial read on COM3 |
-| `_verify.ps1` | Quick serial check on COM3 |
-| `_verify_weather.ps1` | Weather API verification |
-| `_setup_python_env.ps1` | Python environment setup |
-| `tools/pc_voice_receiver.py` | PC-side voice receiver (WiFi audio) |
-| `tools/send_ip.py` | Send IP to device |
-
-**Note:** There are TWO IDF versions in use — the project migrated from v5.4.1→v5.5.4. Legacy scripts target COM3/v5.4.1; primary scripts (`_bf.ps1`) target COM7/v5.5.4. Use `_bf.ps1` for new work.
-
-# Environment
-
-**Dual-environment support (办公室 / 家里).** Before building, Claude Code must ask the user which location they are at, then set the correct paths.
-
-Paths are defined in `idf_env.ps1`. Building manually: uncomment the correct section.
-
-| Environment | IDF_PATH | IDF_TOOLS_PATH | Python |
-|-------------|----------|----------------|--------|
-| 🏢 办公室 | `D:\esp\v5.5.4\esp-idf` | `C:\Espressif\tools` (COM3) | `$IDF_TOOLS_PATH\python\v5.5.4\venv\Scripts\python.exe` |
-| 🏠 家里 | `D:\Espressif\frameworks\esp-idf-v5.5.4` | `D:\Espressif\tools` | `$IDF_TOOLS_PATH\python_env\idf5.5_py3.11_env\Scripts\python.exe` |
-
-| Common | Value |
-|--------|-------|
-| Target | `esp32s3` |
-| Serial port | COM7 |
-| Flash baud | 921600 |
-
-# Project Overview
+# Project Architecture
 
 ESP32-S3 handheld device firmware — NES emulator + LVGL UI + weather + BLE remote + WiFi audio + dual-firmware with XiaoZhi AI. Built with **ESP-IDF v5.5.4**, project name `esp_handheld`. Entry point: `main/main.c`.
 
 **Hardware:** ST7789 240×280 SPI LCD, ES8311 audio, ES7210 mic, LSM6DS3TR-C IMU, AHT20 temp/humidity, 7 physical keys, 16MB flash, 8MB Octal PSRAM.
 
-## Dual-Firmware Partitions
-
-| Partition | Offset | Size | Content |
-|-----------|--------|------|---------|
-| factory | 0x10000 | 4MB | ESP_BSP (Game firmware) |
-| ota_0 | 0x410000 | 4MB | Game OTA slot |
-| ota_1 | 0x810000 | 4MB | XiaoZhi AI firmware |
-| assets | 0xC10000 | ~4MB | SPIFFS resources |
-
-System switching via `esp_ota_set_boot_partition()` + `esp_restart()`. Menu "小智" card toggles: running from factory/ota_0 → reboot into ota_1 (XiaoZhi), running from ota_1 → reboot into factory (ESP_BSP). In XiaoZhi, press START+B together to return to ESP_BSP.
-
-**WiFi sharing:** Both systems use the same `esp-wifi-connect` SsidManager component with NVS namespace `"wifi"`. WiFi credentials configured in either system are available to the other automatically.
-
-## Dual-System Operation
-
-### ESP_BSP → XiaoZhi
-- Menu → 小智 card → detects current partition and toggles: factory/ota_0→ota_1, ota_1→factory
-- Calls `esp_ota_set_boot_partition()` + `esp_restart()`
-
-### XiaoZhi → ESP_BSP
-- **START+B** (GPIO15+GPIO16) held for ~150ms → `ReturnToHandheld()` → reboots to factory
-
-### XiaoZhi Side Button Map
-
-| Physical Key | GPIO | XiaoZhi Function |
-|-------------|------|-----------------|
-| **A** | 17 | Push-to-Talk (hold to speak) |
-| **UP** | 5 | Volume + (click +10, long-press max) |
-| **DOWN** | 6 | Volume - (click -10) |
-| **START** | 15 | Combo: START+B = return to ESP_BSP |
-| **B** | 16 | Combo: START+B = return to ESP_BSP |
-| LEFT, RIGHT | 4, 7 | Unused |
-
-### Dual-System Build/Flash
-
-```powershell
-# Flash both firmwares at once
-.\_flash_dualsystem.ps1
-
-# Quick flash XiaoZhi only (after rebuilding)
-.\xiaozhi-esp32-main\_flash_fw.bat
-```
-
-# Code Architecture
-
-## Module Layout
+## Code Layout
 
 ```
 main/
-  main.c                — Entry: init modules, create tasks, key handler
-  bsp/                  — Board support (st7789, sd_card, bsp_board, key_driver)
-  app/                  — App framework (app_manager, launcher, menu, rom_browser)
+  main.c              — Entry: init, create tasks, key_handler dispatch
+  bsp/                — Board support (st7789, sd_card, bsp_board, key_driver)
+  app/                — App framework (app_manager, launcher, menu, rom_browser)
   modules/
-    nes/                — NES emulator (nes_game, nes_wrapper, font8x16)
-    audio/              — ES8311 DAC + ES7210 ADC + box_audio_codec
-    imu/                — LSM6DS3TR-C driver + calibration
-    sensor/             — AHT20 temp/humidity
-    weather/            — HeFeng weather API (HTTPS + zlib gunzip)
-    pc_remote/          — BLE HID keyboard/mouse, air mouse, WiFi audio
-    wifi_manager/       — WiFi connect/provisioning (esp-wifi-connect bridge)
-    power/              — Battery ADC monitor
-    settings/           — NVS settings (9 fields)
-    time_sync/          — SNTP + NVS backup
-    xiaozhi/            — XiaoZhi AI partition switch (deleted, handled in app_manager)
-    iching/             — I Ching + Xiao Liu Ren fortune divination
+    nes/              — NES wrapper (nes_game, nes_wrapper, font8x16)
+    audio/            — ES8311 DAC + ES7210 ADC + box_audio_codec
+    imu/              — LSM6DS3TR-C driver + calibration
+    sensor/           — AHT20 temp/humidity
+    weather/          — HeFeng weather API (HTTPS + zlib gunzip)
+    pc_remote/        — BLE HID keyboard/mouse, air mouse, WiFi audio
+    wifi_manager/     — WiFi connect/provisioning (esp-wifi-connect C++ bridge)
+    power/            — Battery ADC monitor
+    settings/         — NVS settings (volume, brightness, sleep, etc.)
+    time_sync/        — SNTP + NVS backup
+    iching/           — I Ching + Xiao Liu Ren fortune divination
   ui/
-    display_driver.c    — LVGL init, double-buffer, mutex
-    screens/            — home, menu, settings, countdown, airmouse, kbd,
-                          ip_input, fortune, liuren, calib, record
-    components/         — status_bar, weather_icons
+    display_driver.c  — LVGL init, double-buffer, lvgl_lock/lvgl_unlock
+    screens/          — home, menu, settings, countdown, airmouse, kbd,
+                        ip_input, fortune, liuren, calib, record
+    components/       — status_bar, weather icons
 components/
-  lvgl/                 — LVGL v8.4 (local, not from registry)
-  lv_conf.h             — LVGL config
-  nes_core/             — NES emulator core (C++, from esp32s3_nes_gamer)
-  esp-wifi-connect/     — WiFi provisioning (github.com/78/esp-wifi-connect)
+  lvgl/               — LVGL v8.4 (local source, not from registry)
+  nes_core/           — NES emulator C++ core (from esp32s3_nes_gamer)
+  esp-wifi-connect/   — WiFi provisioning (github.com/78/esp-wifi-connect)
   espressif__esp_codec_dev/ — Codec device abstraction
+  lv_conf.h           — LVGL config (not Kconfig)
 ```
+
+## Partition Layout (16MB flash)
+
+| Partition | Offset | Size | Content |
+|-----------|--------|------|---------|
+| factory   | 0x10000  | 4MB | ESP_BSP (Game firmware) |
+| ota_0     | 0x410000 | 4MB | Game OTA slot |
+| ota_1     | 0x810000 | 4MB | XiaoZhi AI firmware |
+| assets    | 0xC10000 | ~4MB | SPIFFS resources |
+
+System switching via `esp_ota_set_boot_partition()` + `esp_restart()`. Both systems share WiFi config via NVS namespace `"wifi"` (esp-wifi-connect SsidManager).
 
 ## FreeRTOS Task Layout
 
 | Task | Stack | Prio | Core | Role |
 |------|-------|------|------|------|
-| key | 2048 | 5 | 0 | Key scan (software debounce, 3-sample / 10ms) |
-| sensor | 3072 | 3 | 0 | AHT20 + home screen update |
-| imu | 3072 | 3 | 0 | IMU read + attitude |
-| airmouse | 3072 | 3 | 0 | Air mouse calcs (gyro→BLE mouse delta) |
+| key | 2048 | 5 | 0 | Key scan (software debounce, 3-sample/10ms) + invokes key_handler |
+| sensor | 3072 | 3 | 0 | AHT20 read + home screen update |
+| imu | 3072 | 3 | 0 | IMU read + attitude calculation |
+| airmouse | 3072 | 3 | 0 | Gyro→BLE mouse delta |
 | batt | 3072 | 2 | 0 | Battery monitoring (10s interval) |
 | pm | 2048 | 1 | 0 | Power mgmt, Light Sleep check (5s) |
-| game_task | — | — | 1 | NES emulation (60fps game loop) |
+| game_task | — | — | 1 | NES emulation (60fps loop) |
 | video_task | — | — | 0 | NES frame SPI transfer (~38fps) |
 
-## App State Machine (app_manager)
+## App State Machine
 
 ```
-Launcher (home screen) ──[START]──→ Menu (2-column grid)
-Menu ──[A select]──→ Running (app: NES/settings/BLE/etc.)
-Running ──[B/START]──→ Menu
-Menu ──[B/START]──→ Launcher
+Launcher ←──[START]──→ Menu ←──[B/START]──→ Launcher
+                          ↓ [A select]
+                       Running (app)
+                          ↓ [B/START]
+                       Menu
 ```
 
-**Menu screen:**
-- 2-column grid, 8 app cards (4 rows) with icon + label: 游戏, 小智, 键盘, 鼠标, 占卜, 小六壬, 计时, 设置.
-- IMU Calibration moved to Settings menu. Record app removed.
-- Selection highlight = 3px golden border (`0xFFBB00`) + 7% fill tint + glow shadow.
-- Navigation stops at grid edges (no column wrapping).
-- Returning from an app remembers the last selected card position.
+- **Launcher** = home screen (weather, time, status bar). START → Menu.
+- **Menu** = 2-column grid, 8 app cards (游戏/小智/键盘/鼠标/占卜/小六壬/计时/设置). Selection: 3px golden border (`0xFFBB00`) + 7% fill tint. Navigation stops at grid edges. Remembers last selection.
+- **Running** = the active app. B or START returns to Menu (most apps).
+- **return-to-settings:** `app_manager_set_return_to(APP_ID_SETTINGS)` makes return go to settings instead of menu.
+
+## Key Handler Dispatch
+
+`key_handler()` in `main.c` is called from the key task (Core 0, prio 5). It's a central switch on `app_manager_get_state()`:
+
+```
+APP_STATE_LAUNCHER:
+  START pressed → lvgl_lock → menu_enter()
+
+APP_STATE_MENU:
+  D-pad → lvgl_lock → menu_navigate(dx, dy)
+  A     → lvgl_lock → menu_select()   // launches the selected app
+  B/START → lvgl_lock → app_manager_return()
+
+APP_STATE_RUNNING:
+  switch (current_app):
+    APP_ID_NES:       rom_browser_key(key, pressed)
+    APP_ID_KEYBOARD:  physical keys → HID codes, START+B=exit, A-hold=voice
+    APP_ID_MOUSE:     A=left click, B=right click, UP/DOWN=sensitivity
+    APP_ID_SETTINGS:  D-pad nav in list/sub-screens, A=select, B=back
+    APP_ID_FORTUNE:   delegated to fortune_screen (no special key handling)
+    APP_ID_RECORDER:  delegated to liuren_screen (A=trigger divination)
+    APP_ID_COUNTDOWN: delegated to countdown_screen (START+B=exit)
+    APP_ID_CALIB:     delegated to calib_screen
+    default:          fall through to menu exit
+```
+
+**Pattern for adding a new app:** Add an `else if` block in `APP_STATE_RUNNING` checking `app_manager_get_current_app()`.
+
+## LVGL Screen Lifecycle
+
+LVGL has a 64KB heap. Screen transitions without cleanup exhaust it in 3-5 switches.
+
+### Create/Delete Pattern
+
+Every screen create function must:
+1. Save old screen: `lv_obj_t *old = lv_scr_act();`
+2. Create new screen: `lv_obj_t *scr = lv_obj_create(NULL);`
+3. Setup UI widgets...
+4. Delete old screen: `lv_obj_del(old);`
+
+### Static Pointer Safety
+
+Screens store widget pointers as statics. When the old screen is deleted on exit, those pointers **dangle**. Every `*_screen_create()` must reset all static pointers to NULL:
+
+```c
+static lv_obj_t *s_btn = NULL;
+void foo_screen_create(void) {
+    s_btn = NULL;   // MUST reset — dangled pointer on re-entry
+    // ... create widgets, assign s_btn
+}
+```
+
+**Failure to reset causes a crash on the second invocation** (Xiao Liu Ren has hit this).
+
+### Thread Safety
+
+LVGL calls from **outside the LVGL timer handler** must hold the mutex:
+```c
+lvgl_lock();
+lv_obj_set_style_bg_color(some_btn, lv_color_hex(0xFF0000), 0);
+lvgl_unlock();
+```
+
+- `key_handler` calls always need locking (runs on Core 0, prio 5)
+- Sensor/IMU task callbacks updating labels need locking
+- NES exit path: `nes_wrapper_check_exit()` is called from key_handler context, which is already considered safe
+
+### Home Screen Cache
+
+Home screen restores its state from static cache variables (`s_cached_*` in `home_screen.c`). The big weather icon is restored from `s_cached_desc` — it's NOT auto-updated from forecast data. Any new widget added to the home screen must be cached the same way.
 
 ## NES Emulator Architecture
 
-NES runs as two communicating tasks on separate cores:
+Two communicating tasks on separate cores:
 
 ```
 game_task (Core 1)                           video_task (Core 0)
@@ -245,40 +251,36 @@ game_task (Core 1)                           video_task (Core 0)
   └─ xTaskNotify(s_vid_task) ──────────────→
 ```
 
-**Fire-and-forget:** game_task notifies video_task and immediately starts the next frame without waiting for SPI. Game logic stays at 60fps; display runs at ~38fps (SPI bottleneck). **PSRAM shadow buffer** (`s_shadow`) prevents tearing: game_task writes SCREENMEMORY, video_task reads the shadow.
-
-**Frame pacing:** Coarse sleep via `vTaskDelay` (10ms granularity), µs-precision spin-wait:
-```c
-const int32_t frame_us = 16667;  // 1000000/60
-if (remain > 11000) vTaskDelay(pdMS_TO_TICKS((remain - 10000) / 1000));
-while ((int32_t)(esp_timer_get_time() - t0) < frame_us) { asm volatile("nop"); }
-```
+**Fire-and-forget:** game_task notifies video_task and immediately starts the next frame without waiting for SPI. **PSRAM shadow buffer** (`s_shadow`) prevents tearing.
 
 **Exit flow (B+START held 3 frames):**
 1. game_task sets `s_running=false` → cleanup → signals `s_game_done_sem` → notifies `s_vid_task` → deletes itself
-2. video_task wakes → calls `on_game_exit()` → restores LVGL rendering, calls `app_manager_return()`
-3. **Critical:** `nes_game_set_exit_callback()` must be called in `nes_start()` (not just `nes_wrapper_init()`) — `s_exit_callback` is set to NULL after each use
+2. video_task wakes → calls `on_game_exit()` → restores LVGL → `app_manager_return()`
+3. **Critical:** `nes_game_set_exit_callback()` must be called in `nes_start()` (not `nes_wrapper_init()`) — `s_exit_callback` is set to NULL after each use
 
-**Race condition prevention:**
+**Race flags:**
 
 | Flag | Purpose |
 |------|---------|
 | `s_running` | Game loop active? Set by game_task, cleared by stop |
-| `s_abort` | Stop requested during ROM loading? Set by `nes_game_stop()`, checked by game_task before entering loop |
-| `s_game_done_sem` | Binary semaphore: game_task gives on cleanup, `nes_game_stop()` takes to synchronize |
+| `s_abort` | Stop requested during ROM loading? Checked before entering loop |
+| `s_game_done_sem` | Binary semaphore: game_task gives on cleanup, stop() takes |
 
 Supported mappers: 0,1,2,3,4,7,11,15 etc. (from esp32s3_nes_gamer's nes_core).
 
-## LVGL Display Pipeline
+## How to Add a New App
 
-- **Double buffer** in PSRAM (DMA sends buffer A while LVGL renders buffer B). Single buffer causes horizontal stripes.
-- **NOT thread-safe** — all LVGL calls must go through `lvgl_lock()` / `lvgl_unlock()` (defined in `display_driver.c`)
-- Every `lv_obj_create(NULL)` must pair with `lv_obj_del(old_scr)` when switching screens — old screens leak and exhaust LVGL's 64KB heap
-- NES active → LVGL timer_handler paused (`ui_display_set_nes_active()`)
+1. **app_manager.h** — Add `APP_ID_FOO` to the `app_id_t` enum
+2. **app_manager.c** — Add case in `app_manager_launch()` switch, call `foo_screen_create()`
+3. **ui/screens/foo_screen.c/h** — Create screen with create/destroy, handle input
+4. **ui/screens/menu_screen.c** — Add entry to `items[]` array (icon + label + app_id)
+5. **main/CMakeLists.txt** — Add source files to `SRCS` and include dirs to `INCLUDE_DIRS`
+6. **main.c** — Add `#include "ui/screens/foo_screen.h"` and key handling in `key_handler()` under `APP_STATE_RUNNING`
+7. **menu screen "item_count"** — If your `menu_screen.c` uses a hardcoded `item_count`, update it
 
 ## Audio Subsystem
 
-I2S_NUM_0 shared bus: TX (standard mode) → ES8311 DAC → speaker, RX (TDM 4-slot) → ES7210 ADC → dual mic. 16kHz, 16bit. Volume/mic gain NVS-persisted.
+I2S_NUM_0 shared bus: TX (standard) → ES8311 DAC → speaker, RX (TDM 4-slot) → ES7210 ADC → dual mic. 16kHz, 16bit. Volume/mic gain NVS-persisted.
 
 ## BLE HID
 
@@ -288,209 +290,67 @@ Bluedroid BLE, HID keyboard + mouse. Just Works pairing, device name "ESP-Handhe
 
 Uses `78/esp-wifi-connect` v3.1.4 (C++, bridged to C via `wifi_bridge.cpp`). Soft-AP + DNS hijack + built-in web config page. Multi-SSID storage via SsidManager. Auto-migrates old settings_manager WiFi data.
 
-# I Ching Fortune (运势)
+---
 
-Menu → 运势 → 6 selections (general/ career/ business/ fame/ love/ decision) → shake device (IMU) to generate hexagram lines.
+# Dual-Firmware System
 
-## Screen Layout
+## ESP_BSP → XiaoZhi
+Menu → 小智 card → detects current partition and toggles: factory/ota_0→ota_1, ota_1→factory. Calls `esp_ota_set_boot_partition()` + `esp_restart()`.
 
-**Phase 0 (category select):** 6 buttons (30px height, step 36px) fit without scrolling. Title "选择占卜事项" centered.
+## XiaoZhi → ESP_BSP
+**START+B** (GPIO15+GPIO16) held for ~150ms → `ReturnToHandheld()` → reboots to factory.
 
-**Phase 1 (shaking):** Category name + "心念专一，摇动起卦" centered at top. Yao lines grow from bottom up, evenly distributed across the vertical space (~y=77 to y=252, leaving 10% bottom margin). Each line is 12px tall with 23px gap.
+## XiaoZhi Side Button Map
 
-**Phase 2 (result):** "心念专一，摇动起卦" replaced by centered "第X卦 卦名". Compact hexagram (60px wide ≈ 25% screen, 4px lines, 3px gaps) at y=120 upward. Below: scrollable judgment text left-aligned. Navigation UP/DOWN scrolls the text.
+| Key | GPIO | XiaoZhi Function |
+|-----|------|-----------------|
+| **A** | 17 | Push-to-Talk (hold to speak) |
+| **UP** | 5 | Volume + (click +10, long-press max) |
+| **DOWN** | 6 | Volume - (click -10) |
+| **START** | 15 | Combo: START+B = return to ESP_BSP |
+| **B** | 16 | Same combo |
+| LEFT/RIGHT | 4,7 | Unused |
 
-## Shake Detection
+## WiFi Sharing
 
-- Threshold: Y-axis deviates from 1g by >0.6g, rest below 0.2g
-- 3 strong shakes = 1 yao (random bits from `esp_random()`)
-- Cooldown: 600ms between generated lines
+Both systems use the same `esp-wifi-connect` SsidManager with NVS namespace `"wifi"`. Credentials configured in either system are available to the other automatically.
 
-## Critical: Hexagram ID Mapping
-
-`g_iching[]` is in **King Wen order** (1=乾, 2=坤, …, 64=未济), NOT binary order. The `get_hexagram_id()` function computes a binary index `(upper<<3)|lower` using Fu Xi trigram numbering (top line = bit 0, bottom line = bit 2). The `binary_to_index[64]` table translates binary→King Wen array index.
-
-```
-lower = s_yao[2] | (s_yao[1]<<1) | (s_yao[0]<<2);  // top=bit0, bottom=bit2
-upper = s_yao[5] | (s_yao[4]<<1) | (s_yao[3]<<2);
-```
-
-**Files:**
-- `modules/iching/iching_data.c/h` — 64 hexagrams data + `binary_to_index[]` mapping
-- `ui/screens/fortune_screen.c/h` — Selection → shake → result UI
-
-**Regenerate hexagram data:**
-```bash
-python gen_iching.py   # from YI64.md → iching_data.c
-```
-
-**If regenerating, also rebuild binary_to_index[]** — see the mapping formula above.
-
-# Xiao Liu Ren (小六壬)
-
-Menu → 小六壬 → palm interface → press **A** to trigger. 6 spirit positions on finger joints light up in sequence (white → yellow), cycling 3 rounds, stopping at the result.
-
-**Screen layout:**
-- Title "小六壬" at top. White segments form a palm shape with spirit names (大安/留连/速喜/赤口/小吉/空亡) centered vertically within each segment. Finger names (大拇/食指/中指/无名/小) alongside.
-- Below the palm: 3 centered explanation lines + "掐指一算" button.
-- After animation: 0.5s delay, then palm is replaced by a compact view: only the result spirit name centered at top, with full scrollable judgment text below (lunar date, hexagram name, meaning, interpretation).
-
-**Animation:** Segments light in cycle order (大安→留连→速喜→赤口→小吉→空亡), 3 rounds at 60ms, final stop at 80ms per position. Final result highlighted.
-
-**Files:**
-- `modules/iching/liuren_core.c/h` — Lunar calendar conversion + time acquisition + divination logic
-- `ui/screens/liuren_screen.c/h` — Palm finger UI + slot-machine animation
-
-Lunar data table built-in for 2024–2034 (Spring Festival dates, month lengths, leap months).
-
-**Static pointer safety:** All object pointers (segments, labels, scroll container) must be reset on `liuren_screen_create()` because the old screen is deleted on exit, leaving dangling pointers. Missing a reset causes a crash on the second invocation.
-
-# Countdown / Pomodoro (番茄时钟)
-
-IMU tilt detection: left tilt (`ay < -0.9`) starts 5-min rest timer, right tilt (`ay > 0.9`) starts 30-min work timer. Screen auto-rotates via ST7789 hardware MADCTL (not LVGL sw_rotate) to stay upright.
-
-| Action | Result |
-|--------|--------|
-| Left tilt >1s | 5-min rest countdown |
-| Right tilt >1s | 30-min work countdown |
-| START+B | Exit module |
-| START+A | Reset, wait for tilt |
-
-**Files:**
-- `ui/screens/countdown_screen.c/h`
-
-# IMU Calibration
-
-Calibrates IMU axis mapping via 4 standard poses (vertical hold / left tilt / right tilt / flat), 20 samples each. Saves to NVS. After calibration, `imu_calib_detect()` uses vector-angle matching to determine pose (default threshold 0.5 ≈ 60°). Falls back to fixed 0.7g threshold when uncalibrated.
-
-**Files:**
-- `modules/imu/imu_calib.c/h` — Calibration API (save/load/detect)
-- `ui/screens/calib_screen.c/h` — Calibration UI
-
-# Screen Rotation (ST7789 Hardware MADCTL)
-
-Uses hardware MADCTL registers (NOT LVGL software `sw_rotate`):
-- Avoids tearing (`sw_rotate` needs `LV_DISP_ROT_MAX_BUF=10KB` temp buffer)
-- No extra RAM consumed
-- Uses `esp_lcd_panel_swap_xy()` + `esp_lcd_panel_mirror()` to control registers
-- Resets gap via `esp_lcd_panel_set_gap(0,0)` after rotation
-
-Key function: `set_hw_rot()` in `ui/screens/countdown_screen.c`.
-
-Position compensation: vertical = `lv_obj_center()`, tilted = `lv_obj_align(LV_ALIGN_CENTER, 36, -28)`.
-
-# Settings
-
-Settings screen (`ui/screens/settings_screen.c`) — full-screen list with 7 items, black background, each row bordered.
-
-**Items (7):**
-
-| # | Item | Type | Action |
-|---|------|------|--------|
-| 1 | 音量 | Sub-screen | UP/DOWN调整 0-100%，A保存，`box_audio_set_volume()` |
-| 2 | 亮度 | Sub-screen | UP/DOWN调整 0-100%，A保存，`bsp_lcd_backlight_set()` |
-| 3 | WiFi配网 | App | Launches APP_ID_WIFI_SETUP (soft-AP config), B回到设置 |
-| 4 | 电脑IP | App | Launches APP_ID_IP_INPUT, B回到设置 |
-| 5 | 睡眠 | Sub-screen | A切换ON/OFF，UP/DOWN调整超时10-300s，B保存退出 |
-| 6 | IMU校准 | App | Launches APP_ID_CALIB, B回到设置 |
-| 7 | 关于 | App | Launches APP_ID_ABOUT, B回到设置 |
-
-**Sub-screen pattern:**
-- `s_sub_mode` tracks which setting is active (1=音量, 2=亮度, 3=睡眠)
-- `show_sub_screen(title, hint)` creates simple centered UI with value display
-- `settings_screen_navigate()` adjusts value (UP=增大, DOWN=减小) when in sub-mode
-- `settings_screen_select()` saves to NVS + applies to hardware, then recreates list
-- `settings_screen_back()` exits sub-screen, saves sleep settings, returns to list
-
-**Return-to-settings:** WiFi/PCIP/IMU/About launch as full apps via `app_manager_launch()`. `app_manager_set_return_to(APP_ID_SETTINGS)` sets a flag so `app_manager_return()` goes back to settings instead of the main menu.
-
-# Weather Module
-
-Weather data from HeFeng API (`devapi.qweather.com`), fetched by `weather_task` in `main/modules/weather/weather.c`.
-
-## API Endpoints
-
-| Endpoint | Path | Data |
-|----------|------|------|
-| Current | `/v7/weather/now` | `now.text` (desc), `now.temp` |
-| 7-day | `/v7/weather/7d` | `daily[0]` (today high/low), `daily[1..3]` (forecast) |
-
-**Key:** `700cf8ab08774bf089e52d33b89aecf8`, **Location:** `101230501` (泉州), **Host:** `p23p3qvugk.re.qweatherapi.com`
-
-## Memory: cJSON on PSRAM
-
-The 7-day API response (~3.7KB JSON) creates a cJSON tree with 7+ daily objects, each with 20+ string fields. This tree **needs more memory than internal SRAM can provide** after WiFi/SSL/audio allocation. Without PSRAM, `cJSON_Parse()` returns NULL silently.
-
-**Fix in `weather.c`:** Custom allocators force cJSON to use PSRAM:
-```c
-void *cjson_malloc(size_t sz) { return heap_caps_malloc(sz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
-void cjson_free(void *p) { heap_caps_free(p); }
-cJSON_InitHooks(&hooks);
-```
-
-**Without `MALLOC_CAP_8BIT`**, `heap_caps_malloc` returns NULL and all weather data fails to load.
-
-## Cache & UI Flow
-
-Weather data is processed regardless of current screen (removed `APP_STATE_LAUNCHER` guard). When the home screen is recreated (e.g., returning from menu), `home_screen_create()` restores from static cache variables (`s_cached_*`). The big weather icon (`weather_icon_lbl`) must be explicitly restored from `s_cached_desc` — it's NOT updated automatically by the forecast data.
-
-## Icon Matching
-
-`weather_icon_from_desc()` / `weather_icon_get_img()` match Chinese text via `strstr()`:
-
-| Icon | Keyword (UTF-8) | Weather Text |
-|------|-----------------|-------------|
-| ☀️ Sunny | `晴` | 晴, 晴转多云 |
-| ⛅ Cloudy | `多`/`阴` | 多云, 阴 |
-| 🌧️ Rainy | `雨` | 小雨, 中雨, 大雨, 暴雨, 雷阵雨 |
-| ⛈️ Storm | `雷` | 雷阵雨 |
-| ❄️ Snow | `雪` | 小雪, 中雪, 大雪, 雨夹雪 |
-| 🌫️ Foggy | `雾` | 雾, 霾 |
-| 🌬️ Windy | `风` | 大风 |
-
-The `weather_icons_data.c` function checks in ORDER — first match wins (雨 before 雷, so "雷阵雨" matches rainy, not storm).
-
-# Debugging Guide
-
-- Serial log tags: `TIMER` prints `ax= ay= az=` and `ROT` status
-- Common crash: WiFi driver memory exhaustion (`wifi:alloc eb fail`) → reduce LVGL buffer or increase PSRAM
-- Rotation artifacts: `st7789_clear()` allocates 134KB full-screen black pixels from PSRAM and flushes once
-- Quick hardware check: I2C scan addresses (AHT20=0x38, LSM6DS3=0x6A, ES8311=0x18, ES7210=0x40)
+---
 
 # Critical Gotchas
 
-## MSYS2 / Build Environment
-- ESP-IDF refuses to run under MSYS2/Mingw. Always use cmd.exe or PowerShell.
+## Build Environment
+- ESP-IDF refuses to run under MSYS2/Mingw. Use cmd.exe or PowerShell.
 - Set `$env:MSYSTEM=''` before running idf.py from a PowerShell launched from bash.
 - Parallel builds on Windows can fail intermittently (`cc1.exe: CreateProcess: No such file or directory`). Retry or limit with `ninja -j2`.
+- If `idf.py build` fails with "component_manager: unknown command", ensure `IDF_COMPONENT_MANAGER` is set correctly for the build.
 
 ## sdkconfig
 - **Never delete `build/` without backing up `sdkconfig`** — `sdkconfig.defaults` alone doesn't restore LVGL fonts, partition scheme, or PSRAM config.
 - `idf.py set-target esp32s3` regenerates from `sdkconfig.defaults` which is incomplete.
-- XiaoZhi AI must use the same `partitions.csv` (app linked at 0x810000). XiaoZhi side disables OTA (would write wrong slot).
 
 ## PSRAM Memory
-- Use `CONFIG_SPIRAM_USE_CAPS_ALLOC=y` (default). **Never set `CONFIG_SPIRAM_USE_MALLOC=y`** — DMA components (mbedTLS, I2S, WiFi) will crash.
-- NES SCREENMEMORY (61KB) must use `MALLOC_CAP_SPIRAM \| MALLOC_CAP_8BIT`, not `MALLOC_CAP_DMA`.
+- `CONFIG_SPIRAM_USE_CAPS_ALLOC=y` (default). **Never set `CONFIG_SPIRAM_USE_MALLOC=y`** — DMA components (mbedTLS, I2S, WiFi) crash.
+- NES SCREENMEMORY (61KB) must use `MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT`, **not** `MALLOC_CAP_DMA`.
 - `managed_components/` is auto-generated — do not commit. `dependencies.lock` should be committed.
 
 ## Component Manager
-- `IDF_COMPONENT_MANAGER=1` required for zlib (`espressif/zlib: ^1.3.1` in `main/idf_component.yml`). ESP_BSP normally has it disabled — only enable when zlib is needed.
+- `IDF_COMPONENT_MANAGER=1` required for zlib (`espressif/zlib: ^1.3.1` in `main/idf_component.yml`). ESP_BSP normally has it disabled — only enable for weather builds.
 - The zlib dependency is needed by weather module (HeFeng API always returns gzip despite `&gzip=n`). Use `inflateInit2(&strm, 16 + MAX_WBITS)` for auto-detection.
-- XiaoZhi AI **must** have `IDF_COMPONENT_MANAGER=1` (has 50+ managed component dependencies).
 
 ## SPI Bus Sharing
 - SD card and LCD share SPI2_HOST. SD initializes first at 400kHz, LCD joins later at 60MHz (actual ~40MHz on ESP32-S3 due to APB=80MHz, min divider=2).
+- If LCD shows garbage after SD card activity, check that `SD_CS` (GPIO18) is properly driven high when not accessing the SD card.
 
 ## NES Game
 - Task WDT on Core 1 is expected (spin-wait starves idle task). `CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=n`.
-- Exit: B+START held 3 frames → `s_running=false` → cleanup → `s_game_done_sem` → task delete.
-- Stop during ROM loading flow: `nes_game_stop()` sets `s_abort=true`, `s_running=false`, waits on `s_game_done_sem`. game_task finishes loading → checks `s_abort` → `goto done` → gives semaphore → deletes.
-- `nes_game_set_exit_callback(on_game_exit)` must be called in `nes_start()`, not `nes_wrapper_init()`.
+- Stop during ROM loading flow: `nes_game_stop()` sets `s_abort=true`, `s_running=false`, waits on `s_game_done_sem`. game_task finishes loading → checks `s_abort` → `goto done` → gives semaphore → self-deletes.
+- `nes_game_set_exit_callback()` must be called in `nes_start()`, not `nes_wrapper_init()`.
 
 ## LVGL Memory
 - LVGL heap: 64KB (`LV_MEM_SIZE`). After ~3-5 screen transitions without deleting old screens, allocation fails → freeze.
 - Home screen data: cached in static variables (`home_screen.c`). On navigation return, `home_screen_create()` restores from cache.
+- All LVGL calls from tasks (key_handler, sensor, etc.) must use `lvgl_lock()/lvgl_unlock()`.
 
 ## GCC 14+ Compatibility
 - Use `%zu` for `size_t` in printf. C++ files need explicit `#include <cstring>`.
@@ -511,14 +371,88 @@ LED:    IO18
 Audio PA enable: IO46
 ```
 
+## .gitignore Policies
+
+| Excluded | Reason |
+|----------|--------|
+| `build/` | Build artifacts |
+| `managed_components/` | Auto-generated (but `dependencies.lock` is committed) |
+| `sdkconfig` | Generated from `sdkconfig.defaults` + menuconfig |
+| `.claude/` | Session data, memory |
+| `*.txt` | Temp/log files |
+| `xiaozhi-esp32-main/managed_components/`, `xiaozhi-esp32-main/build/` | External repo artifacts |
+| `retro-go-esp32s3-st7789v-v1.1/`, `esp32s3_nes_gamer/`, `Rachel/` | Unused reference repos |
+
+---
+
+# Debugging Guide
+
+## Memory Debugging
+
+```c
+// Check remaining DMA memory (critical for WiFi/audio)
+ESP_LOGI(TAG, "DMA free: %zu", heap_caps_get_free_size(MALLOC_CAP_DMA));
+
+// Check PSRAM usage
+ESP_LOGI(TAG, "PSRAM total: %zu, free: %zu",
+    heap_caps_get_total_size(MALLOC_CAP_SPIRAM),
+    heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+
+// Dump full heap info
+heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+
+// LVGL heap monitor
+lv_mem_monitor_t mm;
+lv_mem_monitor(&mm);
+printf("LVGL heap: used=%d, free=%d, frag=%d%%\n", mm.used_size, mm.free_size, mm.frag_pct);
+```
+
+## Hardware Diagnostics
+
+- **I2C probe:** `i2c_master_probe(I2C_NUM_0, 0x38, 100)` — returns ESP_OK if device at address responds
+- **I2C address map:** AHT20=0x38, LSM6DS3=0x6A, ES8311=0x18, ES7210=0x40
+- **PSRAM verification:** `heap_caps_get_total_size(MALLOC_CAP_SPIRAM)` should return ~8MB. Returns 0 if PSRAM is not initialized.
+
+## Common Crashes
+
+| Symptom | Likely Cause | Fix |
+|---------|-------------|-----|
+| `wifi:alloc eb fail` | WiFi driver out of DMA memory | Reduce LVGL buffer size or increase PSRAM allocation for WiFi |
+| LVGL freeze after 3-5 screen switches | LVGL 64KB heap exhausted from undeleted screens | Check for missing `lv_obj_del(old_scr)` in screen create functions |
+| Crash on 2nd entry to a screen | Dangling static pointer from previous `lv_obj_del` | Reset all static widget pointers to NULL in `*_screen_create()` |
+| `Guru Meditation Error` in game_task | Stack overflow on Core 1 (game_task) | Increase game_task stack or reduce stack usage in ROM loading |
+| cJSON_Parse returns NULL in weather | No PSRAM available for cJSON tree | Check `cjson_malloc` hooks force `MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT` |
+| LCD horizontal stripes | Single LVGL buffer, not double | Must have 2 draw buffers in PSRAM (DMA sends A while LVGL renders B) |
+
+## Serial Log Tags
+
+| Tag | Context |
+|-----|---------|
+| `MAIN` | Entry, key handler dispatch |
+| `APP_MGR` | App lifecycle (launch/return) |
+| `TIMER` | IMU readings (`ax= ay= az=`) + rotation status |
+| `WEATHER` | Weather fetch, parse, cache |
+| `NES` | Game lifecycle, frame timing |
+| `WIFI` | Connection state, provisioning |
+| `LVGL` | Display driver, buffer swaps |
+
+## Weather Module Tips
+
+- HeFeng API key: `700cf8ab08774bf089e52d33b89aecf8`, Location: `101230501` (泉州), Host: `p23p3qvugk.re.qweatherapi.com`
+- API always returns gzip (ignores `&gzip=n`). Must use `inflateInit2(&strm, 16 + MAX_WBITS)`.
+- cJSON allocators must force PSRAM with `MALLOC_CAP_8BIT` or they return NULL silently.
+- Weather data processes regardless of current screen. Home screen restores from `s_cached_*` static vars.
+
+---
+
 # Code Conventions
 
 - C99 for most code; C++ only for `components/nes_core/emucore.cpp` and `modules/wifi_manager/wifi_bridge.cpp`.
 - Component dependencies in `main/CMakeLists.txt` REQUIRES list.
 - `#include` paths use INCLUDE_DIRS from `main/CMakeLists.txt` (relative to `main/`).
-- `.gitignore` excludes: `build/`, `managed_components/`, `sdkconfig`, `.claude/`.
+- Settings stored in NVS (`settings` namespace), loaded via `settings_load(settings_t *s)`.
 
-# Project Sources / References
+# Project Sources
 
 | Component | Source |
 |-----------|--------|

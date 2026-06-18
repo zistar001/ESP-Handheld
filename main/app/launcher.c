@@ -20,9 +20,13 @@ static void launcher_update_task(void *arg) {
         vTaskDelay(pdMS_TO_TICKS(1000));
         tick++;
 
-        if (app_manager_get_state() != APP_STATE_LAUNCHER) continue;
-
         lvgl_lock();
+        /* 在锁内部检查状态，防止竞态：状态可能在检查和获取锁之间改变 */
+        if (app_manager_get_state() != APP_STATE_LAUNCHER) {
+            lvgl_unlock();
+            continue;
+        }
+
         home_screen_update_time(time_sync_get_time_string(),
                                 time_sync_get_date_string());
 

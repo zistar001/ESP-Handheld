@@ -18,7 +18,7 @@ $script:env_home = @{
 }
 
 # ----- 当前使用的环境（办公室 / 家里）-----
-$script:selected = $script:env_office    # 🏢 办公室
+$script:selected = $script:env_home    # 🏠 家里
 
 $script:IDF_PATH       = $script:selected.IDF_PATH
 $script:IDF_TOOLS_PATH = $script:selected.IDF_TOOLS_PATH

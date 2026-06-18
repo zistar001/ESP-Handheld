@@ -9,8 +9,9 @@ static const char *TAG = "MENU";
 void menu_enter(void)
 {
     ESP_LOGI(TAG, "enter");
-    menu_screen_create();
+    /* 先设状态，后创建界面 — 防止 launcher_update_task 在锁外读到旧状态后尝试访问被删除的 home screen */
     app_manager_set_state(APP_STATE_MENU);
+    menu_screen_create();
 }
 
 void menu_navigate(int dx, int dy)

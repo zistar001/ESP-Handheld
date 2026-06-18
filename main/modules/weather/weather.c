@@ -7,6 +7,7 @@
 #include "esp_crt_bundle.h"
 #include "cJSON.h"
 #include "esp_heap_caps.h"
+#include "nvs.h"
 
 /* 让cJSON使用PSRAM，避免内部SRAM不足 */
 static void *cjson_malloc(size_t sz) { return heap_caps_malloc(sz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
@@ -19,12 +20,60 @@ static void cjson_free(void *p) { heap_caps_free(p); }
 
 static const char *TAG = "WEATHER";
 #define HEFENG_API_KEY   "700cf8ab08774bf089e52d33b89aecf8"
-#define HEFENG_LOCATION  "101230501"
+#define DEFAULT_LOCATION "101230501"      /* 泉州本级，无 NVS 时的后备 */
 #define WEATHER_INTERVAL_SEC 1800
 #define WIFI_TIMEOUT_MS   30000
 #define HEFENG_HOST      "p23p3qvugk.re.qweatherapi.com"
+#define NVS_NS           "weather"
+
 static TaskHandle_t s_weather_task = NULL;
 static int s_today_high = 0, s_today_low = 0;  /* cached from 3d response */
+
+/* ── 地区映射 ── */
+static const weather_loc_entry_t s_locations[] = {
+    { "101230501", "\xe9\xb2\xa4\xe5\x9f\x8e\xe5\x8c\xba" },              /* 鲤城区 */
+    { "101230501", "\xe4\xb8\xb0\xe6\xb3\xbd\xe5\x8c\xba" },              /* 丰泽区 */
+    { "101230501", "\xe6\xb4\x9b\xe6\xb1\x9f\xe5\x8c\xba" },              /* 洛江区 */
+    { "101230515", "\xe6\xb3\x89\xe6\xb8\xaf\xe5\x8c\xba" },              /* 泉港区 */
+    { "101230509", "\xe6\x99\x8b\xe6\xb1\x9f\xe5\xb8\x82" },              /* 晋江市 */
+    { "101230510", "\xe7\x9f\xb3\xe7\x8b\xae\xe5\xb8\x82" },              /* 石狮市 */
+    { "101230508", "\xe5\x8d\x97\xe5\xae\x89\xe5\xb8\x82" },              /* 南安市 */
+    { "101230511", "\xe6\x83\xa0\xe5\xae\x89\xe5\x8e\xbf" },              /* 惠安县 */
+    { "101230507", "\xe5\xae\x89\xe6\xba\xaa\xe5\x8e\xbf" },              /* 安溪县 */
+    { "101230505", "\xe6\xb0\xb8\xe6\x98\xa5\xe5\x8e\xbf" },              /* 永春县 */
+    { "101230504", "\xe5\xbe\xb7\xe5\x8c\x96\xe5\x8e\xbf" },              /* 德化县 */
+    { "101230501", "\xe6\xb3\x89\xe5\xb7\x9e\xe7\xbb\x8f\xe6\xb5\x8e\xe6\x8a\x80\xe6\x9c\xaf\xe5\xbc\x80\xe5\x8f\x91\xe5\x8c\xba" },  /* 泉州经济技术开发区 */
+    { "101230501", "\xe6\xb3\x89\xe5\xb7\x9e\xe5\x8f\xb0\xe5\x95\x86\xe6\x8a\x95\xe8\xb5\x84\xe5\x8c\xba" },  /* 泉州台商投资区 */
+};
+static const int s_location_count = sizeof(s_locations) / sizeof(s_locations[0]);
+
+/* 运行时地区 ID 和名称 */
+static char s_location_id[16] = DEFAULT_LOCATION;
+static char s_location_name[32] = "";
+
+static void load_location(void) {
+    nvs_handle_t h;
+    if (nvs_open(NVS_NS, NVS_READONLY, &h) != ESP_OK) return;
+    size_t sz = sizeof(s_location_id);
+    if (nvs_get_str(h, "location_id", s_location_id, &sz) != ESP_OK) {
+        strcpy(s_location_id, DEFAULT_LOCATION);
+    }
+    sz = sizeof(s_location_name);
+    if (nvs_get_str(h, "location_name", s_location_name, &sz) != ESP_OK) {
+        s_location_name[0] = '\0';
+    }
+    nvs_close(h);
+    ESP_LOGI(TAG, "Loaded location: %s (%s)", s_location_name, s_location_id);
+}
+
+static void save_location(const char *id, const char *name) {
+    nvs_handle_t h;
+    if (nvs_open(NVS_NS, NVS_READWRITE, &h) != ESP_OK) return;
+    nvs_set_str(h, "location_id", id);
+    nvs_set_str(h, "location_name", name);
+    nvs_commit(h);
+    nvs_close(h);
+}
 
 /* ── Gzip decompression via zlib inflate ── */
 static char *gunzip(const void *src, size_t src_len) {
@@ -85,14 +134,14 @@ static void parse_weather(const char *body) {
     cJSON *code = cJSON_GetObjectItem(root, "code");
     const char *cs = cJSON_IsString(code) ? code->valuestring : NULL;
     if (!cs || strcmp(cs, "200")) { cJSON_Delete(root); return; }
-    /* Extract location name (priority: adm2 district > name city) */
-    const char *city = "\xe6\xb3\x89\xe5\xb7\x9e"; /* fallback: 泉州 */
+    /* City name: use user-selected location name if available, else API response */
+    const char *city = s_location_name[0] ? s_location_name : "\xe6\xb3\x89\xe5\xb7\x9e";
     cJSON *loc = cJSON_GetObjectItem(root, "location");
-    if (loc) {
+    if (loc && !s_location_name[0]) {
         cJSON *adm2 = cJSON_GetObjectItem(loc, "adm2");
         cJSON *name = cJSON_GetObjectItem(loc, "name");
         if (cJSON_IsString(adm2) && adm2->valuestring[0])
-            city = adm2->valuestring;               /* district/county */
+            city = adm2->valuestring;
         else if (cJSON_IsString(name) && name->valuestring[0])
             city = name->valuestring;
     }
@@ -191,7 +240,7 @@ static esp_err_t evt(esp_http_client_event_t *e) {
 
 static esp_err_t wf(const char *api_path) {
     char path[320];
-    snprintf(path, sizeof(path), "%s?location=%s&key=%s&gzip=n", api_path, HEFENG_LOCATION, HEFENG_API_KEY);
+    snprintf(path, sizeof(path), "%s?location=%s&key=%s&gzip=n", api_path, s_location_id, HEFENG_API_KEY);
     esp_http_client_config_t cfg = {
         .host = HEFENG_HOST, .path = path, .port = 443,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
@@ -217,14 +266,77 @@ static void weather_task(void *arg) {
             vTaskDelay(pdMS_TO_TICKS(2000));
             for (int r=0;r<3;r++){ if(wf("/v7/weather/7d")==0)break; vTaskDelay(pdMS_TO_TICKS(5000)); }
         }
-        vTaskDelay(pdMS_TO_TICKS(WEATHER_INTERVAL_SEC*1000));
+        /* 等待 30 分钟，但允许被 weather_request_refresh() 提前唤醒 */
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(WEATHER_INTERVAL_SEC * 1000));
     }
 }
 
 esp_err_t weather_init(void) {
     if (s_weather_task) return ESP_OK;
+    load_location();
     xTaskCreatePinnedToCore(weather_task,"weather",4096,NULL,2,&s_weather_task,0);
-    ESP_LOGI(TAG,"started"); return ESP_OK;
+    ESP_LOGI(TAG,"started, location=%s (%s)", s_location_name, s_location_id);
+    return ESP_OK;
 }
+
 void weather_set_api_key(const char *k){(void)k;}
-void weather_set_location(const char *l){(void)l;}
+
+void weather_set_location(const char *loc) {
+    if (!loc) return;
+    /* 按 ID 匹配（可能重复，只更新 ID，名称保留或按列表更新） */
+    strncpy(s_location_id, loc, sizeof(s_location_id) - 1);
+    s_location_id[sizeof(s_location_id) - 1] = '\0';
+    s_location_name[0] = '\0';
+    for (int i = 0; i < s_location_count; i++) {
+        if (strcmp(s_locations[i].id, loc) == 0) {
+            strncpy(s_location_name, s_locations[i].name, sizeof(s_location_name) - 1);
+            s_location_name[sizeof(s_location_name) - 1] = '\0';
+            break;
+        }
+    }
+    save_location(s_location_id, s_location_name);
+    ESP_LOGI(TAG, "location set: %s (%s)", s_location_name, s_location_id);
+}
+
+void weather_set_location_by_index(int index) {
+    if (index < 0 || index >= s_location_count) return;
+    strncpy(s_location_id, s_locations[index].id, sizeof(s_location_id) - 1);
+    s_location_id[sizeof(s_location_id) - 1] = '\0';
+    strncpy(s_location_name, s_locations[index].name, sizeof(s_location_name) - 1);
+    s_location_name[sizeof(s_location_name) - 1] = '\0';
+    save_location(s_location_id, s_location_name);
+    ESP_LOGI(TAG, "location set by index %d: %s (%s)", index, s_location_name, s_location_id);
+}
+
+void weather_request_refresh(void) {
+    if (s_weather_task) {
+        xTaskNotifyGive(s_weather_task);
+        ESP_LOGI(TAG, "refresh requested");
+    }
+}
+
+int weather_get_location_index(void) {
+    for (int i = 0; i < s_location_count; i++) {
+        if (strcmp(s_locations[i].id, s_location_id) == 0 &&
+            strcmp(s_locations[i].name, s_location_name) == 0) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+const char *weather_get_location_id(void) {
+    return s_location_id;
+}
+
+const char *weather_get_location_name(void) {
+    return s_location_name;
+}
+
+const weather_loc_entry_t *weather_get_locations(void) {
+    return s_locations;
+}
+
+int weather_get_location_count(void) {
+    return s_location_count;
+}

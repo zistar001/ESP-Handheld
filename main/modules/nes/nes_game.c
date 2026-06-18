@@ -75,7 +75,8 @@ static void audio_timer_cb(TimerHandle_t xTimer) {
             s_audio_buf[i] >>= 2;
         }
         size_t written = 0;
-        i2s_channel_write(tx, s_audio_buf, n * sizeof(int16_t), &written, portMAX_DELAY);
+        i2s_channel_write(tx, s_audio_buf, n * sizeof(int16_t), &written, pdMS_TO_TICKS(10));
+        if (written == 0) break;  /* I2S 忙则跳过本帧，不阻塞定时器 */
         left -= written / sizeof(int16_t);
     }
 }
@@ -344,7 +345,7 @@ esp_err_t nes_game_init(void) {
     if (!NESmachine) {
         NESmachine = nes_create();
         if (!NESmachine) { ESP_LOGE(TAG, "nes_create failed"); return ESP_FAIL; }
-        NESmachine->rominfo = heap_caps_malloc(sizeof(rominfo_t), MALLOC_CAP_DMA);
+        NESmachine->rominfo = heap_caps_malloc(sizeof(rominfo_t), MALLOC_CAP_8BIT);
         if (!NESmachine->rominfo) return ESP_ERR_NO_MEM;
         memset(NESmachine->rominfo, 0, sizeof(rominfo_t));
     }
@@ -353,7 +354,7 @@ esp_err_t nes_game_init(void) {
         s_shadow = heap_caps_malloc(NES_SCREEN_WIDTH * NES_SCREEN_HEIGHT,
                                     MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     }
-    if (!s_audio_buf) s_audio_buf = heap_caps_malloc(DEFAULT_FRAGSIZE * sizeof(int16_t), MALLOC_CAP_SPIRAM);
+    if (!s_audio_buf) s_audio_buf = heap_caps_malloc(DEFAULT_FRAGSIZE * sizeof(int16_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 
     if (!s_game_done_sem) s_game_done_sem = xSemaphoreCreateBinary();
 
