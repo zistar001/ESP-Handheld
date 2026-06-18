@@ -347,6 +347,29 @@ Both systems use the same `esp-wifi-connect` SsidManager with NVS namespace `"wi
 - Stop during ROM loading flow: `nes_game_stop()` sets `s_abort=true`, `s_running=false`, waits on `s_game_done_sem`. game_task finishes loading → checks `s_abort` → `goto done` → gives semaphore → self-deletes.
 - `nes_game_set_exit_callback()` must be called in `nes_start()`, not `nes_wrapper_init()`.
 
+### NES DMA (Critical — intermittent crash)
+- Audio DMA buffer (`s_audio_buf` in `nes_game.c`) must use **`MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT`**, NOT `MALLOC_CAP_SPIRAM` — I2S DMA cannot access PSRAM.
+- NES emulator state structs (`nes_t`, `nes6502_context`, CPU RAM, SRAM) must use **`MALLOC_CAP_8BIT`** (internal SRAM), NOT `MALLOC_CAP_DMA` — DMA pool (~256KB) is shared with WiFi/BLE and drains quickly.
+- Audio timer callback must use a **short timeout** (e.g. `pdMS_TO_TICKS(10)`) for `i2s_channel_write()`, NOT `portMAX_DELAY` — timer daemon blocking stalls LVGL and sensor tasks.
+
+### retro-go Integration (Plan A)
+Project structure for retro-go as a subsystem (similar to XiaoZhi dual-system):
+
+```
+components/retro-go/       ← retro-go system layer (rg_system, rg_display, etc.)
+components/retro-core/     ← Emulator cores (nofrendo, snes9x, etc.)
+main/retro-go/             ← Retro-go entry + ESP_BSP hardware adapter
+```
+
+Entry path: LVGL menu → "游戏" → stops LVGL → starts retro-go → exit retro-go → restarts LVGL.
+Target base: `components/retro-go/targets/esp32-s3-devkit/` with custom `config.h` for our hardware pins.
+
+Hardware config needed for our board (ST7789 240×280, ES8311, 7 keys, 16MB flash, 8MB PSRAM):
+- LCD: ST7789, SPI via IO12/IO13/IO11/IO10/IO14/IO9
+- SD: SPI via IO12/IO13/IO8/IO18 (shared bus)
+- Audio: I2S via IO40/IO39/IO45/IO48/IO21 + ES8311 codec
+- Input: 7 physical keys → retro-go gamepad mapping
+
 ## LVGL Memory
 - LVGL heap: 64KB (`LV_MEM_SIZE`). After ~3-5 screen transitions without deleting old screens, allocation fails → freeze.
 - Home screen data: cached in static variables (`home_screen.c`). On navigation return, `home_screen_create()` restores from cache.
@@ -438,7 +461,9 @@ printf("LVGL heap: used=%d, free=%d, frag=%d%%\n", mm.used_size, mm.free_size, m
 
 ## Weather Module Tips
 
-- HeFeng API key: `700cf8ab08774bf089e52d33b89aecf8`, Location: `101230501` (泉州), Host: `p23p3qvugk.re.qweatherapi.com`
+- HeFeng API key: `700cf8ab08774bf089e52d33b89aecf8`, Default Location: `101230501` (泉州), Host: `p23p3qvugk.re.qweatherapi.com`
+- **Location is now user-configurable** via Settings → 天气地区. Stored in NVS namespace `"weather"` (keys `location_id`, `location_name`). 13 Quanzhou districts available, some share the same API ID but display name is preserved.
+- Location change triggers `xTaskNotifyGive()` to wake weather task for immediate refresh.
 - API always returns gzip (ignores `&gzip=n`). Must use `inflateInit2(&strm, 16 + MAX_WBITS)`.
 - cJSON allocators must force PSRAM with `MALLOC_CAP_8BIT` or they return NULL silently.
 - Weather data processes regardless of current screen. Home screen restores from `s_cached_*` static vars.
@@ -457,6 +482,7 @@ printf("LVGL heap: used=%d, free=%d, frag=%d%%\n", mm.used_size, mm.free_size, m
 | Component | Source |
 |-----------|--------|
 | NES emulator core | https://github.com/planevina/esp32s3_nes_gamer (forked from NesCat) |
+| retro-go (planned) | https://github.com/ducalex/retro-go — multi-emulator system, planned as dual-system switch |
 | WiFi manager | https://github.com/78/esp-wifi-connect |
 | LVGL v8.4 | https://github.com/lvgl/lvgl |
 | XiaoZhi AI | https://github.com/78/xiaozhi-esp32 |
