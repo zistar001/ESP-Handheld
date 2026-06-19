@@ -4,8 +4,6 @@ idf_component_register(
           "bsp/bsp_board.c" "bsp/st7789_driver.c" "bsp/sd_card.c"
           # App framework
           "app/app_manager.c" "app/launcher.c" "app/menu.c" "app/rom_browser.c"
-          # NES emulator
-          "modules/nes/nes_game.c" "modules/nes/nes_wrapper.c" "modules/nes/font8x16.c"
           # Audio
           "modules/audio/box_audio_codec.c" "modules/audio/es8311_driver.c" "modules/audio/es7210_driver.c"
           # Sensors
@@ -45,7 +43,6 @@ idf_component_register(
     INCLUDE_DIRS "."
                  "bsp"
                  "app"
-                 "modules/nes"
                  "modules/audio"
                  "modules/sensor"
                  "modules/imu"
@@ -59,9 +56,8 @@ idf_component_register(
                  "ui"
                  "ui/components"
                  "ui/screens"
-                 "modules/iching"
     REQUIRES driver esp_timer spi_flash nvs_flash fatfs sdmmc app_update esp_partition bt esp_hid esp_adc
-             esp_lcd nes_core espressif__esp_codec_dev lvgl
+             esp_lcd espressif__esp_codec_dev lvgl
              esp_wifi esp_event esp_netif esp_http_client json
              esp_pm esp_http_server mbedtls zlib)
 

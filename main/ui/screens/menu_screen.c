@@ -12,7 +12,7 @@
 #define CARD_START_Y  8
 #define ICON_SIZE     28
 
-static lv_obj_t *cards[8];
+static lv_obj_t *cards[9];
 static lv_obj_t *highlight;
 static lv_obj_t *scroll_cont;
 static int sel;
@@ -45,7 +45,7 @@ lv_obj_t *menu_screen_create(void) {
     /* Reset static pointers — keep sel to remember last selection across visits */
     scroll_cont = NULL;
     highlight = NULL;
-    for (int i = 0; i < 10; i++) cards[i] = NULL;
+    for (int i = 0; i < 9; i++) cards[i] = NULL;
 
     /* Status bar */
     status_bar_create(scr);

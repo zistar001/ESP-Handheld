@@ -28,7 +28,6 @@
 #include "app/rom_browser.h"
 
 /* Modules */
-#include "modules/nes/nes_wrapper.h"
 #include "modules/settings/settings_manager.h"
 #include "modules/audio/box_audio_codec.h"
 #include "modules/sensor/aht20_driver.h"
@@ -73,9 +72,7 @@ static void key_handler(key_id_t key, bool pressed) {
         }
     }
 
-    /* Check if NES game has exited — runs in key_task context (Core 0, prio 5),
-     * safe for LVGL operations. No-op when no exit is pending. */
-    nes_wrapper_check_exit();
+    /* Game exit checking removed — games now run on separate partition (ota_0) */
     app_state_t state = app_manager_get_state();
 
     switch (state) {
@@ -106,8 +103,6 @@ static void key_handler(key_id_t key, bool pressed) {
 
         case APP_STATE_RUNNING:
             if (app_manager_get_current_app() == APP_ID_NES) {
-                ESP_LOGD("MAIN", "DBG key->NES: key=%d pressed=%d game_running=%d",
-                         key, pressed, nes_is_running());
                 rom_browser_key(key, pressed);
             } else if (app_manager_get_current_app() == APP_ID_KEYBOARD) {
                 /* Keyboard HID app */
@@ -371,8 +366,7 @@ void app_main(void) {
     /* 10. Apply settings to hardware */
     settings_sync_global();
 
-    /* 14. NES wrapper (allocate memory, create video task) */
-    nes_wrapper_init();
+    /* 14. NES wrapper removed — games on separate partition (ota_0) */
 
     /* 11. WiFi manager (independent mode) */
     ret = wifi_manager_init();

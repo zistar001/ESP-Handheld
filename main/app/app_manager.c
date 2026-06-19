@@ -2,7 +2,6 @@
 #include "launcher.h"
 #include "menu.h"
 #include "rom_browser.h"
-#include "modules/nes/nes_wrapper.h"
 #include "modules/settings/settings_manager.h"
 #include "modules/wifi_manager/wifi_manager.h"
 #include "modules/pc_remote/air_mouse.h"
@@ -73,7 +72,13 @@ esp_err_t app_manager_launch(app_id_t id) {
 
     switch (id) {
         case APP_ID_NES:
-            rom_browser_enter();
+            ESP_LOGI(TAG, "Switch to retro-go (ota_0)");
+            {
+                const esp_partition_t *rg = esp_partition_find_first(
+                    ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, "ota_0");
+                if (rg) { esp_ota_set_boot_partition(rg); esp_restart(); }
+                ESP_LOGE(TAG, "ota_0 not found!");
+            }
             break;
         case APP_ID_KEYBOARD:
             ESP_LOGI(TAG, "Keyboard HID");
@@ -224,7 +229,6 @@ esp_err_t app_manager_launch(app_id_t id) {
 
 void app_manager_return(void) {
     if (state == APP_STATE_RUNNING) {
-        if (cur_app == APP_ID_NES) nes_stop();
         if (cur_app == APP_ID_MOUSE || cur_app == APP_ID_KEYBOARD) {
             air_mouse_set_enabled(false);
             wifi_audio_voice_stop();
