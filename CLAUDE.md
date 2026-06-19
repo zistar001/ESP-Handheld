@@ -399,13 +399,24 @@ Both systems use the same `esp-wifi-connect` SsidManager with NVS namespace `"wi
 
 ### Boot Config Reliability
 - Boot config (which emulator + ROM to launch) is saved to SD card via `rg_settings`.
-- On `rg_system_exit()`, the config file is `unlink()`ed and the partition is switched to factory (ESP_BSP).
+- `rg_system_exit()` (game menu "Exit"/"Save+Exit"): clears boot config via
+  `unlink(boot.json)` + `rg_settings` API, then restarts same partition
+  (ota_0) → boot reads empty config → launcher.
+- `START+B` combo (in `rg_input.c`): switches to factory (ESP_BSP) by calling
+  `esp_ota_set_boot_partition(factory)` — reliable NVS operation.
+- `rg_system.c`'s `rg_system_exit` was modified to NOT call
+  `rg_system_switch_app("launcher")` since no "launcher" partition exists.
 - A 1.5s delay ensures SD card writes complete before `esp_restart()`.
 
 ### Display
 - ST7789 240x280, driver 0 (ILI9341/ST7789 direct SPI).
-- COLMOD=0x55 (RGB565), MADCTL from `RG_SCREEN_RGB_BGR` and `RG_SCREEN_ROTATION`.
-- Vertical gap `RG_GAP_Y` in ili9341.h adjusts for ST7789 glass misalignment.
+- **Critical:** `RG_SCREEN_INIT()` must send `COLMOD=0x05` (MCU interface, 16-bit).
+  ili9341.h sends `COLMOD=0x55` (RGB interface) which does NOT work over SPI
+  (display ignores all subsequent SPI commands → black screen).
+  The SWRESET in `RG_SCREEN_INIT` clears the wrong value so 0x05 takes effect.
+- MADCTL from `RG_SCREEN_RGB_BGR` and `RG_SCREEN_ROTATION`.
+- Full-memory (240x320) clear NOT possible: SPI CS toggles between transactions,
+  breaking ST7789's continuous RAM write mode. Gap at edges handled by caller.
 - See `components/retro-go/targets/esp-bsp-handheld/config.h` for pin mappings.
 
 ## LVGL Memory
