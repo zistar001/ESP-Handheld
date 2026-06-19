@@ -245,6 +245,24 @@ static void lcd_init(void)
     ILI9341_CMD(0x11);    // Exit Sleep
     rg_usleep(10 * 1000); // Wait 10ms after sleep out
     ILI9341_CMD(0x29);    // Display on
+
+    /* Clear full display memory — prevents garbage/ghosting outside visible area */
+#if defined(RG_SCREEN_FULL_HEIGHT) && RG_SCREEN_FULL_HEIGHT > RG_SCREEN_HEIGHT
+    rg_usleep(50 * 1000);
+    int full_h = RG_SCREEN_FULL_HEIGHT;
+    ILI9341_CMD(0x2A,
+        (0) >> 8, (0) & 0xFF, (RG_SCREEN_WIDTH - 1) >> 8, (RG_SCREEN_WIDTH - 1) & 0xFF);
+    ILI9341_CMD(0x2B,
+        (0) >> 8, (0) & 0xFF, (full_h - 1) >> 8, (full_h - 1) & 0xFF);
+    ILI9341_CMD(0x2C);
+    uint16_t *zero_row = calloc(RG_SCREEN_WIDTH, sizeof(uint16_t));
+    if (zero_row) {
+        for (int r = 0; r < full_h; r++)
+            spi_queue_transaction(zero_row, RG_SCREEN_WIDTH * sizeof(uint16_t), 3);
+        rg_usleep(200 * 1000);
+        free(zero_row);
+    }
+#endif
 }
 
 static void lcd_deinit(void)
