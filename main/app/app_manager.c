@@ -75,8 +75,8 @@ esp_err_t app_manager_launch(app_id_t id) {
             ESP_LOGI(TAG, "Switch to retro-go (ota_0)");
             {
                 const esp_partition_t *rg = esp_partition_find_first(
-                    ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, "ota_0");
-                if (rg) { esp_ota_set_boot_partition(rg); esp_restart(); }
+                    ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
+                if (rg) { esp_ota_set_boot_partition(rg); vTaskDelay(500); esp_restart(); }
                 ESP_LOGE(TAG, "ota_0 not found!");
             }
             break;

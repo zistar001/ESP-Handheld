@@ -9,7 +9,7 @@
 #include <esp_system.h>
 #include <esp_partition.h>
 #include <esp_ota_ops.h>
-#include "drivers/display/ili9341.h"  /* lcd_set_window, lcd_get_buffer, lcd_send_buffer */
+/* Display drivers included via retro-go components, not directly */
 
 /* ── Forward declarations ── */
 void launcher_main(void);
@@ -25,31 +25,8 @@ rg_app_t *app;
  * Override: rg_system_exit — return to launcher (stay on ota_0)
  * (START+B combo handles return to ESP_BSP / factory partition)
  * ================================================================ */
-/* Override of retro-go's weak rg_system_exit() */
-void rg_system_exit(void)
-{
-    RG_LOGI(">>> CUSTOM rg_system_exit: clearing config, restart to launcher <<<");
-    char bootpath[256];
-    snprintf(bootpath, sizeof(bootpath), "%s/boot.json", RG_BASE_PATH_CONFIG);
-    unlink(bootpath);
-    rg_settings_set_string(NS_BOOT, "BootName", NULL);
-    rg_settings_set_string(NS_BOOT, "BootArgs", NULL);
-    rg_settings_set_number(NS_BOOT, "BootFlags", 0);
-    rg_settings_commit();
-    rg_task_delay(2000);
-    /* Stay on ota_0 — next boot reads empty config → launcher_main() */
-    esp_restart();
-    while (1);
-}
-
-void rg_system_restart(void)
-{
-    RG_LOGI("Restarting...");
-    rg_settings_commit();
-    rg_task_delay(1500);
-    esp_restart();
-    while (1);
-}
+/* rg_system_exit and rg_system_restart are now handled in
+   components/retro-go/rg_system.c (weak functions modified in place) */
 
 /* ================================================================
  * launcher_main

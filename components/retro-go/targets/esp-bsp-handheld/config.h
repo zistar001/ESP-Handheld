@@ -33,10 +33,15 @@
 #define RG_SCREEN_HOST              SPI2_HOST
 #define RG_SCREEN_SPEED             SPI_MASTER_FREQ_40M
 
-// ── ST7789 init sequence ──
-// (ili9341.h driver handles: SWRESET, COLMOD=0x55, MADCTL, SLPOUT, DISPON)
-// We only add voltage calibration commands specific to ST7789.
+// ── ST7789 init sequence (overrides ili9341.h defaults) ──
 #define RG_SCREEN_INIT()                                                   \
+    ILI9341_CMD(0x01, 0x00);       /* SWRESET — must re-init from reset */ \
+    rg_task_delay(150);                                                    \
+    ILI9341_CMD(0x11, 0x00);       /* SLPOUT */                            \
+    rg_task_delay(200);                                                    \
+    ILI9341_CMD(0x36, 0x00);       /* MADCTL: RGB (bit3=0), no mirror */  \
+    ILI9341_CMD(0x3A, 0x05);       /* COLMOD: 16bit RGB565, MCU mode */   \
+    ILI9341_CMD(0x29, 0x00);       /* DISPON */                            \
     ILI9341_CMD(0xB2, 0x0C, 0x0C, 0x00, 0x33, 0x33); /* PORCH */         \
     ILI9341_CMD(0xB7, 0x35);       /* GATE */                              \
     ILI9341_CMD(0xBB, 0x1F);       /* VCOM */                              \
