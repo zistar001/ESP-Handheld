@@ -25,9 +25,10 @@ rg_app_t *app;
  * Override: rg_system_exit — return to launcher (stay on ota_0)
  * (START+B combo handles return to ESP_BSP / factory partition)
  * ================================================================ */
+/* Override of retro-go's weak rg_system_exit() */
 void rg_system_exit(void)
 {
-    RG_LOGI("Clearing boot config, returning to launcher...");
+    RG_LOGI(">>> CUSTOM rg_system_exit: clearing config, restart to launcher <<<");
     char bootpath[256];
     snprintf(bootpath, sizeof(bootpath), "%s/boot.json", RG_BASE_PATH_CONFIG);
     unlink(bootpath);
