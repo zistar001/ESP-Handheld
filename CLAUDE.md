@@ -42,8 +42,70 @@ python $env:IDF_PATH\tools\idf.py build
 | `_flash_app.ps1` | App-only flash to COM3 (legacy) |
 | `_monitor.ps1` | 3-second serial read on COM3 |
 | `_verify.ps1` | Quick serial check on COM3 |
+| `retro-go-firmware/build_rg.ps1` | Build retro-go standalone firmware |
 | `tools/pc_voice_receiver.py` | PC-side voice receiver (WiFi audio) |
 | `tools/send_ip.py` | Send IP to device |
+
+## Retro-Go Game System (ota_0)
+
+retro-go is a standalone firmware flashed to the **ota_0** partition (4MB, offset 0x410000).
+It contains a ROM browser launcher + all emulator cores in a single binary.
+
+### Build & Flash
+
+```powershell
+cd retro-go-firmware
+powershell -ExecutionPolicy Bypass -File build_rg.ps1   # builds to build/retro-go-firmware.bin
+esptool.py -p COM7 -b 921600 write_flash 0x410000 build/retro-go-firmware.bin
+```
+
+### ROM Paths (SD Card)
+
+| Platform | Path |
+|----------|------|
+| NES | `/sdcard/roms/nes/*.nes` |
+| GB/GBC | `/sdcard/roms/gb/*.gb` |
+| SMS/GG | `/sdcard/roms/sms/*.sms` |
+| PCE | `/sdcard/roms/pce/*.pce` |
+| SNES | `/sdcard/roms/snes/*.smc` |
+
+### 7-Button Combo Keys
+
+| Physical | Function | Notes |
+|----------|----------|-------|
+| UP/DOWN/LEFT/RIGHT | D-pad | |
+| A | Confirm / Action A | |
+| B | Cancel / Action B | |
+| START | Gamepad START | |
+| **START + A** | **SELECT** | Chord combo |
+| **START + B** (hold 150ms) | **Return to ESP_BSP** | Same as XiaoZhi |
+| **START** (hold 1s) | **System Menu** | Save/Load/Exit |
+
+### Supported Emulators
+
+| Core | Platform | From |
+|------|----------|------|
+| nofrendo | NES/FDS | `D:\retro-go\retro-core\components\nofrendo\` |
+| gnuboy | GB/GBC | `D:\retro-go\retro-core\components\gnuboy\` |
+| smsplus | SMS/GG/Coleco | `D:\retro-go\retro-core\components\smsplus\` |
+| pce-go | PCE/TG16 | `D:\retro-go\retro-core\components\pce-go\` |
+| handy | Atari Lynx | `D:\retro-go\retro-core\components\handy\` |
+| snes9x | SNES | `D:\retro-go\retro-core\components\snes9x\` |
+| gw-emulator | Game & Watch | `D:\retro-go\retro-core\components\gw-emulator\` |
+
+### Firmware Structure
+
+```
+retro-go-firmware/
+├── CMakeLists.txt          ← Project def, references D:\retro-go components
+├── main/
+│   ├── main.c              ← app_main routing + rg_system_exit override
+│   ├── launcher_integration.c  ← ROM browser UI loop
+│   └── CMakeLists.txt
+├── deps/retro-core-mains/  ← Emulator entry points (copied from D:\retro-go)
+├── sdkconfig.defaults
+└── build_rg.ps1
+```
 
 **Note:** There are TWO IDF versions — migrated from v5.4.1→v5.5.4. Legacy scripts target COM3/v5.4.1; primary scripts (`_bf.ps1`) target COM7/v5.5.4. Use `_bf.ps1` for new work.
 
@@ -105,7 +167,6 @@ main/
   bsp/                — Board support (st7789, sd_card, bsp_board, key_driver)
   app/                — App framework (app_manager, launcher, menu, rom_browser)
   modules/
-    nes/              — NES wrapper (nes_game, nes_wrapper, font8x16)
     audio/            — ES8311 DAC + ES7210 ADC + box_audio_codec
     imu/              — LSM6DS3TR-C driver + calibration
     sensor/           — AHT20 temp/humidity
@@ -129,16 +190,24 @@ components/
   lv_conf.h           — LVGL config (not Kconfig)
 ```
 
-## Partition Layout (16MB flash)
+## Partition Layout (16MB flash - Three Systems)
 
 | Partition | Offset | Size | Content |
 |-----------|--------|------|---------|
-| factory   | 0x10000  | 4MB | ESP_BSP (Game firmware) |
-| ota_0     | 0x410000 | 4MB | Game OTA slot |
+| factory   | 0x10000  | 4MB | ESP_BSP (LVGL launcher, weather, settings, utilities) |
+| ota_0     | 0x410000 | 4MB | **Retro-Go (standalone game system)** |
 | ota_1     | 0x810000 | 4MB | XiaoZhi AI firmware |
 | assets    | 0xC10000 | ~4MB | SPIFFS resources |
 
-System switching via `esp_ota_set_boot_partition()` + `esp_restart()`. Both systems share WiFi config via NVS namespace `"wifi"` (esp-wifi-connect SsidManager).
+System switching via `esp_ota_set_boot_partition()` + `esp_restart()`. All three systems share WiFi config via NVS namespace `"wifi"` (esp-wifi-connect SsidManager).
+
+**Boot flows:**
+```
+ESP_BSP menu → "游戏"  → esp_restart() → ota_0 (Retro-Go)
+ESP_BSP menu → "小智"  → esp_restart() → ota_1 (XiaoZhi)
+Retro-Go:    START+B  → esp_restart() → factory (ESP_BSP)
+XiaoZhi:     START+B  → esp_restart() → factory (ESP_BSP)
+```
 
 ## FreeRTOS Task Layout
 
@@ -165,6 +234,7 @@ Launcher ←──[START]──→ Menu ←──[B/START]──→ Launcher
 
 - **Launcher** = home screen (weather, time, status bar). START → Menu.
 - **Menu** = 2-column grid, 8 app cards (游戏/小智/键盘/鼠标/占卜/小六壬/计时/设置). Selection: 3px golden border (`0xFFBB00`) + 7% fill tint. Navigation stops at grid edges. Remembers last selection.
+- **"游戏" card** = partition-switches to ota_0 (Retro-Go standalone firmware). No longer runs NES in-process.
 - **Running** = the active app. B or START returns to Menu (most apps).
 - **return-to-settings:** `app_manager_set_return_to(APP_ID_SETTINGS)` makes return go to settings instead of menu.
 
@@ -183,7 +253,7 @@ APP_STATE_MENU:
 
 APP_STATE_RUNNING:
   switch (current_app):
-    APP_ID_NES:       rom_browser_key(key, pressed)
+    APP_ID_NES:       partition-switch to ota_0 (Retro-Go), no in-process handling
     APP_ID_KEYBOARD:  physical keys → HID codes, START+B=exit, A-hold=voice
     APP_ID_MOUSE:     A=left click, B=right click, UP/DOWN=sensitivity
     APP_ID_SETTINGS:  D-pad nav in list/sub-screens, A=select, B=back
@@ -239,34 +309,11 @@ lvgl_unlock();
 
 Home screen restores its state from static cache variables (`s_cached_*` in `home_screen.c`). The big weather icon is restored from `s_cached_desc` — it's NOT auto-updated from forecast data. Any new widget added to the home screen must be cached the same way.
 
-## NES Emulator Architecture
+## Retro-Go Game System
 
-Two communicating tasks on separate cores:
+Games now run as a **standalone firmware on ota_0 partition** (retro-go). See the "Retro-Go Game System" section above for build, flash, and key mapping details.
 
-```
-game_task (Core 1)                           video_task (Core 0)
-  └─ load_rom_file (SPI SD → PSRAM)          └─ xTaskNotifyWait
-  └─ nes_create / build_address_handlers      └─ Line-by-line SPI transfer
-  └─ nes_renderframe(true) — 60fps loop       └─ on_game_exit → app_manager_return
-  └─ xTaskNotify(s_vid_task) ──────────────→
-```
-
-**Fire-and-forget:** game_task notifies video_task and immediately starts the next frame without waiting for SPI. **PSRAM shadow buffer** (`s_shadow`) prevents tearing.
-
-**Exit flow (B+START held 3 frames):**
-1. game_task sets `s_running=false` → cleanup → signals `s_game_done_sem` → notifies `s_vid_task` → deletes itself
-2. video_task wakes → calls `on_game_exit()` → restores LVGL → `app_manager_return()`
-3. **Critical:** `nes_game_set_exit_callback()` must be called in `nes_start()` (not `nes_wrapper_init()`) — `s_exit_callback` is set to NULL after each use
-
-**Race flags:**
-
-| Flag | Purpose |
-|------|---------|
-| `s_running` | Game loop active? Set by game_task, cleared by stop |
-| `s_abort` | Stop requested during ROM loading? Checked before entering loop |
-| `s_game_done_sem` | Binary semaphore: game_task gives on cleanup, stop() takes |
-
-Supported mappers: 0,1,2,3,4,7,11,15 etc. (from esp32s3_nes_gamer's nes_core).
+**Key difference from old in-process NES:** The "游戏" menu card now calls `esp_ota_set_boot_partition("ota_0")` + `esp_restart()` instead of launching NES in-process. The retro-go firmware runs independently with its own display/audio/input drivers.
 
 ## How to Add a New App
 
@@ -342,33 +389,24 @@ Both systems use the same `esp-wifi-connect` SsidManager with NVS namespace `"wi
 - SD card and LCD share SPI2_HOST. SD initializes first at 400kHz, LCD joins later at 60MHz (actual ~40MHz on ESP32-S3 due to APB=80MHz, min divider=2).
 - If LCD shows garbage after SD card activity, check that `SD_CS` (GPIO18) is properly driven high when not accessing the SD card.
 
-## NES Game
-- Task WDT on Core 1 is expected (spin-wait starves idle task). `CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=n`.
-- Stop during ROM loading flow: `nes_game_stop()` sets `s_abort=true`, `s_running=false`, waits on `s_game_done_sem`. game_task finishes loading → checks `s_abort` → `goto done` → gives semaphore → self-deletes.
-- `nes_game_set_exit_callback()` must be called in `nes_start()`, not `nes_wrapper_init()`.
+## Retro-Go Firmware Notes
 
-### NES DMA (Critical — intermittent crash)
-- Audio DMA buffer (`s_audio_buf` in `nes_game.c`) must use **`MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT`**, NOT `MALLOC_CAP_SPIRAM` — I2S DMA cannot access PSRAM.
-- NES emulator state structs (`nes_t`, `nes6502_context`, CPU RAM, SRAM) must use **`MALLOC_CAP_8BIT`** (internal SRAM), NOT `MALLOC_CAP_DMA` — DMA pool (~256KB) is shared with WiFi/BLE and drains quickly.
-- Audio timer callback must use a **short timeout** (e.g. `pdMS_TO_TICKS(10)`) for `i2s_channel_write()`, NOT `portMAX_DELAY` — timer daemon blocking stalls LVGL and sensor tasks.
+### Memory
+- Frame buffers and surfaces use `MEM_SLOW` (PSRAM) to avoid exhausting internal SRAM.
+- `app_main()` calls `heap_caps_malloc_extmem_enable(1024)` so all `malloc()` calls from emulator cores go to PSRAM.
+- Retro-go's DMA buffers for SPI display are allocated from `MEM_DMA` (internal SRAM) — keep these small.
+- Boot config (`boot.json`) stored on SD card at `/sdcard/retro-go/config/`.
 
-### retro-go Integration (Plan A)
-Project structure for retro-go as a subsystem (similar to XiaoZhi dual-system):
+### Boot Config Reliability
+- Boot config (which emulator + ROM to launch) is saved to SD card via `rg_settings`.
+- On `rg_system_exit()`, the config file is `unlink()`ed and the partition is switched to factory (ESP_BSP).
+- A 1.5s delay ensures SD card writes complete before `esp_restart()`.
 
-```
-components/retro-go/       ← retro-go system layer (rg_system, rg_display, etc.)
-components/retro-core/     ← Emulator cores (nofrendo, snes9x, etc.)
-main/retro-go/             ← Retro-go entry + ESP_BSP hardware adapter
-```
-
-Entry path: LVGL menu → "游戏" → stops LVGL → starts retro-go → exit retro-go → restarts LVGL.
-Target base: `components/retro-go/targets/esp32-s3-devkit/` with custom `config.h` for our hardware pins.
-
-Hardware config needed for our board (ST7789 240×280, ES8311, 7 keys, 16MB flash, 8MB PSRAM):
-- LCD: ST7789, SPI via IO12/IO13/IO11/IO10/IO14/IO9
-- SD: SPI via IO12/IO13/IO8/IO18 (shared bus)
-- Audio: I2S via IO40/IO39/IO45/IO48/IO21 + ES8311 codec
-- Input: 7 physical keys → retro-go gamepad mapping
+### Display
+- ST7789 240x280, driver 0 (ILI9341/ST7789 direct SPI).
+- COLMOD=0x55 (RGB565), MADCTL from `RG_SCREEN_RGB_BGR` and `RG_SCREEN_ROTATION`.
+- Vertical gap `RG_GAP_Y` in ili9341.h adjusts for ST7789 glass misalignment.
+- See `components/retro-go/targets/esp-bsp-handheld/config.h` for pin mappings.
 
 ## LVGL Memory
 - LVGL heap: 64KB (`LV_MEM_SIZE`). After ~3-5 screen transitions without deleting old screens, allocation fails → freeze.
@@ -481,8 +519,8 @@ printf("LVGL heap: used=%d, free=%d, frag=%d%%\n", mm.used_size, mm.free_size, m
 
 | Component | Source |
 |-----------|--------|
-| NES emulator core | https://github.com/planevina/esp32s3_nes_gamer (forked from NesCat) |
-| retro-go (planned) | https://github.com/ducalex/retro-go — multi-emulator system, planned as dual-system switch |
+| Retro-Go (game system) | https://github.com/ducalex/retro-go — multi-emulator system on ota_0 |
+| NES core (nofrendo) | Included in retro-go (`retro-core/components/nofrendo/`) |
 | WiFi manager | https://github.com/78/esp-wifi-connect |
 | LVGL v8.4 | https://github.com/lvgl/lvgl |
 | XiaoZhi AI | https://github.com/78/xiaozhi-esp32 |
