@@ -9,6 +9,7 @@
 #include <esp_system.h>
 #include <esp_partition.h>
 #include <esp_ota_ops.h>
+#include "drivers/display/ili9341.h"  /* lcd_set_window, lcd_get_buffer, lcd_send_buffer */
 
 /* ── Forward declarations ── */
 void launcher_main(void);
@@ -21,28 +22,21 @@ void about_handler(rg_gui_option_t *dest);
 rg_app_t *app;
 
 /* ================================================================
- * Override: rg_system_exit — return to ESP_BSP (factory partition)
+ * Override: rg_system_exit — return to launcher (stay on ota_0)
+ * (START+B combo handles return to ESP_BSP / factory partition)
  * ================================================================ */
 void rg_system_exit(void)
 {
-    RG_LOGI("Returning to ESP_BSP (factory)...");
-    /* 1. Delete boot config file from SD card */
+    RG_LOGI("Clearing boot config, returning to launcher...");
     char bootpath[256];
     snprintf(bootpath, sizeof(bootpath), "%s/boot.json", RG_BASE_PATH_CONFIG);
-    RG_LOGI("Deleting %s", bootpath);
     unlink(bootpath);
-    /* 2. Clear via settings API too (cover both mechanisms) */
     rg_settings_set_string(NS_BOOT, "BootName", NULL);
     rg_settings_set_string(NS_BOOT, "BootArgs", NULL);
     rg_settings_set_number(NS_BOOT, "BootFlags", 0);
     rg_settings_commit();
-    /* 3. Wait for SD card operations to complete */
     rg_task_delay(2000);
-    /* 4. Switch to factory partition (NVS — always reliable) */
-    const esp_partition_t *fact = esp_partition_find_first(
-        ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
-    if (fact) esp_ota_set_boot_partition(fact);
-    rg_task_delay(200);
+    /* Stay on ota_0 — next boot reads empty config → launcher_main() */
     esp_restart();
     while (1);
 }

@@ -86,5 +86,6 @@
 // ── Recovery ──
 #define RG_RECOVERY_BTN             0
 
-// ── ST7789 vertical offset — 显示屏装帧偏移量 ──
-#define RG_GAP_Y                    0
+// ── ST7789 has 240x320 memory (our glass shows 240x280) ──
+// Full-memory clear prevents ghosting at screen edges.
+#define RG_SCREEN_FULL_HEIGHT       320
