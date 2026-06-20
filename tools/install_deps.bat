@@ -8,5 +8,5 @@ if %ERRORLEVEL% NEQ 0 (
     pause
     exit /b 1
 )
-echo Done! Run run_voice_receiver.pyw to start.
+echo Done! Double-click Start_Voice_Receiver.vbs to launch (no console).
 pause
