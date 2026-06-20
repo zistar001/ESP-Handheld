@@ -112,7 +112,7 @@ threading.Thread(target=udp_rx, daemon=True).start()
 try:
     with sd.OutputStream(samplerate=ESP_SR, channels=1, dtype='int16',
                           device=idx, callback=callback, blocksize=256):
-        status("Ready - Hold A on ESP32 to speak")
+        status("Ready - Hold RIGHT on ESP32 to speak")
         while True:
             time.sleep(5)
             if total > 1024:

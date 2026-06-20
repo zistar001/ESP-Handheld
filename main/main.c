@@ -3,6 +3,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
+#include "driver/gpio.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 
@@ -47,6 +48,7 @@ static const char *TAG = "MAIN";
 static bool s_sleeping = false;
 static TickType_t s_last_activity = 0;
 static uint8_t s_wake_brightness = 50;
+
 
 /* ================================================================
  * settings_sync_global — apply settings to hardware
@@ -108,35 +110,64 @@ static void key_handler(key_id_t key, bool pressed) {
                 /* Keyboard HID app */
                 static TickType_t start_tick = 0;
 
-                if (key == KEY_START) { if (pressed) start_tick = xTaskGetTickCount(); break; }
+                if (key == KEY_START) {
+                    if (pressed) {
+                        start_tick = xTaskGetTickCount();
+                        if (kbd_screen_is_enabled())
+                            ble_hid_send_key(0, 0x29); /* START = ESC */
+                    }
+                    break;
+                }
 
-                /* B: ESC or START+B combo exit */
+                /* B: Backspace or START+B combo exit */
                 if (key == KEY_B) {
                     if (pressed) {
                         if ((xTaskGetTickCount() - start_tick) < pdMS_TO_TICKS(500)) {
                             wifi_audio_voice_stop();
-                            ble_hid_release_all(); lvgl_lock(); app_manager_return(); lvgl_unlock();
+                            ble_hid_release_all();
+                            lvgl_lock(); kbd_screen_set_voice_active(false); lvgl_unlock();
+                            lvgl_lock(); app_manager_return(); lvgl_unlock();
                         } else if (kbd_screen_is_enabled()) {
-                            ble_hid_send_key(0, 0x29); /* B = ESC */
+                            ble_hid_send_key(0, 0x2A); /* B = Backspace */
                         }
                     }
                     break;
                 }
 
-                /* A: short=Enter/toggle, hold>500ms=toggle voice on/off */
-                if (key == KEY_A) {
-                    static TickType_t a_tick = 0;
+                /* RIGHT: GPIO polling PTT — hold=voice+alt+x, short=arrow */
+                if (key == KEY_RIGHT) {
                     if (pressed) {
-                        a_tick = xTaskGetTickCount();
-                    } else {
-                        if (wifi_audio_is_streaming()) {
+                        /* Wait 300ms to distinguish short press from hold */
+                        vTaskDelay(pdMS_TO_TICKS(300));
+
+                        if (gpio_get_level(BSP_KEY_RIGHT) != 0) {
+                            /* Released before 300ms: short press - send RIGHT_ARROW */
+                            if (kbd_screen_is_enabled())
+                                ble_hid_send_key(0, 0x4F); /* RIGHT_ARROW */
+                        } else {
+                            /* Still held: enter PTT mode */
+                            ble_hid_send_combo(0x03, 0x06);  /* Ctrl+Shift+C toggle ON */
+                            wifi_audio_voice_start();
+                            lvgl_lock(); kbd_screen_set_voice_active(true); lvgl_unlock();
+
+                            /* Poll GPIO until key release */
+                            while (gpio_get_level(BSP_KEY_RIGHT) == 0)
+                                vTaskDelay(pdMS_TO_TICKS(50));
+
+                            /* Released: stop PTT + alt+x toggle OFF */
+                            ble_hid_send_combo(0x03, 0x06);  /* Ctrl+Shift+C toggle OFF */
                             wifi_audio_voice_stop();
                             lvgl_lock(); kbd_screen_set_voice_active(false); lvgl_unlock();
-                        } else if ((xTaskGetTickCount() - a_tick) > pdMS_TO_TICKS(500) && kbd_screen_is_enabled()) {
-                            if (wifi_audio_voice_start() == ESP_OK)
-                                { lvgl_lock(); kbd_screen_set_voice_active(true); lvgl_unlock(); }
-                        } else if (kbd_screen_is_enabled()) {
-                            ble_hid_send_key(0, 0x28);
+                        }
+                    }
+                    break;
+                }
+
+                /* A: short=Enter/toggle (no more voice PTT on A) */
+                if (key == KEY_A) {
+                    if (!pressed) {
+                        if (kbd_screen_is_enabled()) {
+                            ble_hid_send_key(0, 0x28); /* A = Enter */
                         } else {
                             lvgl_lock(); kbd_screen_select(); lvgl_unlock();
                         }
@@ -144,6 +175,7 @@ static void key_handler(key_id_t key, bool pressed) {
                     break;
                 }
 
+                /* Other arrow keys (UP, DOWN, LEFT) — press only */
                 if (!pressed) break;
                 if (kbd_screen_is_enabled()) {
                     uint8_t hid = 0;
@@ -151,7 +183,6 @@ static void key_handler(key_id_t key, bool pressed) {
                         case KEY_UP:    hid = 0x52; break;
                         case KEY_DOWN:  hid = 0x51; break;
                         case KEY_LEFT:  hid = 0x50; break;
-                        case KEY_RIGHT: hid = 0x4F; break;
                         default: break;
                     }
                     if (hid) ble_hid_send_key(0, hid);

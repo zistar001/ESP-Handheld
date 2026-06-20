@@ -10,3 +10,4 @@ const char *wifi_audio_get_pc_ip(void);
 esp_err_t wifi_audio_voice_start(void);
 void wifi_audio_voice_stop(void);
 bool wifi_audio_is_streaming(void);
+void wifi_audio_ptt_send(bool start);

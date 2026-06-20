@@ -24,7 +24,7 @@ static const uint8_t keybd_report_map[] = {
     0x95, 0x01, 0x75, 0x08, 0x81, 0x03, 0x95, 0x05,
     0x75, 0x01, 0x05, 0x08, 0x19, 0x01, 0x29, 0x05,
     0x91, 0x02, 0x95, 0x01, 0x75, 0x03, 0x91, 0x03,
-    0x95, 0x05, 0x75, 0x08, 0x15, 0x00, 0x25, 0x65,
+    0x95, 0x06, 0x75, 0x08, 0x15, 0x00, 0x25, 0x65,
     0x05, 0x07, 0x19, 0x00, 0x29, 0x65, 0x81, 0x00,
     0xC0
 };
@@ -153,11 +153,50 @@ esp_err_t ble_hid_init(void) {
 
 esp_err_t ble_hid_send_key(uint8_t modifier, uint8_t key) {
     if (!connected || !hid_dev) return ESP_ERR_INVALID_STATE;
-    uint8_t report[7] = { modifier, 0, key, 0, 0, 0, 0 };
-    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 7);
+    uint8_t report[8] = { modifier, 0, key, 0, 0, 0, 0, 0 };
+    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
     vTaskDelay(pdMS_TO_TICKS(10));
-    memset(report, 0, 7);
-    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 7);
+    memset(report, 0, 8);
+    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
+    return ESP_OK;
+}
+
+void ble_hid_press_key(uint8_t modifier, uint8_t key) {
+    if (!connected || !hid_dev) return;
+    uint8_t report[8] = { modifier, 0, key, 0, 0, 0, 0, 0 };
+    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
+}
+
+void ble_hid_send_combo(uint8_t modifier, uint8_t key) {
+    if (!connected || !hid_dev) return;
+    /* Step 1: press modifier alone (50ms) — lets host register the modifier state */
+    uint8_t r[8] = { modifier, 0, 0, 0, 0, 0, 0, 0 };
+    esp_hidd_dev_input_set(hid_dev, 0, 1, r, 8);
+    vTaskDelay(pdMS_TO_TICKS(50));
+    /* Step 2: add the key (50ms) — combo held */
+    r[2] = key;
+    esp_hidd_dev_input_set(hid_dev, 0, 1, r, 8);
+    vTaskDelay(pdMS_TO_TICKS(50));
+    /* Step 3: release the key (20ms) — modifier still held */
+    r[2] = 0;
+    esp_hidd_dev_input_set(hid_dev, 0, 1, r, 8);
+    vTaskDelay(pdMS_TO_TICKS(20));
+    /* Step 4: release modifier */
+    memset(r, 0, 8);
+    esp_hidd_dev_input_set(hid_dev, 0, 1, r, 8);
+}
+
+esp_err_t ble_hid_send_modkey(uint8_t modifier, uint8_t key) {
+    if (!connected || !hid_dev) return ESP_ERR_INVALID_STATE;
+    /* Send modifier alone first, then add key — some BLE stacks need this */
+    uint8_t report[8] = { modifier, 0, 0, 0, 0, 0, 0, 0 };
+    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    report[2] = key;
+    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    memset(report, 0, 8);
+    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
     return ESP_OK;
 }
 
@@ -180,8 +219,8 @@ void ble_hid_mouse_click(uint8_t buttons) {
 
 void ble_hid_release_all(void) {
     if (!hid_dev) return;
-    uint8_t zero[7] = {0};
-    esp_hidd_dev_input_set(hid_dev, 0, 1, zero, 7);
+    uint8_t zero[8] = {0};
+    esp_hidd_dev_input_set(hid_dev, 0, 1, zero, 8);
 }
 
 esp_err_t ble_hid_deinit(void) {

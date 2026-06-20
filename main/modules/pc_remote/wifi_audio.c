@@ -126,3 +126,16 @@ void wifi_audio_voice_stop(void) {
 
 bool wifi_audio_is_streaming(void) { return streaming; }
 
+void wifi_audio_ptt_send(bool start) {
+    if (s_pc_ip[0] == '\0') return;
+    int s = socket(AF_INET, SOCK_DGRAM, 0);
+    if (s < 0) return;
+    struct sockaddr_in a;
+    a.sin_family = AF_INET;
+    a.sin_port = htons(9212);
+    a.sin_addr.s_addr = inet_addr(s_pc_ip);
+    const char *msg = start ? "start" : "stop";
+    sendto(s, msg, strlen(msg), 0, (struct sockaddr*)&a, sizeof(a));
+    close(s);
+}
+

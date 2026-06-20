@@ -74,7 +74,7 @@ lv_obj_t *kbd_screen_create(void) {
         "Keys (Kbd ON):\n"
         "A = Enter  B = ESC\n"
         "Arrows = Move\n"
-        "Hold A = Voice (PTT)\n"
+        "Hold RIGHT = Voice (PTT)\n"
         "START+B = Exit");
     lv_obj_set_style_text_color(info, lv_color_hex(0x999999), 0);
     lv_obj_set_pos(info, 20, 170);
