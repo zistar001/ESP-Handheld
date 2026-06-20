@@ -15,7 +15,7 @@
 #include "ui/screens/liuren_screen.h"
 #include "ui/screens/calib_screen.h"
 #include "ui/screens/theme_screen.h"
-#include "ui/screens/home_screen.h"
+#include "ui/screens/spectrum_screen.h"
 #include "ui/screens/home_screen.h"
 #include "ui/display_driver.h"
 #include "esp_log.h"
@@ -187,6 +187,7 @@ esp_err_t app_manager_launch(app_id_t id) {
                 target = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
             }
             if (target) { esp_ota_set_boot_partition(target); esp_restart(); }
+            else ESP_LOGE(TAG, "XiaoZhi partition not found — check partition table");
             break;
         }
         case APP_ID_IP_INPUT:
@@ -203,6 +204,7 @@ esp_err_t app_manager_launch(app_id_t id) {
                 else if (p->subtype == ESP_PARTITION_SUBTYPE_APP_OTA_0)
                     sys_name = "Game (OTA)";
             }
+            lv_obj_t *old = lv_scr_act();
             lv_obj_t *scr = lv_obj_create(NULL);
             lv_obj_set_style_bg_color(scr, lv_color_hex(0x1a1a2e), 0);
             lv_obj_t *l = lv_label_create(scr);
@@ -221,11 +223,17 @@ esp_err_t app_manager_launch(app_id_t id) {
             lv_obj_set_style_text_color(l, lv_color_hex(0xCCCCCC), 0);
             lv_obj_center(l);
             lv_scr_load(scr);
+            if (old) lv_obj_del(old);
             break;
         }
         case APP_ID_THEME: {
             ESP_LOGI(TAG, "Theme config");
             theme_screen_create();
+            break;
+        }
+        case APP_ID_SPECTRUM: {
+            ESP_LOGI(TAG, "Spectrum visualizer");
+            spectrum_screen_create();
             break;
         }
         default:

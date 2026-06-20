@@ -17,7 +17,7 @@ static lv_obj_t *cards[9];
 static lv_obj_t *highlight;
 static lv_obj_t *scroll_cont;
 static int sel;
-static int item_count = 8;
+static int item_count = 9;
 
 #define HIGHLIGHT_COLOR  CLR_HIGHLIGHT
 
@@ -30,6 +30,7 @@ static const struct { const char *icon; const char *label; app_id_t app; } items
     { LV_SYMBOL_REFRESH, "\xe5\x8d\xa0\xe5\x8d\x9c",  APP_ID_FORTUNE },     /* 占卜 */
     { LV_SYMBOL_LOOP,    "\xe5\xb0\x8f\xe5\x85\xad\xe5\xa3\xac",  APP_ID_RECORDER },    /* 小六壬 */
     { LV_SYMBOL_BELL,    "\xe8\xae\xa1\xe6\x97\xb6",  APP_ID_COUNTDOWN },   /* 计时 */
+    { LV_SYMBOL_AUDIO,   "\xe9\xa2\x91\xe8\xb0\xb1",  APP_ID_SPECTRUM },    /* 频谱 */
     { LV_SYMBOL_SETTINGS,"\xe8\xae\xbe\xe7\xbd\xae",  APP_ID_SETTINGS },    /* 设置 */
 };
 

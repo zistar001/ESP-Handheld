@@ -23,6 +23,7 @@
 #include "ui/screens/countdown_screen.h"
 #include "ui/screens/calib_screen.h"
 #include "ui/screens/theme_screen.h"
+#include "ui/screens/spectrum_screen.h"
 
 /* App framework */
 #include "app/app_manager.h"
@@ -246,12 +247,16 @@ static void key_handler(key_id_t key, bool pressed) {
                     if (key == KEY_START) hold_start_t = false;
                     if (key == KEY_B) hold_b_t = false;
                     if (key == KEY_A && countdown_screen_is_finished()) {
+                        lvgl_lock();
                         countdown_screen_reset();
+                        lvgl_unlock();
                     }
                 }
                 if (hold_start_t && hold_b_t) {
                     hold_start_t = hold_b_t = false;
+                    lvgl_lock();
                     app_manager_return();
+                    lvgl_unlock();
                 }
             } else if (app_manager_get_current_app() == APP_ID_FORTUNE && pressed) {
                 lvgl_lock();
@@ -289,6 +294,10 @@ static void key_handler(key_id_t key, bool pressed) {
                 else if (key == KEY_A)     theme_screen_select();
                 else if (key == KEY_B || key == KEY_START) app_manager_return();
                 lvgl_unlock();
+            } else if (app_manager_get_current_app() == APP_ID_SPECTRUM && pressed) {
+                if (key == KEY_B || key == KEY_START) {
+                    lvgl_lock(); app_manager_return(); lvgl_unlock();
+                }
             } else if (app_manager_get_current_app() == APP_ID_IP_INPUT && pressed) {
                 lvgl_lock();
                 if (key == KEY_UP)        ip_input_navigate(0, 1);
@@ -297,18 +306,22 @@ static void key_handler(key_id_t key, bool pressed) {
                 else if (key == KEY_B || key == KEY_START) { ip_input_cancel(); app_manager_return(); }
                 lvgl_unlock();
             } else if (app_manager_get_current_app() == APP_ID_WIFI_SETUP && pressed) {
-                lvgl_lock();
                 if (key == KEY_A) {
+                    /* Release LVGL lock before blocking BT deinit (~2s) */
+                    lvgl_unlock();
                     ble_hid_deinit(); /* stop BLE to free 2.4GHz for WiFi AP */
                     wifi_manager_forget_ssids();
                     wifi_manager_stop_station();
                     vTaskDelay(pdMS_TO_TICKS(500));
                     wifi_manager_start_config();
+                    lvgl_lock();
                     app_manager_launch(APP_ID_WIFI_SETUP); /* refresh screen */
+                    lvgl_unlock();
                 } else if (key == KEY_B || key == KEY_START) {
+                    lvgl_lock();
                     app_manager_return();
+                    lvgl_unlock();
                 }
-                lvgl_unlock();
             } else if (pressed && (key == KEY_B || key == KEY_START)) {
                 lvgl_lock();
                 app_manager_return();
@@ -374,7 +387,11 @@ void app_main(void) {
     bsp_lcd_backlight_set(cfg.brightness);
 
     /* 5. LVGL display driver */
-    ui_display_init();
+    ret = ui_display_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "FATAL: Display init failed: %s", esp_err_to_name(ret));
+        return;
+    }
 
     /* 6. Audio codec (ES8311 + ES7210) */
     box_audio_init();

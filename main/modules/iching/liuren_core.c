@@ -69,21 +69,25 @@ static int solar_to_lunar(int syear, int smonth, int sday, lunar_date_t *ld) {
     /* 2025年春节: 2025-01-29 */
     /* 2026年春节: 2026-02-17 */
     static const int spring_festival[][3] = {
+        {2023, 1, 22},  /* ← 向前扩展一年，保证春节前日期不乱码 */
         {2024, 2, 10}, {2025, 1, 29}, {2026, 2, 17},
         {2027, 2, 6},  {2028, 1, 26}, {2029, 2, 13},
         {2030, 2, 3},  {2031, 1, 23}, {2032, 2, 11},
         {2033, 1, 31}, {2034, 2, 19}, {0, 0, 0}
     };
 
-    int idx = syear - LUNAR_START_YEAR;
-    if (idx < 0 || idx > 10) return -1;
+    int idx = syear - (LUNAR_START_YEAR - 1);  /* offset now starts at 2023 */
+    if (idx < 0 || idx > 11) return -1;
 
     /* 计算从春节到目标日期的天数差 */
     int sf_month = spring_festival[idx][1];
     int sf_day = spring_festival[idx][2];
 
-    /* 简单月份天数数组 */
-    static const int month_days[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+    /* 月份天数数组 — 考虑闰年 */
+    int year_eff = syear;
+    if (smonth < 3) year_eff--;  /* Jan/Feb use previous year for leap check */
+    int is_leap = (year_eff % 4 == 0 && year_eff % 100 != 0) || (year_eff % 400 == 0);
+    int month_days[] = {31, is_leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
     /* 计算天数差 */
     int diff = 0;

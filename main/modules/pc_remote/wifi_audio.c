@@ -21,6 +21,7 @@ static int s_pc_last_octet = 0;  /* set via IP input UI */
 void wifi_audio_set_pc_ip(const char *ip) {
     if (ip && strlen(ip) >= 7) {
         strncpy(s_pc_ip, ip, sizeof(s_pc_ip)-1);
+        s_pc_ip[sizeof(s_pc_ip)-1] = '\0';  /* ensure NUL termination */
         /* Also parse last octet for later rebuild */
         const char *dot = strrchr(ip, '.');
         if (dot) s_pc_last_octet = atoi(dot + 1);
@@ -42,7 +43,7 @@ void wifi_audio_set_pc_last_octet(int octet) {
     if (my_ip && my_ip[0]) {
         char ip[16]; strncpy(ip, my_ip, 15); ip[15]='\0';
         char *dot = strrchr(ip, '.');
-        if (dot) { snprintf(dot+1, 15-(dot+1-ip), "%d", octet); strncpy(s_pc_ip, ip, sizeof(s_pc_ip)-1); }
+        if (dot) { snprintf(dot+1, 15-(dot+1-ip), "%d", octet); strncpy(s_pc_ip, ip, sizeof(s_pc_ip)-1); s_pc_ip[sizeof(s_pc_ip)-1]='\0'; }
     }
     ESP_LOGI(TAG, "PC last octet set: %d → ip=%s", octet, s_pc_ip);
 }
@@ -71,7 +72,7 @@ void wifi_audio_rebuild_pc_ip(void) {
         if (my_ip && my_ip[0]) {
             char ip[16]; strncpy(ip, my_ip, 15); ip[15]='\0';
             char *dot = strrchr(ip, '.');
-            if (dot) { snprintf(dot+1, 15-(dot+1-ip), "%d", s_pc_last_octet); strncpy(s_pc_ip, ip, sizeof(s_pc_ip)-1); }
+            if (dot) { snprintf(dot+1, 15-(dot+1-ip), "%d", s_pc_last_octet); strncpy(s_pc_ip, ip, sizeof(s_pc_ip)-1); s_pc_ip[sizeof(s_pc_ip)-1]='\0'; }
             ESP_LOGI(TAG, "PC IP rebuilt: %s", s_pc_ip);
         }
     }
@@ -90,8 +91,8 @@ static void audio_tx_task(void *arg) {
         }
         vTaskDelay(pdMS_TO_TICKS(16));  /* 256 samples / 16ms = 16kHz matched */
     }
-    if (sock >= 0) close(sock);
-    sock = -1;
+    if (sock >= 0) { close(sock); sock = -1; }
+    streaming = false;
     vTaskDelete(NULL);
 }
 
@@ -110,9 +111,10 @@ esp_err_t wifi_audio_voice_start(void) {
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) { ESP_LOGE(TAG, "socket fail"); return ESP_FAIL; }
-    int bc = 1; setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bc, sizeof(bc));
+    /* No SO_BROADCAST — audio is unicast to the configured PC IP only */
 
     streaming = true;
+    audio_task_h = NULL;
     xTaskCreatePinnedToCore(audio_tx_task, "audio_tx", 4096, NULL, 3, &audio_task_h, 1);
     return ESP_OK;
 }
@@ -120,7 +122,13 @@ esp_err_t wifi_audio_voice_start(void) {
 void wifi_audio_voice_stop(void) {
     if (!streaming) return;
     streaming = false;
-    if (audio_task_h) { vTaskDelay(pdMS_TO_TICKS(100)); audio_task_h = NULL; }
+    /* Force-terminate the TX task — vTaskDelete is safe even if task
+     * is blocked in I2S read. This avoids the race where a new
+     * voice_start creates a second task before the old one exits. */
+    if (audio_task_h) {
+        vTaskDelete(audio_task_h);
+        audio_task_h = NULL;
+    }
     ESP_LOGI(TAG, "Voice stopped");
 }
 

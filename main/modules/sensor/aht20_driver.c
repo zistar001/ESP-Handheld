@@ -11,6 +11,7 @@ static const char *TAG = "AHT20";
 static i2c_master_dev_handle_t s_dev = NULL;
 
 esp_err_t aht20_init(void) {
+    if (s_dev) return ESP_OK;  /* already initialized */
     i2c_master_bus_handle_t bus = bsp_get_i2c_bus();
     if (!bus) {
         ESP_LOGE(TAG, "I2C bus not initialized");

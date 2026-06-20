@@ -46,6 +46,7 @@ esp_err_t bsp_lcd_init(void) {
 }
 
 esp_err_t bsp_i2c_init(void) {
+    if (s_i2c_bus) return ESP_OK;  /* already initialized */
     ESP_LOGI(TAG, "I2C init (new driver)...");
     ESP_LOGI(TAG, "SDA=%d, SCL=%d", BSP_I2C_SDA, BSP_I2C_SCL);
     i2c_master_bus_config_t bus_cfg = {
@@ -72,10 +73,10 @@ i2c_master_bus_handle_t bsp_get_i2c_bus(void) {
 
 esp_err_t bsp_board_init(void) {
     ESP_LOGI(TAG, "BSP init");
-    bsp_lcd_init();
-    bsp_i2c_init();
-    // 延迟SD卡初始化，避免SPI总线冲突
-    // sd_card_init();
+    esp_err_t r = bsp_lcd_init();
+    if (r != ESP_OK) { ESP_LOGE(TAG, "LCD init failed"); return r; }
+    r = bsp_i2c_init();
+    if (r != ESP_OK) { ESP_LOGE(TAG, "I2C init failed"); return r; }
     return ESP_OK;
 }
 

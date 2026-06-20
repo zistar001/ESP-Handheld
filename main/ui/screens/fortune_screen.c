@@ -265,6 +265,9 @@ static void shake_task(void *arg) {
     vTaskDelete(NULL);
 }
 
+/* Forward decl — used by enter_shake_screen via LV_EVENT_DELETE */
+static void scr_del_cb(lv_event_t *e);
+
 /* ================================================================
  *  Create the shaking/result screen (phase 1+2)
  * ================================================================ */
@@ -272,6 +275,7 @@ static void enter_shake_screen(void) {
     lv_obj_t *old = lv_scr_act();
     s_scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(s_scr, COLOR_BG, 0);
+    lv_obj_add_event_cb(s_scr, scr_del_cb, LV_EVENT_DELETE, NULL);
     status_bar_create(s_scr);
 
     /* Centered title */
@@ -317,6 +321,25 @@ static void cat_select_cb(lv_event_t *e) {
     s_category = (int)(intptr_t)lv_event_get_user_data(e);
     /* Called from LVGL event (already inside lvgl_lock) — don't lock again */
     enter_shake_screen();
+}
+
+/* ── 屏幕删除时安全停止摇动任务 ── */
+static void scr_del_cb(lv_event_t *e) {
+    (void)e;
+    s_shaking = false;
+    if (s_shake_task) {
+        /* 等待任务退出，最多 2 秒 */
+        TickType_t start = xTaskGetTickCount();
+        while (eTaskGetState(s_shake_task) != eDeleted &&
+               (xTaskGetTickCount() - start) < pdMS_TO_TICKS(2000)) {
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        s_shake_task = NULL;
+    }
+    clear_all_lines();
+    if (s_judgment_label) { s_judgment_label = NULL; }
+    if (s_result_title) { s_result_title = NULL; }
+    s_phase = 0;
 }
 
 /* ================================================================

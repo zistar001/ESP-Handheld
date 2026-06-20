@@ -25,6 +25,8 @@ idf_component_register(
           "modules/iching/liuren_core.c"
           # Theme
           "modules/theme/theme_manager.c"
+          # Spectrum
+          "modules/spectrum/spectrum_analyzer.c"
           # PC Remote (BLE HID + air mouse + WiFi audio)
           "modules/pc_remote/ble_hid.c" "modules/pc_remote/air_mouse.c" "modules/pc_remote/wifi_audio.c"
           # UI
@@ -42,6 +44,7 @@ idf_component_register(
            "ui/screens/liuren_screen.c"
            "ui/screens/calib_screen.c"
            "ui/screens/theme_screen.c"
+           "ui/screens/spectrum_screen.c"
            "ui/screens/record_screen.c"
     INCLUDE_DIRS "."
                  "bsp"
@@ -57,6 +60,7 @@ idf_component_register(
                  "modules/pc_remote"
                  "modules/iching"
                  "modules/theme"
+                 "modules/spectrum"
                  "ui"
                  "ui/components"
                  "ui/screens"

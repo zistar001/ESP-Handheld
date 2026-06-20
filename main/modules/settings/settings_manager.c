@@ -72,6 +72,14 @@ esp_err_t settings_load(settings_t *s) {
     nvs_get_blob(h, "key_map", s->key_map, &sz);
 
     nvs_close(h);
+
+    /* ── 范围校验：防止 NVS 损坏的数据引起异常 ── */
+    if (s->volume > 100)          s->volume = defaults.volume;
+    if (s->brightness > 100)      s->brightness = defaults.brightness;
+    if (s->mic_gain > 100)        s->mic_gain = defaults.mic_gain;
+    if (s->air_mouse_sens < 0.1f || s->air_mouse_sens > 5.0f) s->air_mouse_sens = defaults.air_mouse_sens;
+    if (s->sleep_timeout_sec < 5 || s->sleep_timeout_sec > 7200) s->sleep_timeout_sec = defaults.sleep_timeout_sec;
+
     return ESP_OK;
 }
 

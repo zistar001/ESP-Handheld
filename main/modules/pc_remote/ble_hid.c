@@ -154,11 +154,12 @@ esp_err_t ble_hid_init(void) {
 esp_err_t ble_hid_send_key(uint8_t modifier, uint8_t key) {
     if (!connected || !hid_dev) return ESP_ERR_INVALID_STATE;
     uint8_t report[8] = { modifier, 0, key, 0, 0, 0, 0, 0 };
-    esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
+    esp_err_t r = esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
     vTaskDelay(pdMS_TO_TICKS(10));
     memset(report, 0, 8);
     esp_hidd_dev_input_set(hid_dev, 0, 1, report, 8);
-    return ESP_OK;
+    if (r != ESP_OK) ESP_LOGW(TAG, "send_key fail: %s", esp_err_to_name(r));
+    return r;
 }
 
 void ble_hid_press_key(uint8_t modifier, uint8_t key) {
@@ -203,8 +204,9 @@ esp_err_t ble_hid_send_modkey(uint8_t modifier, uint8_t key) {
 esp_err_t ble_hid_send_mouse(uint8_t buttons, int8_t dx, int8_t dy) {
     if (!connected || !hid_dev) return ESP_ERR_INVALID_STATE;
     uint8_t report[4] = { buttons, (uint8_t)dx, (uint8_t)dy, 0 };
-    esp_hidd_dev_input_set(hid_dev, 0, 2, report, 4);
-    return ESP_OK;
+    esp_err_t r = esp_hidd_dev_input_set(hid_dev, 0, 2, report, 4);
+    if (r != ESP_OK) ESP_LOGW(TAG, "send_mouse fail: %s", esp_err_to_name(r));
+    return r;
 }
 
 

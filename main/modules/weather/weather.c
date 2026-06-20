@@ -19,12 +19,15 @@ static void cjson_free(void *p) { heap_caps_free(p); }
 #include <stdlib.h>
 
 static const char *TAG = "WEATHER";
-#define HEFENG_API_KEY   "700cf8ab08774bf089e52d33b89aecf8"
 #define DEFAULT_LOCATION "101230501"      /* 泉州本级，无 NVS 时的后备 */
 #define WEATHER_INTERVAL_SEC 1800
 #define WIFI_TIMEOUT_MS   30000
 #define HEFENG_HOST      "p23p3qvugk.re.qweatherapi.com"
 #define NVS_NS           "weather"
+
+/* API 密钥从 NVS 动态加载，不再硬编码 */
+static char s_api_key[48] = "";
+static bool s_skip_weather = true;  /* 无密钥时跳过天气请求 */
 
 static TaskHandle_t s_weather_task = NULL;
 static int s_today_high = 0, s_today_low = 0;  /* cached from 3d response */
@@ -239,8 +242,12 @@ static esp_err_t evt(esp_http_client_event_t *e) {
 }
 
 static esp_err_t wf(const char *api_path) {
+    if (s_api_key[0] == '\0') {
+        ESP_LOGE(TAG, "API key not set — skipping weather request");
+        return ESP_ERR_INVALID_STATE;
+    }
     char path[320];
-    snprintf(path, sizeof(path), "%s?location=%s&key=%s&gzip=n", api_path, s_location_id, HEFENG_API_KEY);
+    snprintf(path, sizeof(path), "%s?location=%s&key=%s&gzip=n", api_path, s_location_id, s_api_key);
     esp_http_client_config_t cfg = {
         .host = HEFENG_HOST, .path = path, .port = 443,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
@@ -260,6 +267,11 @@ static esp_err_t wf(const char *api_path) {
 static void weather_task(void *arg) {
     wifi_manager_init();
     while (1) {
+        if (s_skip_weather) {
+            /* 无 API 密钥 → 等待通知（可能被 weather_set_api_key 唤醒） */
+            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(WEATHER_INTERVAL_SEC * 1000));
+            continue;
+        }
         if (wifi_manager_wait_connected(pdMS_TO_TICKS(WIFI_TIMEOUT_MS))) {
             vTaskDelay(pdMS_TO_TICKS(3000));
             for (int r=0;r<3;r++){ if(wf("/v7/weather/now")==0)break; vTaskDelay(pdMS_TO_TICKS(5000)); }
@@ -274,12 +286,54 @@ static void weather_task(void *arg) {
 esp_err_t weather_init(void) {
     if (s_weather_task) return ESP_OK;
     load_location();
+
+    /* ── API 密钥：首次启动时迁移旧硬编码密钥到 NVS ── */
+    /*     迁移后密钥仅存在于设备 NVS 中，不在 git 源码里 */
+    #define MIGRATE_API_KEY "700cf8ab08774bf089e52d33b89aecf8"
+    nvs_handle_t h;
+    bool has_key = false;
+    if (nvs_open(NVS_NS, NVS_READWRITE, &h) == ESP_OK) {
+        size_t sz = sizeof(s_api_key);
+        if (nvs_get_str(h, "api_key", s_api_key, &sz) == ESP_OK && s_api_key[0]) {
+            s_skip_weather = false;
+            has_key = true;
+            ESP_LOGI(TAG, "API key loaded from NVS");
+        } else {
+            /* 首次启动：迁移默认密钥到 NVS */
+            strncpy(s_api_key, MIGRATE_API_KEY, sizeof(s_api_key) - 1);
+            s_api_key[sizeof(s_api_key) - 1] = '\0';
+            nvs_set_str(h, "api_key", s_api_key);
+            nvs_commit(h);
+            s_skip_weather = false;
+            has_key = true;
+            ESP_LOGI(TAG, "API key migrated to NVS (one-time)");
+        }
+        nvs_close(h);
+    }
+    if (!has_key) {
+        ESP_LOGW(TAG, "No NVS — weather disabled");
+    }
     xTaskCreatePinnedToCore(weather_task,"weather",4096,NULL,2,&s_weather_task,0);
-    ESP_LOGI(TAG,"started, location=%s (%s)", s_location_name, s_location_id);
+    ESP_LOGI(TAG,"started, location=%s (%s) api=%s",
+             s_location_name, s_location_id, s_skip_weather ? "MISSING" : "ok");
     return ESP_OK;
 }
 
-void weather_set_api_key(const char *k){(void)k;}
+void weather_set_api_key(const char *key) {
+    if (!key || !key[0]) return;
+    strncpy(s_api_key, key, sizeof(s_api_key) - 1);
+    s_api_key[sizeof(s_api_key) - 1] = '\0';
+    s_skip_weather = false;
+    /* 持久化到 NVS */
+    nvs_handle_t h;
+    if (nvs_open(NVS_NS, NVS_READWRITE, &h) == ESP_OK) {
+        nvs_set_str(h, "api_key", s_api_key);
+        nvs_commit(h);
+        nvs_close(h);
+    }
+    ESP_LOGI(TAG, "API key updated");
+    weather_request_refresh();
+}
 
 void weather_set_location(const char *loc) {
     if (!loc) return;

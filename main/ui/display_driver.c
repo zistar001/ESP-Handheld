@@ -75,19 +75,17 @@ esp_err_t ui_display_init(void) {
         free(white);
     }
 
-    /* LVGL display buffer — 双缓冲解决DMA未完成时LVGL重写数据导致的条纹 */
+    /* LVGL display buffer — 双缓冲（DMA-capable 内存） */
     size_t buf_size = ST7789_WIDTH * 20 * sizeof(lv_color_t);
     lv_color_t *buf = heap_caps_malloc(buf_size, MALLOC_CAP_DMA);
     lv_color_t *buf2 = heap_caps_malloc(buf_size, MALLOC_CAP_DMA);
-    if (!buf) {
+    if (!buf || !buf2) {
+        /* DMA 内存不足 → 单缓冲模式（PSRAM，避免 SPI DMA 安全问题） */
+        ESP_LOGW(TAG, "DMA alloc failed (free=%zu), falling back to single-buffer PSRAM",
+                 heap_caps_get_free_size(MALLOC_CAP_DMA));
+        free(buf);  /* may be NULL or valid — free handles both */
+        free(buf2);
         buf = heap_caps_malloc(buf_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-        buf2 = NULL;
-    }
-    if (!buf2 && buf) {
-        buf2 = heap_caps_malloc(buf_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    }
-    if (!buf) {
-        buf = heap_caps_malloc(buf_size, MALLOC_CAP_8BIT);
         buf2 = NULL;
     }
     if (!buf) { ESP_LOGE(TAG, "Buffer alloc failed"); return ESP_ERR_NO_MEM; }

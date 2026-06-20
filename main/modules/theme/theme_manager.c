@@ -20,6 +20,8 @@ static const theme_def_t s_themes[THEME_COUNT] = {
 
 /* ── 当前运行时配置 ── */
 static theme_config_t s_cfg = {
+    .magic = THEME_MAGIC,
+    .version = THEME_VERSION,
     .base_theme = THEME_CLASSIC_ORANGE,
     .override_mask = 0,
 };
@@ -91,8 +93,11 @@ void theme_load(void) {
     size_t sz = sizeof(s_cfg);
     e = nvs_get_blob(h, "data", &s_cfg, &sz);
     nvs_close(h);
-    if (e != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to load theme config, using default");
+    if (e != ESP_OK || s_cfg.magic != THEME_MAGIC || s_cfg.version != THEME_VERSION) {
+        ESP_LOGW(TAG, "Invalid/missing theme data (magic=%08x ver=%d, expect %08x ver=%d), using default",
+                 (unsigned)s_cfg.magic, s_cfg.version, (unsigned)THEME_MAGIC, THEME_VERSION);
+        s_cfg.magic = THEME_MAGIC;
+        s_cfg.version = THEME_VERSION;
         s_cfg.base_theme = THEME_CLASSIC_ORANGE;
         s_cfg.override_mask = 0;
     } else {
@@ -104,6 +109,8 @@ void theme_load(void) {
 void theme_save(void) {
     nvs_handle_t h;
     if (nvs_open(NVS_NS, NVS_READWRITE, &h) != ESP_OK) return;
+    s_cfg.magic = THEME_MAGIC;
+    s_cfg.version = THEME_VERSION;
     nvs_set_blob(h, "data", &s_cfg, sizeof(s_cfg));
     nvs_commit(h);
     nvs_close(h);

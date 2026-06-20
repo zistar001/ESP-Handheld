@@ -70,8 +70,8 @@
     {RG_KEY_DOWN,  .num = GPIO_NUM_6,  .pullup = 1, .level = 0},\
     {RG_KEY_LEFT,  .num = GPIO_NUM_4,  .pullup = 1, .level = 0},\
     {RG_KEY_RIGHT, .num = GPIO_NUM_7,  .pullup = 1, .level = 0},\
-    {RG_KEY_A,     .num = GPIO_NUM_17, .pullup = 1, .level = 0},\
-    {RG_KEY_B,     .num = GPIO_NUM_16, .pullup = 1, .level = 0},\
+    {RG_KEY_A,     .num = GPIO_NUM_16, .pullup = 1, .level = 0},\
+    {RG_KEY_B,     .num = GPIO_NUM_17, .pullup = 1, .level = 0},\
     {RG_KEY_START, .num = GPIO_NUM_15, .pullup = 1, .level = 0},\
 }
 #define RG_GAMEPAD_HAS_MENU_BTN     0

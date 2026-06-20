@@ -19,11 +19,14 @@ esp_err_t wifi_manager_init(void) {
         ESP_LOGI(TAG, "No saved WiFi, use Config menu to setup");
     }
 
+    /* Disable power save for stable TCP connections */
+    {
+        esp_err_t ps = esp_wifi_set_ps(WIFI_PS_NONE);
+        if (ps != ESP_OK) ESP_LOGW(TAG, "Failed to disable WiFi power save: %s", esp_err_to_name(ps));
+    }
+
     s_inited = true;
     ESP_LOGI(TAG, "WiFi manager ready");
-
-    /* Disable power save for stable TCP connections */
-    esp_wifi_set_ps(WIFI_PS_NONE);
 
     return ESP_OK;
 }

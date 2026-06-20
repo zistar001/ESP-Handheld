@@ -135,21 +135,31 @@ esp_err_t imu_init(void) {
 
 bool imu_is_ready(void) { return s_dev != NULL; }
 
-static int16_t read_i16(uint8_t reg) {
+static bool read_i16(uint8_t reg, int16_t *out) {
     uint8_t b[2];
-    i2c_master_transmit_receive(s_dev, &reg, 1, b, 2, 100);
-    return (int16_t)(b[0] | (b[1] << 8));
+    esp_err_t r = i2c_master_transmit_receive(s_dev, &reg, 1, b, 2, 100);
+    if (r != ESP_OK) return false;
+    *out = (int16_t)(b[0] | (b[1] << 8));
+    return true;
 }
 
 esp_err_t imu_read(imu_data_t *d) {
     if (!s_dev) return ESP_ERR_INVALID_STATE;
 
-    d->temp = (float)read_i16(0x20) / 256.0f + 25.0f;
-    d->gx = (float)read_i16(0x22) / 70.0f;
-    d->gy = (float)read_i16(0x24) / 70.0f;
-    d->gz = (float)read_i16(0x26) / 70.0f;
-    d->ax = (float)read_i16(0x28) / 16384.0f;
-    d->ay = (float)read_i16(0x2A) / 16384.0f;
-    d->az = (float)read_i16(0x2C) / 16384.0f;
+    int16_t val;
+    if (!read_i16(0x20, &val)) return ESP_FAIL;
+    d->temp = (float)val / 256.0f + 25.0f;
+    if (!read_i16(0x22, &val)) return ESP_FAIL;
+    d->gx = (float)val / 70.0f;
+    if (!read_i16(0x24, &val)) return ESP_FAIL;
+    d->gy = (float)val / 70.0f;
+    if (!read_i16(0x26, &val)) return ESP_FAIL;
+    d->gz = (float)val / 70.0f;
+    if (!read_i16(0x28, &val)) return ESP_FAIL;
+    d->ax = (float)val / 16384.0f;
+    if (!read_i16(0x2A, &val)) return ESP_FAIL;
+    d->ay = (float)val / 16384.0f;
+    if (!read_i16(0x2C, &val)) return ESP_FAIL;
+    d->az = (float)val / 16384.0f;
     return ESP_OK;
 }

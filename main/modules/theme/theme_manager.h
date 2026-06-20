@@ -34,7 +34,11 @@ typedef struct {
 } theme_def_t;
 
 /* 用户配置：基础主题 + 逐槽覆盖 */
+#define THEME_MAGIC 0x54484D53  /* "THMS" */
+#define THEME_VERSION 1
 typedef struct {
+    uint32_t    magic;
+    uint8_t     version;
     theme_id_t  base_theme;
     uint8_t     override_mask;          /* bit0-4 对应 5个槽 */
     uint32_t    override_colors[TSLOT_COUNT];
