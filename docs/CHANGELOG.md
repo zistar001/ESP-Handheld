@@ -1,5 +1,30 @@
 # ESP32-S3 Handheld Game - 变更记录
 
+## 2026-06-20 — 主页崩溃修复 + 键盘右键PTT + 按键映射重做
+
+### 一、主页崩溃修复（严重）
+- **`home_screen.c`**: 所有 `home_screen_update_*()` 函数增加 `lv_obj_is_valid(s_scr)` 守卫
+  - 天气数据在后台加载完成时，若主页已被销毁（用户已进入菜单），不再写入悬空LVGL指针
+  - 数据仍写入静态缓存变量，返回主页时可恢复显示
+
+### 二、键盘模块右键PTT语音
+- **PTT触发**: 长按右键>300ms → 启动WiFi语音流 + 发送 Ctrl+Shift+C
+  - GPIO轮询检测按键状态，释放立即停止语音
+  - 使用 `ble_hid_send_combo()` 带50ms时序间隔，避免BLE报文合并
+- **键盘报告格式**: 改为标准8字节（6键槽），兼容输入法全局热键
+- **按键映射重做**:
+  - START → ESC（单按）
+  - B → Backspace（退格）
+  - A → Enter
+  - 方向键 → 方向键
+  - 长按右键 → 语音PTT + Ctrl+Shift+C
+  - START+B → 退出应用
+  - **移除**: 旧的长按A启动语音
+
+### 三、PC语音接收
+- `tools/pc_voice_receiver.py`: 提示文字更新
+- `tools/pc_voice_receiver.exe`: 独立可执行文件（PyInstaller打包，无控制台窗口）
+
 ## 2026-06-11 — WiFi语音流 + 配网修复 + 音频优化
 
 ### 一、WiFi语音流（UDP → VB-Cable → Windows IME）
