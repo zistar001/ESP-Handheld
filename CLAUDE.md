@@ -177,10 +177,11 @@ main/
     settings/         — NVS settings (volume, brightness, sleep, etc.)
     time_sync/        — SNTP + NVS backup
     iching/           — I Ching + Xiao Liu Ren fortune divination
+    theme/            — Theme manager (6 themes, 5 color slots, NVS, mix-and-match)
   ui/
     display_driver.c  — LVGL init, double-buffer, lvgl_lock/lvgl_unlock
     screens/          — home, menu, settings, countdown, airmouse, kbd,
-                        ip_input, fortune, liuren, calib, record
+                        ip_input, fortune, liuren, calib, record, theme
     components/       — status_bar, weather icons
 components/
   lvgl/               — LVGL v8.4 (local source, not from registry)
@@ -336,6 +337,55 @@ Bluedroid BLE, HID keyboard + mouse. Just Works pairing, device name "ESP-Handhe
 ## WiFi Manager
 
 Uses `78/esp-wifi-connect` v3.1.4 (C++, bridged to C via `wifi_bridge.cpp`). Soft-AP + DNS hijack + built-in web config page. Multi-SSID storage via SsidManager. Auto-migrates old settings_manager WiFi data.
+
+---
+
+# Theme System
+
+Theme system provides runtime color switching via NVS-persisted config. All UI screens support it.
+
+## Color Slots (5)
+
+| Slot | Usage | Example |
+|------|-------|---------|
+| `TSLOT_BG` | Background color | `0x0A0A0A` |
+| `TSLOT_ACCENT` | Active buttons, primary highlight | `0xFF5C00` |
+| `TSLOT_HIGHLIGHT` | Menu selection border, bright accent | `0xFFBB00` |
+| `TSLOT_TEXT` | Primary text | `0xFFFFFF` |
+| `TSLOT_SUBTEXT` | Secondary text, hints | `0x999999` |
+
+## 6 Built-in Themes
+
+```
+                    BG         ACCENT     HIGHLIGHT  TEXT      SUBTEXT
+经典橙 (default)    #0A0A0A   #FF5C00    #FFBB00    #FFFFFF  #999999
+极光蓝             #0D1117   #0096FF    #58A6FF    #FFFFFF  #8B949E
+赛博紫             #0A0015   #BB86FC    #00FFFF    #FFFFFF  #8870A0
+翡翠绿             #0A0F0A   #00C853    #69F0AE    #FFFFFF  #A5D6A7
+暗紫金             #120A1A   #BB86FC    #FFD700    #FFFFFF  #9980B0
+钢铁灰             #121212   #FF6D00    #FF9100    #FFFFFF  #B0B0B0
+```
+
+## Mix & Match (Per-Slot Override)
+
+Select a base theme, then override individual color slots via the theme screen.
+Overrides are saved alongside the base theme in NVS.
+
+## Adding a New Theme
+
+Add an entry in `s_themes[]` in `modules/theme/theme_manager.c`:
+```c
+[THEME_NEW] = {"主题名", {BG, ACCENT, HIGHLIGHT, TEXT, SUBTEXT}},
+```
+And add the enum value to `theme_id_t` in the header.
+
+## Using Theme Colors in a Screen
+
+1. `#include "ui/components/theme_colors.h"`
+2. Replace hardcoded color macros with `CLR_BG`, `CLR_ACCENT`, `CLR_TEXT`, etc.
+
+Each `${CLR_*}` macro calls `theme_get_color()` at runtime — screens update
+immediately when the theme changes (no restart needed).
 
 ---
 

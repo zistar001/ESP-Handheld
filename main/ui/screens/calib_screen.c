@@ -1,5 +1,6 @@
 #include "calib_screen.h"
 #include "ui/components/status_bar.h"
+#include "ui/components/theme_colors.h"
 #include "ui/display_driver.h"
 #include "modules/imu/imu_driver.h"
 #include "modules/imu/imu_calib.h"
@@ -8,17 +9,17 @@
 #include "esp_log.h"
 static const char *TAG = "CALIB";
 
-#define BG       lv_color_hex(0x0A0A0A)
-#define WHITE    lv_color_hex(0xFFFFFF)
-#define ORANGE   lv_color_hex(0xFF5C00)
+#define BG       CLR_BG
+#define WHITE    CLR_TEXT
+#define ACCENT   CLR_ACCENT
 #define GREEN    lv_color_hex(0x00CC66)
 #define GREY     lv_color_hex(0x666666)
 
 static const char *POSE_PROMPTS[] = {
-    "Step 1/4  UPRIGHT\nHold device vertically\nScreen facing you",
-    "Step 2/4  LEFT SIDE\nLeft edge down\nPlace on table",
-    "Step 3/4  RIGHT SIDE\nRight edge down\nPlace on table",
-    "Step 4/4  FLAT\nScreen facing up\nPlace on table",
+    "第 1/4 步  竖立\n设备竖着拿\n屏幕面向自己",
+    "第 2/4 步  左侧躺\n左侧朝下\n放在桌面上",
+    "第 3/4 步  右侧躺\n右侧朝下\n放在桌面上",
+    "第 4/4 步  平放\n屏幕朝上\n放在桌面上",
 };
 static const int POSE_COUNT = 4;
 
@@ -44,10 +45,10 @@ static void add_sample(const imu_data_t *imu, imu_vec_t *v) {
 static void update_ui(void) {
     if (step < POSE_COUNT) {
         lv_label_set_text(step_lbl, POSE_PROMPTS[step]);
-        lv_label_set_text(status_lbl, sampling ? "Sampling..." : "Press A to start");
+        lv_label_set_text(status_lbl, sampling ? "采集中..." : "按 A 开始");
     } else {
-        lv_label_set_text(step_lbl, "Calibration done!");
-        lv_label_set_text(status_lbl, "Saved to NVS\nPress B/START to exit");
+        lv_label_set_text(step_lbl, "校准完成!");
+        lv_label_set_text(status_lbl, "已保存\n按 B/START 退出");
     }
 }
 
@@ -107,7 +108,7 @@ lv_obj_t *calib_screen_create(void) {
     step_lbl = lv_label_create(scr);
     lv_label_set_text(step_lbl, POSE_PROMPTS[0]);
     lv_obj_set_style_text_color(step_lbl, WHITE, 0);
-    lv_obj_set_style_text_font(step_lbl, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(step_lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(step_lbl, 20, 50);
     lv_obj_set_width(step_lbl, 200);
     lv_obj_set_style_text_align(step_lbl, LV_TEXT_ALIGN_CENTER, 0);
@@ -120,9 +121,9 @@ lv_obj_t *calib_screen_create(void) {
     lv_obj_set_width(ax_lbl, 200);
 
     status_lbl = lv_label_create(scr);
-    lv_label_set_text(status_lbl, "Press A to sample");
-    lv_obj_set_style_text_color(status_lbl, ORANGE, 0);
-    lv_obj_set_style_text_font(status_lbl, &lv_font_montserrat_16, 0);
+    lv_label_set_text(status_lbl, "按 A 采样");
+    lv_obj_set_style_text_color(status_lbl, ACCENT, 0);
+    lv_obj_set_style_text_font(status_lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_align(status_lbl, LV_ALIGN_BOTTOM_MID, 0, -20);
 
     timer = lv_timer_create(on_tick, 100, NULL);

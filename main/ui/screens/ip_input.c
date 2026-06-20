@@ -1,13 +1,15 @@
 #include "ip_input.h"
 #include "modules/pc_remote/wifi_audio.h"
 #include "modules/wifi_manager/wifi_manager.h"
+#include "ui/components/theme_colors.h"
 #include <stdio.h>
 #include <string.h>
 
-#define BG     lv_color_hex(0x0A0A0A)
-#define ORANGE lv_color_hex(0xFF5C00)
-#define WHITE  lv_color_hex(0xFFFFFF)
+#define BG     CLR_BG
+#define ACCENT CLR_ACCENT
+#define WHITE  CLR_TEXT
 #define GREY   lv_color_hex(0x888888)
+#define SUB    CLR_SUBTEXT
 
 static lv_obj_t *prefix_lbl, *octet_lbl, *status_lbl;
 static int octet_val = 1;
@@ -39,18 +41,19 @@ lv_obj_t *ip_input_screen_create(void) {
 
     /* Title */
     lv_obj_t *t = lv_label_create(scr);
-    lv_label_set_text(t, "Set PC IP");
+    lv_label_set_text(t, "设置电脑 IP");
     lv_obj_set_style_text_color(t, WHITE, 0);
-    lv_obj_set_style_text_font(t, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(t, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(t, 15, 20);
 
     /* Subtitle - current value */
     status_lbl = lv_label_create(scr);
     const char *cur = wifi_audio_get_pc_ip();
     char buf[64];
-    snprintf(buf, sizeof(buf), "Current: %s", cur && cur[0] ? cur : "(none)");
+    snprintf(buf, sizeof(buf), "当前: %s", cur && cur[0] ? cur : "(无)");
     lv_label_set_text(status_lbl, buf);
     lv_obj_set_style_text_color(status_lbl, GREY, 0);
+    lv_obj_set_style_text_font(status_lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(status_lbl, 15, 50);
 
     /* Prefix label */
@@ -61,14 +64,15 @@ lv_obj_t *ip_input_screen_create(void) {
 
     /* Editable octet */
     octet_lbl = lv_label_create(scr);
-    lv_obj_set_style_text_color(octet_lbl, ORANGE, 0);
+    lv_obj_set_style_text_color(octet_lbl, ACCENT, 0);
     lv_obj_set_style_text_font(octet_lbl, &lv_font_montserrat_48, 0);
     lv_obj_align(octet_lbl, LV_ALIGN_CENTER, 0, -10);
 
     /* Hints */
     lv_obj_t *hint = lv_label_create(scr);
-    lv_label_set_text(hint, "UP/DOWN: change\nA: confirm  B: cancel");
-    lv_obj_set_style_text_color(hint, lv_color_hex(0x555555), 0);
+    lv_label_set_text(hint, "UP/DOWN: 调整\nA: 确认  B: 取消");
+    lv_obj_set_style_text_color(hint, SUB, 0);
+    lv_obj_set_style_text_font(hint, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(hint, 15, 210);
 
     /* Init with last used or default 1 */
@@ -92,7 +96,7 @@ void ip_input_select(void) {
     wifi_audio_rebuild_pc_ip();
 
     char buf[64];
-    snprintf(buf, sizeof(buf), "Saved: %s", wifi_audio_get_pc_ip());
+    snprintf(buf, sizeof(buf), "已保存: %s", wifi_audio_get_pc_ip());
     lv_label_set_text(status_lbl, buf);
     lv_obj_set_style_text_color(status_lbl, lv_color_hex(0x4CAF50), 0);
 }

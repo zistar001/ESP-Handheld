@@ -1,9 +1,10 @@
 #include "menu_screen.h"
 #include "app/app_manager.h"
 #include "ui/components/status_bar.h"
+#include "ui/components/theme_colors.h"
 #include <stdlib.h>
 
-#define CARD_COLOR    lv_color_hex(0xFF5C00)
+#define CARD_COLOR    CLR_ACCENT
 #define CARD_W        96
 #define CARD_H        68
 #define CARD_R        12
@@ -18,7 +19,7 @@ static lv_obj_t *scroll_cont;
 static int sel;
 static int item_count = 8;
 
-#define HIGHLIGHT_COLOR  lv_color_hex(0xFFBB00)   /* Golden yellow — highly visible on dark bg */
+#define HIGHLIGHT_COLOR  CLR_HIGHLIGHT
 
 /* Pencil design: icon + Chinese label */
 static const struct { const char *icon; const char *label; app_id_t app; } items[] = {
@@ -40,7 +41,7 @@ static void card_cb(lv_event_t *e) {
 lv_obj_t *menu_screen_create(void) {
     lv_obj_t *old = lv_scr_act();
     lv_obj_t *scr = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x0A0A0A), 0);
+    lv_obj_set_style_bg_color(scr, CLR_BG, 0);
 
     /* Reset static pointers — keep sel to remember last selection across visits */
     scroll_cont = NULL;

@@ -22,6 +22,7 @@
 #include "ui/screens/ip_input.h"
 #include "ui/screens/countdown_screen.h"
 #include "ui/screens/calib_screen.h"
+#include "ui/screens/theme_screen.h"
 
 /* App framework */
 #include "app/app_manager.h"
@@ -33,6 +34,7 @@
 #include "modules/audio/box_audio_codec.h"
 #include "modules/sensor/aht20_driver.h"
 #include "modules/imu/imu_driver.h"
+#include "modules/theme/theme_manager.h"
 #include "modules/pc_remote/air_mouse.h"
 #include "modules/pc_remote/ble_hid.h"
 #include "modules/pc_remote/wifi_audio.h"
@@ -280,6 +282,13 @@ static void key_handler(key_id_t key, bool pressed) {
                 if (!pressed && (key == KEY_B || key == KEY_START)) {
                     lvgl_lock(); app_manager_return(); lvgl_unlock();
                 }
+            } else if (app_manager_get_current_app() == APP_ID_THEME && pressed) {
+                lvgl_lock();
+                if (key == KEY_UP)        theme_screen_navigate(-1);
+                else if (key == KEY_DOWN)  theme_screen_navigate(1);
+                else if (key == KEY_A)     theme_screen_select();
+                else if (key == KEY_B || key == KEY_START) app_manager_return();
+                lvgl_unlock();
             } else if (app_manager_get_current_app() == APP_ID_IP_INPUT && pressed) {
                 lvgl_lock();
                 if (key == KEY_UP)        ip_input_navigate(0, 1);
@@ -352,6 +361,9 @@ void app_main(void) {
     settings_t cfg;
     settings_load(&cfg);
     ESP_LOGI(TAG, "Settings loaded: vol=%d bright=%d", cfg.volume, cfg.brightness);
+
+    /* 2b. Theme (NVS-backed) */
+    theme_load();
 
     /* 3. SD card first (creates SPI bus at safe speed, LCD joins later) */
     ret = sd_card_init();

@@ -14,6 +14,7 @@
 #include "ui/screens/fortune_screen.h"
 #include "ui/screens/liuren_screen.h"
 #include "ui/screens/calib_screen.h"
+#include "ui/screens/theme_screen.h"
 #include "ui/screens/home_screen.h"
 #include "ui/screens/home_screen.h"
 #include "ui/display_driver.h"
@@ -115,8 +116,9 @@ esp_err_t app_manager_launch(app_id_t id) {
             lv_obj_add_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
             lv_obj_t *title = lv_label_create(scr);
-            lv_label_set_text(title, "WiFi Settings (B: Back)");
+            lv_label_set_text(title, "WiFi 设置 (B: 返回)");
             lv_obj_set_style_text_color(title, lv_color_hex(0xFFFFFF), 0);
+            lv_obj_set_style_text_font(title, &lv_font_simsun_16_cjk, 0);
             lv_obj_set_pos(title, 10, 10);
 
             lv_obj_t *status = lv_label_create(scr);
@@ -219,6 +221,11 @@ esp_err_t app_manager_launch(app_id_t id) {
             lv_obj_set_style_text_color(l, lv_color_hex(0xCCCCCC), 0);
             lv_obj_center(l);
             lv_scr_load(scr);
+            break;
+        }
+        case APP_ID_THEME: {
+            ESP_LOGI(TAG, "Theme config");
+            theme_screen_create();
             break;
         }
         default:

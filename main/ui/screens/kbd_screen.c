@@ -1,14 +1,16 @@
 #include "kbd_screen.h"
 #include "modules/pc_remote/ble_hid.h"
 #include "ui/components/status_bar.h"
+#include "ui/components/theme_colors.h"
 #include <stdio.h>
 #include <string.h>
 
-#define BG       lv_color_hex(0x0A0A0A)
-#define ORANGE   lv_color_hex(0xFF5C00)
+#define BG       CLR_BG
+#define ACCENT   CLR_ACCENT
 #define GREEN    lv_color_hex(0x4CAF50)
-#define GREY     lv_color_hex(0x333333)
-#define WHITE    lv_color_hex(0xFFFFFF)
+#define BTN_OFF  lv_color_hex(0x333333)
+#define WHITE    CLR_TEXT
+#define SUB      CLR_SUBTEXT
 
 static lv_obj_t *kbd_btn, *voice_btn;
 static bool kb_enabled = false;
@@ -19,18 +21,24 @@ bool kbd_screen_is_enabled(void) { return kb_enabled; }
 
 static void update_display(void) {
     /* Kbd toggle */
-    lv_obj_set_style_bg_color(kbd_btn, kb_enabled ? ORANGE : GREY, 0);
+    lv_obj_set_style_bg_color(kbd_btn, kb_enabled ? ACCENT : BTN_OFF, 0);
     lv_obj_set_style_border_width(kbd_btn, sel == 0 ? 2 : 0, 0);
     lv_obj_set_style_border_color(kbd_btn, WHITE, 0);
     lv_obj_t *lbl = lv_obj_get_child(kbd_btn, 0);
-    if (lbl) lv_label_set_text(lbl, kb_enabled ? "Kbd: ON" : "Kbd: OFF");
+    if (lbl) {
+        lv_label_set_text(lbl, kb_enabled ? "键盘: 开" : "键盘: 关");
+        lv_obj_set_style_text_font(lbl, &lv_font_simsun_16_cjk, 0);
+    }
 
     /* Voice indicator */
-    lv_obj_set_style_bg_color(voice_btn, voice_active ? GREEN : GREY, 0);
+    lv_obj_set_style_bg_color(voice_btn, voice_active ? GREEN : BTN_OFF, 0);
     lv_obj_set_style_border_width(voice_btn, sel == 1 ? 2 : 0, 0);
     lv_obj_set_style_border_color(voice_btn, WHITE, 0);
     lbl = lv_obj_get_child(voice_btn, 0);
-    if (lbl) lv_label_set_text(lbl, voice_active ? "Voice: ON" : "Voice: OFF");
+    if (lbl) {
+        lv_label_set_text(lbl, voice_active ? "语音: 开" : "语音: 关");
+        lv_obj_set_style_text_font(lbl, &lv_font_simsun_16_cjk, 0);
+    }
 }
 
 lv_obj_t *kbd_screen_create(void) {
@@ -43,9 +51,9 @@ lv_obj_t *kbd_screen_create(void) {
     status_bar_create(scr);
 
     lv_obj_t *title = lv_label_create(scr);
-    lv_label_set_text(title, "Keyboard");
+    lv_label_set_text(title, "键盘");
     lv_obj_set_style_text_color(title, WHITE, 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(title, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(title, 15, 36);
 
     /* Kbd toggle button */
@@ -54,8 +62,9 @@ lv_obj_t *kbd_screen_create(void) {
     lv_obj_set_pos(kbd_btn, 20, 71);
     lv_obj_set_style_radius(kbd_btn, 8, 0);
     lv_obj_t *lbl = lv_label_create(kbd_btn);
-    lv_label_set_text(lbl, "Kbd: OFF");
+    lv_label_set_text(lbl, "键盘: 关");
     lv_obj_set_style_text_color(lbl, WHITE, 0);
+    lv_obj_set_style_text_font(lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_center(lbl);
 
     /* Voice state button */
@@ -64,19 +73,21 @@ lv_obj_t *kbd_screen_create(void) {
     lv_obj_set_pos(voice_btn, 20, 126);
     lv_obj_set_style_radius(voice_btn, 8, 0);
     lv_obj_t *vlbl = lv_label_create(voice_btn);
-    lv_label_set_text(vlbl, "Voice: OFF");
+    lv_label_set_text(vlbl, "语音: 关");
     lv_obj_set_style_text_color(vlbl, WHITE, 0);
+    lv_obj_set_style_text_font(vlbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_center(vlbl);
 
     /* Instructions */
     lv_obj_t *info = lv_label_create(scr);
     lv_label_set_text(info,
-        "Keys (Kbd ON):\n"
-        "A = Enter  B = ESC\n"
-        "Arrows = Move\n"
-        "Hold RIGHT = Voice (PTT)\n"
-        "START+B = Exit");
-    lv_obj_set_style_text_color(info, lv_color_hex(0x999999), 0);
+        "按键 (键盘开):\n"
+        "A = 回车  B = ESC\n"
+        "方向键 = 移动\n"
+        "按住右键 = 语音(PTT)\n"
+        "START+B = 退出");
+    lv_obj_set_style_text_color(info, SUB, 0);
+    lv_obj_set_style_text_font(info, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(info, 20, 170);
 
     kb_enabled = false;

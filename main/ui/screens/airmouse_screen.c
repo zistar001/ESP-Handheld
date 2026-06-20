@@ -2,13 +2,15 @@
 #include "modules/pc_remote/ble_hid.h"
 #include "modules/pc_remote/air_mouse.h"
 #include "ui/components/status_bar.h"
+#include "ui/components/theme_colors.h"
 #include <stdio.h>
 #include <string.h>
 
-#define BG       lv_color_hex(0x0A0A0A)
-#define ORANGE   lv_color_hex(0xFF5C00)
-#define GREY     lv_color_hex(0x333333)
-#define WHITE    lv_color_hex(0xFFFFFF)
+#define BG       CLR_BG
+#define ACCENT   CLR_ACCENT
+#define BTN_OFF  lv_color_hex(0x333333)
+#define WHITE    CLR_TEXT
+#define SUB      CLR_SUBTEXT
 
 static lv_obj_t *toggle_btn, *sens_btns[3];
 static bool mouse_on = false;
@@ -18,22 +20,25 @@ static int sel = 0;       /* 0=toggle, 1-3=sens */
 bool airmouse_screen_mouse_enabled(void) { return mouse_on; }
 
 static void update_sens(void) {
-    float vals[] = {0.5f, 1.0f, 2.0f};
+    float vals[] = {0.25f, 0.5f, 1.0f};
     air_mouse_set_sensitivity(vals[cur_sens]);
 }
 
 static void update_display(void) {
     /* Toggle */
-    lv_obj_set_style_bg_color(toggle_btn, mouse_on ? ORANGE : GREY, 0);
+    lv_obj_set_style_bg_color(toggle_btn, mouse_on ? ACCENT : BTN_OFF, 0);
     lv_obj_t *lbl = lv_obj_get_child(toggle_btn, 0);
-    if (lbl) lv_label_set_text(lbl, mouse_on ? "Mouse: ON" : "Mouse: OFF");
+    if (lbl) {
+        lv_label_set_text(lbl, mouse_on ? "鼠标: 开" : "鼠标: 关");
+        lv_obj_set_style_text_font(lbl, &lv_font_simsun_16_cjk, 0);
+    }
     lv_obj_set_style_border_width(toggle_btn, sel == 0 ? 2 : 0, 0);
     lv_obj_set_style_border_color(toggle_btn, WHITE, 0);
 
     /* Sensitivity buttons */
     for (int i = 0; i < 3; i++) {
         bool active = (i == cur_sens);
-        lv_obj_set_style_bg_color(sens_btns[i], active ? ORANGE : GREY, 0);
+        lv_obj_set_style_bg_color(sens_btns[i], active ? ACCENT : BTN_OFF, 0);
         lv_obj_set_style_border_width(sens_btns[i], (sel == i + 1) ? 2 : 0, 0);
         lv_obj_set_style_border_color(sens_btns[i], WHITE, 0);
     }
@@ -50,9 +55,9 @@ lv_obj_t *airmouse_screen_create(void) {
 
     /* Title */
     lv_obj_t *title = lv_label_create(scr);
-    lv_label_set_text(title, "Mouse");
+    lv_label_set_text(title, "鼠标");
     lv_obj_set_style_text_color(title, WHITE, 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(title, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(title, 15, 36);
 
     /* Toggle */
@@ -61,18 +66,20 @@ lv_obj_t *airmouse_screen_create(void) {
     lv_obj_set_pos(toggle_btn, 20, 71);
     lv_obj_set_style_radius(toggle_btn, 8, 0);
     lv_obj_t *lbl = lv_label_create(toggle_btn);
-    lv_label_set_text(lbl, "Mouse: OFF");
+    lv_label_set_text(lbl, "鼠标: 关");
     lv_obj_set_style_text_color(lbl, WHITE, 0);
+    lv_obj_set_style_text_font(lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_center(lbl);
 
     /* Sensitivity label */
     lv_obj_t *sens_lbl = lv_label_create(scr);
-    lv_label_set_text(sens_lbl, "Sensitivity:");
-    lv_obj_set_style_text_color(sens_lbl, lv_color_hex(0xAAAAAA), 0);
+    lv_label_set_text(sens_lbl, "灵敏度:");
+    lv_obj_set_style_text_color(sens_lbl, SUB, 0);
+    lv_obj_set_style_text_font(sens_lbl, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(sens_lbl, 20, 110);
 
     /* Sensitivity buttons */
-    const char *names[] = {"Low", "Mid", "High"};
+    const char *names[] = {"低", "中", "高"};
     for (int i = 0; i < 3; i++) {
         sens_btns[i] = lv_btn_create(scr);
         lv_obj_set_size(sens_btns[i], 58, 32);
@@ -81,18 +88,20 @@ lv_obj_t *airmouse_screen_create(void) {
         lv_obj_t *sl = lv_label_create(sens_btns[i]);
         lv_label_set_text(sl, names[i]);
         lv_obj_set_style_text_color(sl, WHITE, 0);
+        lv_obj_set_style_text_font(sl, &lv_font_simsun_16_cjk, 0);
         lv_obj_center(sl);
     }
 
     /* Instructions */
     lv_obj_t *info = lv_label_create(scr);
     lv_label_set_text(info,
-        "Key Map:\n"
-        "A = Left Click\n"
-        "B = Right Click\n"
-        "\xE2\x86\x92 = Voice\n"
-        "START+B = Exit");
-    lv_obj_set_style_text_color(info, lv_color_hex(0x999999), 0);
+        "按键说明:\n"
+        "A = 左键\n"
+        "B = 右键\n"
+        "\xE2\x86\x92 = 语音\n"
+        "START+B = 退出");
+    lv_obj_set_style_text_color(info, SUB, 0);
+    lv_obj_set_style_text_font(info, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(info, 20, 185);
 
     /* Init state */

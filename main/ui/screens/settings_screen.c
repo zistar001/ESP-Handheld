@@ -5,6 +5,7 @@
 #include "modules/wifi_manager/wifi_manager.h"
 #include "modules/pc_remote/wifi_audio.h"
 #include "modules/weather/weather.h"
+#include "modules/theme/theme_manager.h"
 #include "ui/components/status_bar.h"
 #include "es8311_driver.h"
 #include "modules/audio/box_audio_codec.h"
@@ -12,14 +13,15 @@
 #include <string.h>
 
 /* Styling */
-#define COLOR_BG     lv_color_hex(0x0A0A0A)
+#include "ui/components/theme_colors.h"
+#define COLOR_BG     CLR_BG
 #define COLOR_ROW    lv_color_hex(0x151515)
-#define COLOR_ORANGE lv_color_hex(0xFF5C00)
+#define COLOR_ORANGE CLR_ACCENT
 #define COLOR_GREY   lv_color_hex(0x666666)
 #define COLOR_LINE   lv_color_hex(0x2A2A2A)
 
 #define ITEM_H 30
-#define MAX_ITEMS 8
+#define MAX_ITEMS 9
 
 typedef struct {
     const char *name;
@@ -149,6 +151,13 @@ static void enter_about(void) {
     app_manager_set_return_to(APP_ID_SETTINGS);
     app_manager_launch(APP_ID_ABOUT);
 }
+static const char *get_theme_val(void) {
+    return theme_get_name(theme_get_base());
+}
+static void enter_theme(void) {
+    app_manager_set_return_to(APP_ID_SETTINGS);
+    app_manager_launch(APP_ID_THEME);
+}
 static void enter_calib(void) {
     app_manager_set_return_to(APP_ID_SETTINGS);
     app_manager_launch(APP_ID_CALIB);
@@ -264,6 +273,7 @@ static const settings_item_t items[MAX_ITEMS] = {
     { "电脑IP",   get_pc_ip_val,   enter_pc_ip },
     { "天气地区", get_location_val, enter_location },
     { "睡眠",     get_sleep_val,   enter_sleep },
+    { "主题",     get_theme_val,   enter_theme },
     { "IMU校准",  get_calib_val,   enter_calib },
     { "关于",     get_about_val,   enter_about },
 };

@@ -1,12 +1,13 @@
 #include "home_screen.h"
 #include "ui/components/weather_icon.h"
+#include "ui/components/theme_colors.h"
 #include <stdio.h>
 #include <string.h>
 
-#define COLOR_BG       lv_color_hex(0x0A0A0A)
-#define COLOR_ORANGE   lv_color_hex(0xFF5C00)
-#define COLOR_WHITE    lv_color_hex(0xFFFFFF)
-#define COLOR_GREY     lv_color_hex(0x999999)
+#define COLOR_BG       CLR_BG
+#define COLOR_ORANGE   CLR_ACCENT
+#define COLOR_WHITE    CLR_TEXT
+#define COLOR_GREY     CLR_SUBTEXT
 #define COLOR_WHITE_80 lv_color_hex(0xFFFFFFCC)
 #define COLOR_WHITE_67 lv_color_hex(0xFFFFFFAA)
 #define COLOR_WHITE_53 lv_color_hex(0xFFFFFF88)

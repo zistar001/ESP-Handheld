@@ -23,6 +23,8 @@ idf_component_register(
            # I Ching
           "modules/iching/iching_data.c"
           "modules/iching/liuren_core.c"
+          # Theme
+          "modules/theme/theme_manager.c"
           # PC Remote (BLE HID + air mouse + WiFi audio)
           "modules/pc_remote/ble_hid.c" "modules/pc_remote/air_mouse.c" "modules/pc_remote/wifi_audio.c"
           # UI
@@ -39,6 +41,7 @@ idf_component_register(
            "ui/screens/fortune_screen.c"
            "ui/screens/liuren_screen.c"
            "ui/screens/calib_screen.c"
+           "ui/screens/theme_screen.c"
            "ui/screens/record_screen.c"
     INCLUDE_DIRS "."
                  "bsp"
@@ -53,6 +56,7 @@ idf_component_register(
                  "modules/wifi_manager"
                  "modules/pc_remote"
                  "modules/iching"
+                 "modules/theme"
                  "ui"
                  "ui/components"
                  "ui/screens"

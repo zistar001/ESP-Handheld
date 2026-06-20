@@ -1,5 +1,6 @@
 #include "fortune_screen.h"
 #include "ui/components/status_bar.h"
+#include "ui/components/theme_colors.h"
 #include "ui/display_driver.h"
 #include "modules/imu/imu_driver.h"
 #include "modules/iching/iching_data.h"
@@ -9,10 +10,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define COLOR_BG       lv_color_hex(0x0A0A0A)
-#define COLOR_ORANGE   lv_color_hex(0xFF5C00)
-#define COLOR_WHITE    lv_color_hex(0xFFFFFF)
-#define COLOR_GREY     lv_color_hex(0x999999)
+#define COLOR_BG       CLR_BG
+#define COLOR_ORANGE   CLR_ACCENT
+#define COLOR_WHITE    CLR_TEXT
+#define COLOR_GREY     CLR_SUBTEXT
 
 static const char *categories[] = {"运势", "事业", "经商", "求名", "婚恋", "决策"};
 static int s_category = 0;
