@@ -178,10 +178,11 @@ main/
     time_sync/        — SNTP + NVS backup
     iching/           — I Ching + Xiao Liu Ren fortune divination
     theme/            — Theme manager (6 themes, 5 color slots, NVS, mix-and-match)
+    spectrum/         — 256-pt fixed-point FFT + audio spectrum analyzer
   ui/
     display_driver.c  — LVGL init, double-buffer, lvgl_lock/lvgl_unlock
     screens/          — home, menu, settings, countdown, airmouse, kbd,
-                        ip_input, fortune, liuren, calib, record, theme
+                        ip_input, fortune, liuren, calib, record, theme, spectrum
     components/       — status_bar, weather icons
 components/
   lvgl/               — LVGL v8.4 (local source, not from registry)
@@ -234,7 +235,7 @@ Launcher ←──[START]──→ Menu ←──[B/START]──→ Launcher
 ```
 
 - **Launcher** = home screen (weather, time, status bar). START → Menu.
-- **Menu** = 2-column grid, 8 app cards (游戏/小智/键盘/鼠标/占卜/小六壬/计时/设置). Selection: 3px golden border (`0xFFBB00`) + 7% fill tint. Navigation stops at grid edges. Remembers last selection.
+- **Menu** = 2-column grid, 9 app cards (游戏/小智/键盘/鼠标/占卜/小六壬/计时/频谱/设置). Selection: 3px golden border (`0xFFBB00`) + 7% fill tint. Navigation stops at grid edges. Remembers last selection.
 - **"游戏" card** = partition-switches to ota_0 (Retro-Go standalone firmware). No longer runs NES in-process.
 - **Running** = the active app. B or START returns to Menu (most apps).
 - **return-to-settings:** `app_manager_set_return_to(APP_ID_SETTINGS)` makes return go to settings instead of menu.
