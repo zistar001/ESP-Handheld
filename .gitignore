@@ -17,3 +17,4 @@ xiaozhi-esp32-main/sdkconfig
 xiaozhi-esp32-main/sdkconfig.old
 _tmp_*.bat
 !CMakeLists.txt
+.venv/
