@@ -1,9 +1,10 @@
 @echo off
+chcp 65001 >nul
 REM ESP32 Voice Receiver — 一键安装依赖
 echo Installing dependencies...
-pip install sounddevice numpy pystray pillow
+python -m pip install sounddevice numpy pystray pillow
 if %ERRORLEVEL% NEQ 0 (
-    echo Install failed. Try: pip install sounddevice numpy pystray pillow
+    echo Install failed. Try: python -m pip install sounddevice numpy pystray pillow
     pause
     exit /b 1
 )
