@@ -1,10 +1,9 @@
 """
 ESP32 Voice Receiver — UDP PCM → VB-Cable virtual mic + system tray icon
-.pyw version — no console window on double-click.
+No numpy dependency — uses RawOutputStream for minimal size.
 """
 import socket, sys, time, threading, io
 import sounddevice as sd
-import numpy as np
 
 PORT = 9210
 ESP_SR = 16000
@@ -36,7 +35,7 @@ status(f"PC IP: {pc_ip}")
 status(f"CABLE: [{idx}] {name}")
 status(f"Listening UDP:{PORT}...")
 
-# ── Tray icon ──
+# Tray icon
 try:
     import pystray
     from PIL import Image, ImageDraw
@@ -65,30 +64,31 @@ try:
     threading.Thread(target=tray.run, daemon=True).start()
     status("Tray icon active")
 except ImportError:
-    status("pystray not installed, running without tray")
+    status("pystray not installed")
 
-# ── Send PC IP to ESP32 via broadcast ──
+# Send PC IP to ESP32 via broadcast
 parts = pc_ip.split('.')
 if len(parts) == 4:
-    prefix = f"{parts[0]}.{parts[1]}.{parts[2]}."
     dsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     dsock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    dsock.sendto(pc_ip.encode(), (f"{prefix}255", 9211))
+    dsock.sendto(pc_ip.encode(), (f"{parts[0]}.{parts[1]}.{parts[2]}.255", 9211))
     dsock.close()
 
-# ── Audio streaming ──
+# Audio streaming (no numpy — RawOutputStream with bytes)
 ring = bytearray()
 lock = threading.Lock()
 total = 0
 
 def callback(outdata, frames, time_info, st):
     global ring, total
-    needed = frames * 2
+    needed = frames * 2  # 16-bit mono = 2 bytes per frame
     with lock:
         if len(ring) < needed:
-            outdata.fill(0); return
-        chunk = ring[:needed]; ring = ring[needed:]
-        outdata[:, 0] = np.frombuffer(chunk, dtype=np.int16)
+            outdata[:] = b'\x00' * needed
+            return
+        chunk = ring[:needed]
+        ring = ring[needed:]
+        outdata[:] = chunk
         total += needed
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -106,8 +106,8 @@ def udp_rx():
 threading.Thread(target=udp_rx, daemon=True).start()
 
 try:
-    with sd.OutputStream(samplerate=ESP_SR, channels=1, dtype='int16',
-                          device=idx, callback=callback, blocksize=256):
+    with sd.RawOutputStream(samplerate=ESP_SR, channels=1, dtype='int16',
+                             device=idx, callback=callback, blocksize=256):
         status("Ready - Hold RIGHT on ESP32 to speak")
         while True:
             time.sleep(5)
