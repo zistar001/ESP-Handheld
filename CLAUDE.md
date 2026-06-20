@@ -178,7 +178,7 @@ main/
     time_sync/        — SNTP + NVS backup
     iching/           — I Ching + Xiao Liu Ren fortune divination
     theme/            — Theme manager (6 themes, 5 color slots, NVS, mix-and-match)
-    spectrum/         — 256-pt fixed-point FFT + audio spectrum analyzer
+    spectrum/         — Float32 FFT spectrum visualizer (mirrored bars, adjustable params)
   ui/
     display_driver.c  — LVGL init, double-buffer, lvgl_lock/lvgl_unlock
     screens/          — home, menu, settings, countdown, airmouse, kbd,
@@ -263,10 +263,17 @@ APP_STATE_RUNNING:
     APP_ID_RECORDER:  delegated to liuren_screen (A=trigger divination)
     APP_ID_COUNTDOWN: delegated to countdown_screen (START+B=exit)
     APP_ID_CALIB:     delegated to calib_screen
+    APP_ID_SPECTRUM:  UP/DOWN=select param, LEFT/RIGHT/A=adjust, B/START=exit
     default:          fall through to menu exit
 ```
 
 **Pattern for adding a new app:** Add an `else if` block in `APP_STATE_RUNNING` checking `app_manager_get_current_app()`.
+
+## Sleep Prevention
+
+The power management task (`pm_task`, 5s interval) skips sleep when:
+- `APP_ID_COUNTDOWN` is active (timer must stay visible)
+- `APP_ID_SPECTRUM` is active (spectrum must stay visible)
 
 ## LVGL Screen Lifecycle
 
