@@ -129,7 +129,7 @@ esp_err_t imu_init(void) {
     if (r != ESP_OK) ESP_LOGE(TAG, "IF cfg failed: %s", esp_err_to_name(r));
     vTaskDelay(pdMS_TO_TICKS(10));
 
-    ESP_LOGI(TAG, "IMU init complete ✓");
+    ESP_LOGI(TAG, "IMU init complete [OK]");
     return ESP_OK;
 }
 

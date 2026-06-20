@@ -295,9 +295,14 @@ static void key_handler(key_id_t key, bool pressed) {
                 else if (key == KEY_B || key == KEY_START) app_manager_return();
                 lvgl_unlock();
             } else if (app_manager_get_current_app() == APP_ID_SPECTRUM && pressed) {
-                if (key == KEY_B || key == KEY_START) {
-                    lvgl_lock(); app_manager_return(); lvgl_unlock();
-                }
+                lvgl_lock();
+                if (key == KEY_UP)        spectrum_screen_navigate(-1);
+                else if (key == KEY_DOWN)  spectrum_screen_navigate(1);
+                else if (key == KEY_LEFT)  spectrum_screen_adjust(-1);
+                else if (key == KEY_RIGHT) spectrum_screen_adjust(1);
+                else if (key == KEY_A)     spectrum_screen_adjust(1);
+                else if (key == KEY_B || key == KEY_START) app_manager_return();
+                lvgl_unlock();
             } else if (app_manager_get_current_app() == APP_ID_IP_INPUT && pressed) {
                 lvgl_lock();
                 if (key == KEY_UP)        ip_input_navigate(0, 1);
@@ -342,8 +347,9 @@ static void pm_task(void *arg) {
         /* 加载设置 */
         settings_t cfg;
         if (settings_load(&cfg) != ESP_OK || !cfg.sleep_enabled) continue;
-        /* 计时运行时禁止休眠 */
+        /* 计时/频谱运行时禁止休眠 */
         if (app_manager_get_current_app() == APP_ID_COUNTDOWN) continue;
+        if (app_manager_get_current_app() == APP_ID_SPECTRUM) continue;
 
         TickType_t now = xTaskGetTickCount();
         if ((now - s_last_activity) > pdMS_TO_TICKS(cfg.sleep_timeout_sec * 1000)) {

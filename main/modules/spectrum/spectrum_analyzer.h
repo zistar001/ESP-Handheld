@@ -1,17 +1,25 @@
 #pragma once
 #include <stdint.h>
 
-#define FFT_N       256         /* FFT 点数（必须是 2 的幂） */
-#define SPECTRUM_BARS 16        /* 显示柱数 */
-#define SPECTRUM_SAMPLE_RATE 16000
+#define FFT_N       256
+#define SPECTRUM_BARS 16
 
-/* 频谱分析结果：16 个频段的幅度 (0-4095) */
 typedef struct {
     uint16_t bands[SPECTRUM_BARS];
 } spectrum_result_t;
 
-/* 初始化（不需要硬件，只准备 FFT 查找表） */
-void spectrum_init(void);
+/* 可调参数 */
+typedef struct {
+    float  noise_threshold;   /* 静音门限，默认 0.01 (0.001~0.1) */
+    uint8_t smoothing;        /* 平滑度 0-9 (0=极快, 9=极慢), 默认 7 */
+    uint8_t mic_gain;         /* 麦克风增益 0-37 dB, 默认 37 */
+} spectrum_params_t;
 
-/* 从 int16_t 音频缓冲执行一次 FFT 分析 */
+void spectrum_init(void);
 void spectrum_analyze(const int16_t *samples, int count, spectrum_result_t *out);
+
+/* 参数存取 — 频谱界面用 UP/DOWN/A 调节 */
+const spectrum_params_t *spectrum_get_params(void);
+void spectrum_set_noise_threshold(float v);
+void spectrum_set_smoothing(uint8_t v);
+void spectrum_set_mic_gain_db(uint8_t db);

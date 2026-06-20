@@ -4,38 +4,44 @@
 #include <stdbool.h>
 
 /* ══════════════════════════════════════════════════════════════════
- * 固定点 Radix-2 DIT FFT
- *
- * twiddle: W_N^k = cos(2πk/N) - j·sin(2πk/N)
- * 预计算成 Q15 定点格式 (±32767)
+ * float32 FFT — 标准 Radix-2 DIT，无定点缩放问题
  * ══════════════════════════════════════════════════════════════════ */
 
-#define Q15_MAX 32767
-
-static int16_t twiddle_cos[FFT_N / 2];   /* cos 表，Q15 */
-static int16_t twiddle_sin[FFT_N / 2];   /* sin 表，Q15（取负后即 -sin） */
-static int32_t fft_buf[FFT_N * 2];       /* 实部/虚部交错 */
+static float twid_cos[FFT_N / 2];
+static float twid_sin[FFT_N / 2];
+static float fft_real[FFT_N];
+static float fft_imag[FFT_N];
 static bool s_inited = false;
+
+/* 默认参数 */
+static spectrum_params_t s_params = {
+    .noise_threshold = 0.01f,
+    .smoothing = 7,
+    .mic_gain = 37,
+};
+
+const spectrum_params_t *spectrum_get_params(void) { return &s_params; }
+void spectrum_set_noise_threshold(float v) { if (v >= 0.001f && v <= 0.1f) s_params.noise_threshold = v; }
+void spectrum_set_smoothing(uint8_t v) { if (v <= 9) s_params.smoothing = v; }
+void spectrum_set_mic_gain_db(uint8_t db) { if (db <= 60) s_params.mic_gain = db; }
 
 void spectrum_init(void) {
     if (s_inited) return;
     for (int k = 0; k < FFT_N / 2; k++) {
-        float angle = -2.0f * M_PI * k / FFT_N;  /* -j 方向，即正向 FFT */
-        twiddle_cos[k] = (int16_t)(cosf(angle) * Q15_MAX);
-        twiddle_sin[k] = (int16_t)(sinf(angle) * Q15_MAX);
+        float a = -2.0f * (float)M_PI * k / FFT_N;
+        twid_cos[k] = cosf(a);
+        twid_sin[k] = sinf(a);
     }
     s_inited = true;
 }
 
 /* ── 位反转 ── */
-static void bit_reverse(int32_t *data, int n) {
+static void bit_reverse(float *re, float *im, int n) {
     for (int i = 0, j = 0; i < n; i++) {
         if (i < j) {
-            int32_t tr = data[i * 2], ti = data[i * 2 + 1];
-            data[i * 2] = data[j * 2];
-            data[i * 2 + 1] = data[j * 2 + 1];
-            data[j * 2] = tr;
-            data[j * 2 + 1] = ti;
+            float tr = re[i], ti = im[i];
+            re[i] = re[j]; im[i] = im[j];
+            re[j] = tr;    im[j] = ti;
         }
         int bit = n >> 1;
         while (j & bit) { j ^= bit; bit >>= 1; }
@@ -43,16 +49,9 @@ static void bit_reverse(int32_t *data, int n) {
     }
 }
 
-/* ── Q15 复数乘法： (ar+j·ai)*(br+j·bi) ── */
-static inline void cmul_q15(int16_t ar, int16_t ai, int16_t br, int16_t bi,
-                             int32_t *rr, int32_t *ri) {
-    *rr = ((int32_t)ar * br - (int32_t)ai * bi) >> 15;
-    *ri = ((int32_t)ar * bi + (int32_t)ai * br) >> 15;
-}
-
-/* ── FFT 主循环 ── */
-static void fft_run(int32_t *data, int n) {
-    bit_reverse(data, n);
+/* ── 标准 Cooley-Tukey 蝶形 ── */
+static void fft_run(float *re, float *im, int n) {
+    bit_reverse(re, im, n);
 
     for (int len = 2; len <= n; len <<= 1) {
         int half = len >> 1;
@@ -60,68 +59,75 @@ static void fft_run(int32_t *data, int n) {
         for (int i = 0; i < n; i += len) {
             for (int j = 0; j < half; j++) {
                 int tw = j * step;
-                int16_t wr = twiddle_cos[tw];
-                int16_t wi = twiddle_sin[tw];
+                float wr = twid_cos[tw];
+                float wi = twid_sin[tw];
 
-                int idx_u = (i + j) * 2;
-                int idx_l = (i + j + half) * 2;
+                int u = i + j;
+                int l = i + j + half;
 
-                int32_t tr, ti;
-                cmul_q15(wr, wi,
-                         (int16_t)(data[idx_l] >> 8),   /* 缩放到 Q15 近似 */
-                         (int16_t)(data[idx_l + 1] >> 8),
-                         &tr, &ti);
+                float tr = wr * re[l] - wi * im[l];
+                float ti = wr * im[l] + wi * re[l];
 
-                int32_t ur = data[idx_u];
-                int32_t ui = data[idx_u + 1];
-                data[idx_l]     = ur - tr;
-                data[idx_l + 1] = ui - ti;
-                data[idx_u]     = ur + tr;
-                data[idx_u + 1] = ui + ti;
+                re[l] = re[u] - tr;
+                im[l] = im[u] - ti;
+                re[u] = re[u] + tr;
+                im[u] = im[u] + ti;
             }
         }
     }
 }
 
 /* ── Hann 窗 ── */
-static void apply_hann(int32_t *data, int n) {
+static void apply_hann(float *buf, int n) {
     for (int i = 0; i < n; i++) {
-        float w = 0.5f * (1.0f - cosf(2.0f * M_PI * i / (n - 1)));
-        data[i * 2] = (int32_t)(data[i * 2] * w);
-        /* 虚部初始为 0，不变 */
+        float w = 0.5f * (1.0f - cosf(2.0f * (float)M_PI * i / (n - 1)));
+        buf[i] *= w;
     }
 }
 
-/* ── 幅度计算 + 对数频段归并 → 16 柱 ── */
-static void bin_to_bars(const int32_t *data, int n, spectrum_result_t *out) {
-    /* 每柱代表一个对数间距的频段 */
+/* ── 线性幅度 + 绝对门限 + 等宽频段分组 ──
+ * 参考 esp-dsp: mag = (re² + im²) / N, 再用 dB */
+static void bin_to_bars(int n, spectrum_result_t *out) {
+    /* 计算线性功率谱 / N（参考 esp-dsp 做法） */
+    static float pwr[FFT_N / 2];
+    float pwr_max = 0;
+    float scale = 1.0f / (float)n;
+
+    for (int k = 0; k < n / 2; k++) {
+        float m = (fft_real[k] * fft_real[k] + fft_imag[k] * fft_imag[k]) * scale;
+        pwr[k] = m;
+        if (m > pwr_max) pwr_max = m;
+    }
+
+    /* 绝对门限：可调参数 noise_threshold */
+    if (pwr_max < s_params.noise_threshold) {
+        memset(out->bands, 0, sizeof(out->bands));
+        return;
+    }
+
+    /* 对数频段分组：低频窄、高频宽，匹配人耳听觉
+     * 128 bins @ 16kHz → 每个 bin = 62.5Hz
+     * bins:  0=DC,  2=125Hz,  5=312Hz, ... 115=7.2kHz */
     static const int bar_bins[SPECTRUM_BARS + 1] = {
-        0,  1,  2,  3,  4,  6,  8,  10,    /* 0-7:  0Hz ~ 500Hz */
-        13, 16, 20, 25, 32, 40, 50, 64,    /* 8-15: 500Hz ~ 4kHz */
-        128                                  /* 终点: n/2 = 128 bins */
+        0,  2,  3,  4,  5,  6,  8, 10,
+       13, 17, 22, 29, 38, 50, 66, 87,
+       128
     };
+    int usable = n / 2;
 
     for (int b = 0; b < SPECTRUM_BARS; b++) {
-        int32_t sum = 0;
+        float peak = 0;
         int start = bar_bins[b];
         int end   = bar_bins[b + 1];
-        /* 只取 n/2 以内的正频率 */
-        if (start >= n / 2) break;
-        if (end > n / 2) end = n / 2;
+        if (start >= usable) break;
+        if (end > usable) end = usable;
         for (int k = start; k < end; k++) {
-            int32_t r = data[k * 2];
-            int32_t i = data[k * 2 + 1];
-            /* 幅度 ≈ sqrt(r² + i²)，用近似：|r| + |i| */
-            int32_t mag = (r < 0 ? -r : r) + (i < 0 ? -i : i);
-            sum += mag;
+            if (pwr[k] > peak) peak = pwr[k];
         }
-        int count = end - start;
-        if (count > 0) sum /= count;
-        /* 缩放到 0-4095 */
-        sum >>= 8;  /* FFT 内部有 ×256 的放大，这里缩回 */
-        if (sum > 4095) sum = 4095;
-        if (sum < 0) sum = 0;
-        out->bands[b] = (uint16_t)sum;
+        /* 映射：pwr_max → 3000, 线性映射 */
+        uint16_t u = (uint16_t)(peak / pwr_max * 3000.0f);
+        if (u > 3000) u = 3000;
+        out->bands[b] = u;
     }
 }
 
@@ -129,18 +135,21 @@ static void bin_to_bars(const int32_t *data, int n, spectrum_result_t *out) {
 void spectrum_analyze(const int16_t *samples, int count, spectrum_result_t *out) {
     if (!s_inited) spectrum_init();
 
-    /* 填充 FFT 缓冲区（截断或零填充到 FFT_N） */
+    /* int16 → float32, 去直流分量, 归一化到 [-1, 1] */
     int n = (count < FFT_N) ? count : FFT_N;
+    float dc = 0;
+    for (int i = 0; i < n; i++) dc += (float)samples[i];
+    dc /= (float)n;
     for (int i = 0; i < n; i++) {
-        fft_buf[i * 2]     = (int32_t)samples[i] * 256;  /* 放大提高精度 */
-        fft_buf[i * 2 + 1] = 0;
+        fft_real[i] = ((float)samples[i] - dc) / 32768.0f;
+        fft_imag[i] = 0;
     }
     for (int i = n; i < FFT_N; i++) {
-        fft_buf[i * 2] = 0;
-        fft_buf[i * 2 + 1] = 0;
+        fft_real[i] = 0;
+        fft_imag[i] = 0;
     }
 
-    apply_hann(fft_buf, FFT_N);
-    fft_run(fft_buf, FFT_N);
-    bin_to_bars(fft_buf, FFT_N, out);
+    apply_hann(fft_real, FFT_N);
+    fft_run(fft_real, fft_imag, FFT_N);
+    bin_to_bars(FFT_N, out);
 }
