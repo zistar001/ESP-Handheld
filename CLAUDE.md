@@ -648,6 +648,7 @@ Rev 2 PCB 不再共享 SPI 总线：
 - ST7789 240x280, driver 0 (ILI9341/ST7789 direct SPI).
 - **Critical:** `RG_SCREEN_INIT()` must send `COLMOD=0x05` (MCU interface, 16-bit). ili9341.h sends `COLMOD=0x55` (RGB interface) which does NOT work over SPI (display ignores all subsequent SPI commands → black screen). The SWRESET in `RG_SCREEN_INIT` clears the wrong value so 0x05 takes effect.
 - Full-memory (240x320) clear NOT possible: SPI CS toggles between transactions, breaking ST7789's continuous RAM write mode. Gap at edges handled by caller.
+- **Display gap:** ST7789 has 240x320 memory, glass shows 240x280 (rows 20-299). `ili9341.h`'s `lcd_set_window()` adds `y_gap = (FULL_HEIGHT - HEIGHT)/2 = 20` to RASET.
 - Target config at `components/retro-go/targets/esp-bsp-handheld/config.h`.
 
 ## LVGL Memory
@@ -655,6 +656,21 @@ Rev 2 PCB 不再共享 SPI 总线：
 - Home screen data: cached in static variables (`home_screen.c`). On navigation return, `home_screen_create()` restores from cache.
 - All LVGL calls from tasks (key_handler, launcher_upd, sensor, etc.) must use `lvgl_lock()/lvgl_unlock()`.
 - The weather icons font file (`weather_icons_font.c`) is NOT compiled in CMakeLists.txt — icons use LVGL symbols instead. If adding font-based weather icons, add to SRCS.
+
+## CJK Font
+
+Font file: `components/lvgl/src/font/lv_font_simsun_16_cjk.c` (SimHei, not SimSun despite filename).
+
+Generated with `lv_font_conv`:
+```
+lv_font_conv --font C:/Windows/Fonts/simhei.ttf --size 16 --bpp 4 --format lvgl \
+  -r 0x20-0x7F,0xA0-0xFF,0x2500-0x25FF,0x3000-0x303F,0xFF00-0xFFEF,0x2010-0x201F,0x2026 \
+  --symbols <chinese_chars.txt> -o components/lvgl/src/font/lv_font_simsun_16_cjk.c --no-compress
+```
+
+- `chinese_chars.txt` is the symbol list source (commit both if regenerating)
+- Missing chars can cause □ boxes. Scan with `grep -rP '[\x{4e00}-\x{9fff}]' main/ --include="*.c"` and check each against the symbol list
+- To regenerate: edit `chinese_chars.txt`, then run `lv_font_conv` (installed globally via npm)
 
 ## GCC 14+ Compatibility
 - Use `%zu` for `size_t` in printf. C++ files need explicit `#include <cstring>`.
