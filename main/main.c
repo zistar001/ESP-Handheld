@@ -367,16 +367,9 @@ static void pm_task(void *arg) {
         }
         if (key_held) { s_sleeping = false; continue; }
 
-        /* 配置按键 EXT1 和定时器作为唤醒源（但用户按 RESET 即可） */
-        const uint64_t key_mask = (1ULL << BSP_KEY_UP)    | (1ULL << BSP_KEY_DOWN)  |
-                                  (1ULL << BSP_KEY_LEFT)  | (1ULL << BSP_KEY_RIGHT) |
-                                  (1ULL << BSP_KEY_A)     | (1ULL << BSP_KEY_B)     |
-                                  (1ULL << BSP_KEY_START);
-        esp_sleep_enable_ext1_wakeup(key_mask, ESP_EXT1_WAKEUP_ANY_LOW);
-        esp_sleep_enable_timer_wakeup(3600 * 1000000ULL);  /* 1h fallback */
-
         ESP_LOGI(TAG, "=== Deep sleep: idle %ds, press RESET to wake ===",
                  cfg.sleep_timeout_sec);
+        fflush(stdout);
         esp_deep_sleep_start();
         /* 不会执行到这里 */
     }
