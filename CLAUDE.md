@@ -292,9 +292,19 @@ The boot order matters — SD card must init first to claim SPI bus at safe spee
 14. **Power management** — `pm_task` sleep monitor (5s interval)
 15. **App manager** — `app_manager_init()` shows launcher screen
 
-## Sleep Prevention
+## Power Management
 
-The power management task (`pm_task`, 5s interval) skips sleep when:
+The power management task (`pm_task`, 5s interval) implements **Light Sleep**:
+
+1. After inactivity timeout (default 300s), turns off backlight first
+2. **Deinits BLE** (`ble_hid_deinit()`) — releases BT controller
+3. **Stops WiFi** (`wifi_manager_stop_station()`) — shuts down RF
+4. Enters **Light Sleep** via `esp_light_sleep_start()` with EXT1 GPIO wake-up on all 7 key pins
+5. On any key press → wakes, re-inits BLE, restarts WiFi, restores backlight
+
+Power savings (estimated): ~150-200mA → ~5-10mA during standby.
+
+Light Sleep skips when:
 - `APP_ID_COUNTDOWN` is active (timer must stay visible)
 - `APP_ID_SPECTRUM` is active (spectrum must stay visible)
 
@@ -568,7 +578,7 @@ Bluedroid BLE, HID keyboard + mouse. Just Works pairing (`ESP_IO_CAP_NONE`), dev
 
 I2C 地址 0x6A（SA0=VDD）。使用标准 I2C 总线（IO1/IO2），ODR=104Hz，ACC ±2g，GYRO ±2000dps。
 
-**朝向修正：** 代码在 `imu_driver.c` 的 `imu_read()` 中对 `ax` 和 `gx` 取反（`-val/scale`），因为 PCB 安装将 IMU X 轴方向翻转了 180 度。上下轴（az/gz）和左右轴（ay/gy）不需修正。
+**朝向修正：** 代码在 `imu_driver.c` 的 `imu_read()` 中对 `ax`、`ay`、`gx`、`gy` 取反（`-val/scale`），因为 PCB 安装将 IMU 水平方向翻转了 180 度（X 和 Y 轴都反了）。上下轴（az/gz）不需修正。
 
 `imu_calib.c` 提供基于加速度的四方向姿态检测（UPRIGHT/LEFT/RIGHT/FLAT），支持 NVS 校准。校准数据通过 `calib_screen`（APP_ID_CALIB）触发保存。
 
