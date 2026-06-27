@@ -336,7 +336,7 @@ static void key_handler(key_id_t key, bool pressed) {
 }
 
 /* ================================================================
- * Power management task — 背光控制（5s间隔，暂不进入 Light Sleep）
+ * Power management task — Deep Sleep（5s间隔）
  * ================================================================ */
 static void pm_task(void *arg) {
     while (1) {
@@ -354,7 +354,31 @@ static void pm_task(void *arg) {
 
         s_sleeping = true;
         bsp_lcd_backlight_set(0);
-        ESP_LOGI(TAG, "Display off (timeout=%ds, light sleep TBD)", cfg.sleep_timeout_sec);
+        vTaskDelay(pdMS_TO_TICKS(200));
+
+        /* 检查是否有按键没松开 */
+        bool key_held = false;
+        const gpio_num_t chk[] = {
+            BSP_KEY_UP, BSP_KEY_DOWN, BSP_KEY_LEFT, BSP_KEY_RIGHT,
+            BSP_KEY_A, BSP_KEY_B, BSP_KEY_START
+        };
+        for (int i = 0; i < 7; i++) {
+            if (gpio_get_level(chk[i]) == 0) { key_held = true; break; }
+        }
+        if (key_held) { s_sleeping = false; continue; }
+
+        /* 配置按键 EXT1 和定时器作为唤醒源（但用户按 RESET 即可） */
+        const uint64_t key_mask = (1ULL << BSP_KEY_UP)    | (1ULL << BSP_KEY_DOWN)  |
+                                  (1ULL << BSP_KEY_LEFT)  | (1ULL << BSP_KEY_RIGHT) |
+                                  (1ULL << BSP_KEY_A)     | (1ULL << BSP_KEY_B)     |
+                                  (1ULL << BSP_KEY_START);
+        esp_sleep_enable_ext1_wakeup(key_mask, ESP_EXT1_WAKEUP_ANY_LOW);
+        esp_sleep_enable_timer_wakeup(3600 * 1000000ULL);  /* 1h fallback */
+
+        ESP_LOGI(TAG, "=== Deep sleep: idle %ds, press RESET to wake ===",
+                 cfg.sleep_timeout_sec);
+        esp_deep_sleep_start();
+        /* 不会执行到这里 */
     }
 }
 
