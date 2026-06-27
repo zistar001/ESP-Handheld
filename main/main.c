@@ -336,12 +336,13 @@ static void key_handler(key_id_t key, bool pressed) {
 }
 
 /* ================================================================
- * Power management task — Deep Sleep（5s间隔）
+ * Power management task — 熄屏（5s间隔，按键恢复背光）
  * ================================================================ */
 static void pm_task(void *arg) {
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(5000));
-        if (s_sleeping) continue;
+
+        if (s_sleeping) continue;  /* 已休眠：背光在 key_handler 恢复 */
 
         settings_t cfg;
         if (settings_load(&cfg) != ESP_OK || !cfg.sleep_enabled) continue;
@@ -354,17 +355,7 @@ static void pm_task(void *arg) {
 
         s_sleeping = true;
         bsp_lcd_backlight_set(0);
-        vTaskDelay(pdMS_TO_TICKS(100));
-
-        /* 用 BOOT 按键（GPIO0）作为唤醒源（不碰 7 个有问题的按键 GPIO）
-           实际用户按 RESET 键就能唤醒 */
-        esp_sleep_enable_ext1_wakeup(1ULL << BSP_KEY_BOOT, ESP_EXT1_WAKEUP_ANY_LOW);
-
-        ESP_LOGI(TAG, "=== Deep sleep timeout=%ds, press RESET to wake ===",
-                 cfg.sleep_timeout_sec);
-        fflush(stdout);
-        esp_deep_sleep_start();
-        /* 不会执行到这里 */
+        ESP_LOGI(TAG, "Standby: backlight off (timeout=%ds)", cfg.sleep_timeout_sec);
     }
 }
 
