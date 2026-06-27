@@ -354,20 +354,13 @@ static void pm_task(void *arg) {
 
         s_sleeping = true;
         bsp_lcd_backlight_set(0);
-        vTaskDelay(pdMS_TO_TICKS(200));
+        vTaskDelay(pdMS_TO_TICKS(100));
 
-        /* 检查是否有按键没松开 */
-        bool key_held = false;
-        const gpio_num_t chk[] = {
-            BSP_KEY_UP, BSP_KEY_DOWN, BSP_KEY_LEFT, BSP_KEY_RIGHT,
-            BSP_KEY_A, BSP_KEY_B, BSP_KEY_START
-        };
-        for (int i = 0; i < 7; i++) {
-            if (gpio_get_level(chk[i]) == 0) { key_held = true; break; }
-        }
-        if (key_held) { s_sleeping = false; continue; }
+        /* 配一个长定时器作为唤醒源（否则 esp_deep_sleep_start 会失败）
+           实际用户按 RESET 键就能唤醒 */
+        esp_sleep_enable_timer_wakeup(24 * 3600 * 1000000ULL);
 
-        ESP_LOGI(TAG, "=== Deep sleep: idle %ds, press RESET to wake ===",
+        ESP_LOGI(TAG, "=== Deep sleep timeout=%ds, press RESET to wake ===",
                  cfg.sleep_timeout_sec);
         fflush(stdout);
         esp_deep_sleep_start();
