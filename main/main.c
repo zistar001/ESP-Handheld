@@ -6,6 +6,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "esp_sleep.h"
 
 /* BSP */
 #include "bsp_board.h"
@@ -337,27 +338,72 @@ static void key_handler(key_id_t key, bool pressed) {
 }
 
 /* ================================================================
- * Power management task — 休眠监控（5s间隔）
+ * Power management task — Light Sleep（5s间隔）
  * ================================================================ */
 static void pm_task(void *arg) {
+    /* GPIO wake-up pins for Light Sleep */
+    static const gpio_num_t s_wake_pins[] = {
+        BSP_KEY_UP, BSP_KEY_DOWN, BSP_KEY_LEFT, BSP_KEY_RIGHT,
+        BSP_KEY_A, BSP_KEY_B, BSP_KEY_START
+    };
+    static const uint64_t s_wake_mask = (1ULL << BSP_KEY_UP)    | (1ULL << BSP_KEY_DOWN)  |
+                                        (1ULL << BSP_KEY_LEFT)  | (1ULL << BSP_KEY_RIGHT) |
+                                        (1ULL << BSP_KEY_A)     | (1ULL << BSP_KEY_B)     |
+                                        (1ULL << BSP_KEY_START);
+
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(5000));
         if (s_sleeping) continue;
 
-        /* 加载设置 */
         settings_t cfg;
         if (settings_load(&cfg) != ESP_OK || !cfg.sleep_enabled) continue;
-        /* 计时/频谱运行时禁止休眠 */
         if (app_manager_get_current_app() == APP_ID_COUNTDOWN) continue;
         if (app_manager_get_current_app() == APP_ID_SPECTRUM) continue;
 
         TickType_t now = xTaskGetTickCount();
-        if ((now - s_last_activity) > pdMS_TO_TICKS(cfg.sleep_timeout_sec * 1000)) {
-            s_sleeping = true;
-            s_wake_brightness = cfg.brightness;
-            bsp_lcd_backlight_set(0);
-            ESP_LOGI(TAG, "Sleep: backlight off (timeout=%ds)", cfg.sleep_timeout_sec);
+        if ((now - s_last_activity) <= pdMS_TO_TICKS(cfg.sleep_timeout_sec * 1000))
+            continue;
+
+        s_sleeping = true;
+        s_wake_brightness = cfg.brightness;
+        bsp_lcd_backlight_set(0);
+
+        /* 停用 BLE（省 BT 控制器功耗） */
+        bool had_ble = ble_hid_is_initialized();
+        if (had_ble) {
+            ESP_LOGI(TAG, "Light sleep: stopping BLE...");
+            ble_hid_deinit();
         }
+
+        /* 停用 WiFi（省 RF 功耗） */
+        bool had_wifi = wifi_manager_is_connected();
+        if (had_wifi) {
+            ESP_LOGI(TAG, "Light sleep: stopping WiFi...");
+            wifi_manager_stop_station();
+        }
+
+        ESP_LOGI(TAG, "Light sleep: entering (timeout=%ds)", cfg.sleep_timeout_sec);
+
+        /* 配置 GPIO wake-up：7 个按键任意按下唤醒 */
+        esp_sleep_enable_ext1_wakeup(s_wake_mask, ESP_EXT1_WAKEUP_ANY_LOW);
+
+        /* Enter Light Sleep */
+        esp_light_sleep_start();
+
+        /* ========== 唤醒后恢复 ========== */
+        ESP_LOGI(TAG, "Woke from light sleep");
+
+        if (had_ble) {
+            esp_err_t r = ble_hid_init();
+            if (r != ESP_OK) ESP_LOGW(TAG, "BLE re-init: %s", esp_err_to_name(r));
+        }
+        if (had_wifi) {
+            wifi_manager_start_station();
+        }
+
+        bsp_lcd_backlight_set(s_wake_brightness);
+        s_last_activity = xTaskGetTickCount();
+        s_sleeping = false;
     }
 }
 

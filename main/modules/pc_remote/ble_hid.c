@@ -246,4 +246,5 @@ esp_err_t ble_hid_deinit(void) {
 }
 
 bool ble_hid_is_connected(void) { return connected; }
+bool ble_hid_is_initialized(void) { return s_initialized; }
 const char *ble_hid_get_passkey(void) { return "1234"; }

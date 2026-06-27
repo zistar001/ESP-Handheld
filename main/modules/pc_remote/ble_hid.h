@@ -12,4 +12,5 @@ void     ble_hid_mouse_click(uint8_t buttons);
 void     ble_hid_release_all(void);
 esp_err_t ble_hid_deinit(void);
 bool ble_hid_is_connected(void);
+bool ble_hid_is_initialized(void);
 const char *ble_hid_get_passkey(void);
