@@ -165,7 +165,16 @@ static void lcd_set_window(int left, int top, int width, int height)
     int right = left + width - 1;
     int bottom = top + height - 1;
 
-    if (left < 0 || top < 0 || right >= display.screen.real_width || bottom >= display.screen.real_height)
+#ifdef RG_SCREEN_FULL_HEIGHT
+    /* ST7789 native 240×320, visible 240×280 — gap 20 at top */
+    static const int y_gap = (RG_SCREEN_FULL_HEIGHT - RG_SCREEN_HEIGHT) / 2;  /* = 20 */
+#else
+    static const int y_gap = 0;
+#endif
+    top += y_gap;
+    bottom += y_gap;
+
+    if (left < 0 || top < 0 || right >= display.screen.real_width || bottom >= display.screen.real_height + y_gap * 2)
         RG_LOGW("Bad lcd window (x0=%d, y0=%d, x1=%d, y1=%d)\n", left, top, right, bottom);
 
     ILI9341_CMD(0x2A, left >> 8, left & 0xff, right >> 8, right & 0xff); // Horiz
