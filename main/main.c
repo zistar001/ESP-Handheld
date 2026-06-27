@@ -356,9 +356,9 @@ static void pm_task(void *arg) {
         bsp_lcd_backlight_set(0);
         vTaskDelay(pdMS_TO_TICKS(100));
 
-        /* 配一个长定时器作为唤醒源（否则 esp_deep_sleep_start 会失败）
+        /* 用 BOOT 按键（GPIO0）作为唤醒源（不碰 7 个有问题的按键 GPIO）
            实际用户按 RESET 键就能唤醒 */
-        esp_sleep_enable_timer_wakeup(24 * 3600 * 1000000ULL);
+        esp_sleep_enable_ext1_wakeup(1ULL << BSP_KEY_BOOT, ESP_EXT1_WAKEUP_ANY_LOW);
 
         ESP_LOGI(TAG, "=== Deep sleep timeout=%ds, press RESET to wake ===",
                  cfg.sleep_timeout_sec);
