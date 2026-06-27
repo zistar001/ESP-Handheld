@@ -19,18 +19,18 @@ esp_err_t st7789_sleep_in(void);
 esp_err_t st7789_sleep_out(void);
 esp_lcd_panel_handle_t st7789_get_panel(void);
 
-/* 获取SPI总线host设备（供SD卡等外设共享SPI总线） */
+/* SPI2_HOST handle (供LVGL写入帧数据) */
 spi_host_device_t st7789_get_spi_host(void);
 
-/* NES渲染时获取/释放SPI总线独占权（防止与LVGL冲突） */
+/* NES渲染时获取/释放SPI总线独占权 */
 void st7789_bus_acquire(void);
 void st7789_bus_release(void);
 
-/* SPI总线互斥锁 — LCD和SD卡共享SPI2_HOST时使用 */
+/* SPI总线互斥锁 */
 void st7789_spi_lock(void);
 void st7789_spi_unlock(void);
 
-/* 清屏(全黑), 用于旋转前消除重影 */
+/* 清屏(全黑) */
 void st7789_clear(void);
 
 #ifdef __cplusplus

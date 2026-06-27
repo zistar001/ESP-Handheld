@@ -5,7 +5,7 @@ idf_component_register(
           # App framework
           "app/app_manager.c" "app/launcher.c" "app/menu.c" "app/rom_browser.c"
           # Audio
-          "modules/audio/box_audio_codec.c" "modules/audio/es8311_driver.c" "modules/audio/es7210_driver.c"
+          "modules/audio/box_audio_codec.c"
           # Sensors
           "modules/sensor/aht20_driver.c"
            "modules/imu/imu_driver.c"

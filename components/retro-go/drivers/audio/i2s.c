@@ -41,7 +41,7 @@ static bool driver_init(int device, int sample_rate)
     if (state.device == 0)
     {
     #if RG_AUDIO_USE_INT_DAC
-        esp_err_t ret = i2s_driver_install(I2S_NUM_0, &(i2s_config_t){
+        esp_err_t ret = i2s_driver_install(I2S_NUM_1, &(i2s_config_t){
             .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
             .sample_rate = sample_rate,
             .bits_per_sample = 16,
@@ -62,7 +62,7 @@ static bool driver_init(int device, int sample_rate)
     else if (state.device == 1)
     {
     #if RG_AUDIO_USE_EXT_DAC
-        esp_err_t ret = i2s_driver_install(I2S_NUM_0, &(i2s_config_t){
+        esp_err_t ret = i2s_driver_install(I2S_NUM_1, &(i2s_config_t){
             .mode = I2S_MODE_MASTER | I2S_MODE_TX,
             .sample_rate = sample_rate,
             .bits_per_sample = 16,
@@ -77,7 +77,7 @@ static bool driver_init(int device, int sample_rate)
         }, 0, NULL);
         if (ret == ESP_OK)
         {
-            ret = i2s_set_pin(I2S_NUM_0, &(i2s_pin_config_t) {
+            ret = i2s_set_pin(I2S_NUM_1, &(i2s_pin_config_t) {
                 .mck_io_num = GPIO_NUM_NC,
                 .bck_io_num = RG_GPIO_SND_I2S_BCK,
                 .ws_io_num = RG_GPIO_SND_I2S_WS,
@@ -101,12 +101,12 @@ static bool driver_init(int device, int sample_rate)
 
 static bool driver_set_sample_rates(int sampleRate)
 {
-    return i2s_set_sample_rates(I2S_NUM_0, sampleRate) == ESP_OK;
+    return i2s_set_sample_rates(I2S_NUM_1, sampleRate) == ESP_OK;
 }
 
 static bool driver_deinit(void)
 {
-    i2s_driver_uninstall(I2S_NUM_0);
+    i2s_driver_uninstall(I2S_NUM_1);
     if (state.device == 0)
     {
     #if RG_AUDIO_USE_INT_DAC
@@ -179,7 +179,7 @@ static bool driver_submit(const rg_audio_frame_t *frames, size_t count)
         if (i == count - 1 || ++pos == RG_COUNT(buffer))
         {
             size_t written;
-            if (i2s_write(I2S_NUM_0, (void *)buffer, pos * 4, &written, 1000) != ESP_OK)
+            if (i2s_write(I2S_NUM_1, (void *)buffer, pos * 4, &written, 1000) != ESP_OK)
                 RG_LOGW("I2S Submission error! Written: %d/%d\n", written, pos * 4);
             pos = 0;
         }
@@ -189,7 +189,7 @@ static bool driver_submit(const rg_audio_frame_t *frames, size_t count)
 
 static bool driver_set_mute(bool mute)
 {
-    i2s_zero_dma_buffer(I2S_NUM_0);
+    i2s_zero_dma_buffer(I2S_NUM_1);
     #ifdef RG_GPIO_SND_AMP_ENABLE
     gpio_set_level(RG_GPIO_SND_AMP_ENABLE, mute ? MUTE_ENABLE : MUTE_DISABLE);
     #endif

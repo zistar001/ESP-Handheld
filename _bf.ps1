@@ -8,7 +8,7 @@ $env:MSYSTEM=''
 $env:IDF_PATH=$script:IDF_PATH
 $env:IDF_TOOLS_PATH=$script:IDF_TOOLS_PATH
 $env:IDF_COMPONENT_MANAGER='0'
-$PY = Join-Path $script:IDF_TOOLS_PATH "python\v5.5.4\venv\Scripts\python.exe"
+$PY = Join-Path $script:IDF_TOOLS_PATH "idf-python\3.11.2\python.exe"
 $IDF_PY = Join-Path $script:IDF_PATH "tools\idf.py"
 $ESPTOOL = "$PY -m esptool --chip esp32s3 -p $script:COM_PORT -b 921600 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_size 16MB --flash_freq 80m"
 

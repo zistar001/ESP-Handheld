@@ -10,7 +10,6 @@ static i2c_master_bus_handle_t s_i2c_bus = NULL;
 
 esp_err_t bsp_lcd_backlight_set(uint8_t brightness_percent) {
     if (brightness_percent > 100) brightness_percent = 100;
-    /* 13-bit duty: 0~8191, use 8191 as max */
     uint32_t duty = (brightness_percent * 8191) / 100;
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
@@ -20,7 +19,7 @@ esp_err_t bsp_lcd_backlight_set(uint8_t brightness_percent) {
 esp_err_t bsp_lcd_init(void) {
     ESP_LOGI(TAG, "LCD init...");
 
-    /* Configure backlight PWM */
+    /* Configure backlight PWM on BSP_LCD_BL (IO43) */
     gpio_set_direction(BSP_LCD_BL, GPIO_MODE_OUTPUT);
     ledc_timer_config_t ledc_timer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
@@ -36,19 +35,18 @@ esp_err_t bsp_lcd_init(void) {
         .duty = 0, .hpoint = 0
     };
     ledc_channel_config(&ledc_ch);
-    bsp_lcd_backlight_set(50);  /* 50% brightness initially */
+    bsp_lcd_backlight_set(50);
 
-    /* Initialize ST7789 via ESP-IDF panel API */
-    st7789_init(NULL);  /* NULL = let st7789_init create its own SPI */
+    /* Initialize ST7789 on SPI2_HOST (SCK=IO21, MOSI=IO14, CS=IO42, DC=IO44, RST=IO13) */
+    st7789_init(NULL);
 
     ESP_LOGI(TAG, "LCD init done");
     return ESP_OK;
 }
 
 esp_err_t bsp_i2c_init(void) {
-    if (s_i2c_bus) return ESP_OK;  /* already initialized */
-    ESP_LOGI(TAG, "I2C init (new driver)...");
-    ESP_LOGI(TAG, "SDA=%d, SCL=%d", BSP_I2C_SDA, BSP_I2C_SCL);
+    if (s_i2c_bus) return ESP_OK;
+    ESP_LOGI(TAG, "I2C init: SDA=GPIO1, SCL=GPIO2");
     i2c_master_bus_config_t bus_cfg = {
         .i2c_port = I2C_NUM_0,
         .sda_io_num = BSP_I2C_SDA,
@@ -57,7 +55,6 @@ esp_err_t bsp_i2c_init(void) {
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
-    ESP_LOGI(TAG, "Creating I2C bus...");
     esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_i2c_bus);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "I2C init failed: %s", esp_err_to_name(ret));

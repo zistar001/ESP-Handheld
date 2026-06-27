@@ -27,7 +27,7 @@ endmacro()
 
 # Extra component dirs: our retro-go + emulator cores from D:\retro-go
 set(EXTRA_COMPONENT_DIRS
-    "D:/code/claudecode/ESP_BSP/components/retro-go"
+    "D:/code/claudecode/ESP_BSP1/components/retro-go"
     "D:/retro-go/retro-core/components/nofrendo"
     "D:/retro-go/retro-core/components/gnuboy"
     "D:/retro-go/retro-core/components/pce-go"

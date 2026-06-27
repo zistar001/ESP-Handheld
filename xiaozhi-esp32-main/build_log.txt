@@ -1,3 +1,0 @@
-WARNING: Python interpreter "C:\Users\Administrator\.espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe" used to start idf.py is not from installed venv "D:\Espressif\tools\python_env\idf5.5_py3.11_env"
-Build directory 'D:\code\claudecode\ESP_BSP\xiaozhi-esp32-main\build' configured for project 'D:\code\XIAOZHI_AI\xiaozhi-esp32-main' not 'D:\code\claudecode\ESP_BSP\xiaozhi-esp32-main'. Run 'idf.py fullclean' to start again.
-Executing action: all (aliases: build)

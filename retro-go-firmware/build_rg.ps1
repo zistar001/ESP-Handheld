@@ -9,7 +9,7 @@ $env:IDF_TOOLS_PATH = 'D:\Espressif\tools'
 $env:IDF_COMPONENT_MANAGER = '0'
 $env:IDF_PYTHON_ENV_PATH = "$env:USERPROFILE\.espressif\python_env\idf5.5_py3.11_env"
 $env:ESP_ROM_ELF_DIR = "$env:IDF_PATH\components\esp_rom\esp32s3"
-$COM_PORT           = 'COM7'
+$COM_PORT           = 'COM8'
 
 # Activate ESP-IDF Python virtual environment
 $venv = "$env:USERPROFILE\.espressif\python_env\idf5.5_py3.11_env\Scripts"

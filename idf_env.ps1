@@ -14,7 +14,7 @@ $script:env_office = @{
 $script:env_home = @{
     IDF_PATH       = 'D:\Espressif\frameworks\esp-idf-v5.5.4'
     IDF_TOOLS_PATH = 'D:\Espressif\tools'
-    COM_PORT       = 'COM7'
+    COM_PORT       = 'COM8'
 }
 
 # ----- 当前使用的环境（办公室 / 家里）-----

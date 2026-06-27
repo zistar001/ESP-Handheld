@@ -7,7 +7,6 @@
 #include "modules/weather/weather.h"
 #include "modules/theme/theme_manager.h"
 #include "ui/components/status_bar.h"
-#include "es8311_driver.h"
 #include "modules/audio/box_audio_codec.h"
 #include <stdio.h>
 #include <string.h>
