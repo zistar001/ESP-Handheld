@@ -47,7 +47,7 @@ static void refresh_ui(void) {
             /* 基础主题行: 显示 ○/● + 主题名 */
             bool active = (theme_get_base() == (theme_id_t)i);
             snprintf(buf, sizeof(buf), "%s %s",
-                     active ? "\xE2\x97\x8F" : "\xE2\x97\x8B",
+                     active ? "[*]" : "[ ]",
                      theme_get_name((theme_id_t)i));
             lv_label_set_text(lbl, buf);
             lv_obj_set_style_text_color(lbl, active ? ORANGE : WHITE, 0);
@@ -148,7 +148,7 @@ lv_obj_t *theme_screen_create(void) {
 
     /* 分隔标签 */
     lv_obj_t *sep = lv_label_create(cont);
-    lv_label_set_text(sep, "── 自定义混搭 ──");
+    lv_label_set_text(sep, "== 自定义混搭 ==");
     lv_obj_set_style_text_color(sep, SUB, 0);
     lv_obj_set_style_text_font(sep, &lv_font_simsun_16_cjk, 0);
     lv_obj_set_pos(sep, 50, idx * 30 + 5);
