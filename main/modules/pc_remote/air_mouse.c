@@ -70,7 +70,7 @@ void air_mouse_task(void *arg) {
             if (fabsf(gx) > 1.5f || fabsf(gy) > 1.5f) {
                 active = true;
                 dx = (int8_t)fminf(fmaxf(-gx * sensitivity * 2, -127), 127);
-                dy = (int8_t)fminf(fmaxf(gy * sensitivity * 2, -127), 127);
+                dy = (int8_t)fminf(fmaxf(-gy * sensitivity * 2, -127), 127);
                 ble_hid_send_mouse(0, dx, dy);
             }
 
