@@ -367,6 +367,9 @@ static void pm_task(void *arg) {
 void app_main(void) {
     ESP_LOGI(TAG, "=== ESP32-S3 Smart Handheld ===");
 
+    /* Small delay to allow serial monitor to capture boot messages */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     /* 1. NVS */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -399,8 +402,16 @@ void app_main(void) {
         return;
     }
 
-    /* 6. Audio codec (ES8311 + ES7210) */
-    box_audio_init();
+    /* 6. Audio - MAX98357 + MSM261 digital mic */
+    ret = box_audio_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Audio init FAILED: %s", esp_err_to_name(ret));
+    } else {
+        ESP_LOGI(TAG, "Audio init OK, playing beep...");
+        box_audio_beep();
+        ESP_LOGI(TAG, "Beep done");
+        box_audio_diag();  /* 诊断：打印 I2S 麦克风数据 */
+    }
 
     /* 7. Sensors (best-effort) */
     ret = aht20_init();

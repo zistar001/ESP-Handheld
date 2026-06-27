@@ -3,12 +3,24 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "driver/i2s_std.h"
-#include "driver/i2s_tdm.h"
-#include "driver/i2c_master.h"
-#include "esp_codec_dev.h"
-#include "esp_codec_dev_defaults.h"
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
+
+/*
+ * New PCB (Rev 2) Audio Architecture:
+ *   ┌─ I2S0 (RX) ──────────────────────┐
+ *   │  BCLK=IO11, WS=IO12, DATA=IO10   │
+ *   │  → MSM261 数字麦克风 (I2S)        │
+ *   └────────────────────────────────────┘
+ *   ┌─ I2S1 (TX) ──────────────────────┐
+ *   │  BCLK=IO46, LRC=IO9, DIN=IO3     │
+ *   │  → MAX98357 数字功放 (I2S入)      │
+ *   └────────────────────────────────────┘
+ *
+ * 两个独立I2S控制器，各自独立时钟。无外部音频编解码芯片。
+ * 音量控制由软件乘法实现（MAX98357无I2C音量控制）。
+ */
 
 static const char *TAG = "BOX_AUDIO";
 
@@ -16,32 +28,23 @@ static const char *TAG = "BOX_AUDIO";
 
 static uint32_t s_sample_rate = 16000;
 
-/* Shared I2S handles (TX + RX on same port) */
-static i2s_chan_handle_t            s_tx_chan  = NULL;
-static i2s_chan_handle_t            s_rx_chan  = NULL;
-static const audio_codec_data_if_t *s_data_if  = NULL;
+/* I2S0 TX → MAX98357 */
+static i2s_chan_handle_t s_tx_chan = NULL;
 
-/* ES8311 (output) */
-static const audio_codec_ctrl_if_t *s_out_ctrl_if  = NULL;
-static const audio_codec_gpio_if_t *s_gpio_if      = NULL;
-static const audio_codec_if_t      *s_out_codec_if = NULL;
-static esp_codec_dev_handle_t       s_out_dev      = NULL;
+/* I2S1 RX → 数字麦克风 */
+static i2s_chan_handle_t s_rx_chan = NULL;
 
-/* ES7210 (input) */
-static const audio_codec_ctrl_if_t *s_in_ctrl_if  = NULL;
-static const audio_codec_if_t      *s_in_codec_if = NULL;
-static esp_codec_dev_handle_t       s_in_dev      = NULL;
+static uint8_t s_volume = 70;      /* 0-100, 软件音量 */
+static float   s_mic_gain = 1.0f;  /* 麦克风增益系数 */
+static bool    s_inited = false;
 
-/* Shared I2C bus for audio codecs */
-static i2c_master_bus_handle_t s_i2c_bus = NULL;
-
-static uint8_t s_volume = 70;
-static bool s_inited = false;
-
-static esp_err_t create_shared_i2s(uint32_t rate)
+/* ================================================================
+ *  I2S0 TX — MAX98357 数字功放
+ * ================================================================ */
+static esp_err_t init_i2s0_tx(uint32_t rate)
 {
     i2s_chan_config_t chan_cfg = {
-        .id = I2S_NUM_0,
+        .id = BSP_AMP_HOST,  /* I2S_NUM_0 */
         .role = I2S_ROLE_MASTER,
         .dma_desc_num = 6,
         .dma_frame_num = 240,
@@ -49,177 +52,76 @@ static esp_err_t create_shared_i2s(uint32_t rate)
         .auto_clear_before_cb = false,
         .intr_priority = 0,
     };
-    ESP_RETURN_ON_ERROR(i2s_new_channel(&chan_cfg, &s_tx_chan, &s_rx_chan),
-                        TAG, "i2s_new_channel failed");
+    /* TX only — rx_handle = NULL */
+    ESP_RETURN_ON_ERROR(i2s_new_channel(&chan_cfg, &s_tx_chan, NULL),
+                        TAG, "i2s_new_channel(TX) failed");
 
     i2s_std_config_t std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(rate),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(AUDIO_BITS, I2S_SLOT_MODE_MONO),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
-            .mclk = BSP_AUDIO_MCLK,
-            .bclk = BSP_AUDIO_BCLK,
-            .ws   = BSP_AUDIO_WS,
-            .dout = BSP_AUDIO_DOUT,
+            .mclk = I2S_GPIO_UNUSED,   /* MAX98357 不需要 MCLK */
+            .bclk = BSP_AMP_BCLK,      /* IO46 */
+            .ws   = BSP_AMP_LRC,       /* IO9 */
+            .dout = BSP_AMP_DIN,       /* IO3 */
             .din  = I2S_GPIO_UNUSED,
             .invert_flags = {false, false, false},
         },
     };
     ESP_RETURN_ON_ERROR(i2s_channel_init_std_mode(s_tx_chan, &std_cfg),
-                        TAG, "i2s_channel_init_std_mode failed");
+                        TAG, "i2s_channel_init_std_mode(TX) failed");
     ESP_RETURN_ON_ERROR(i2s_channel_enable(s_tx_chan),
                         TAG, "i2s_channel_enable(TX) failed");
 
-    i2s_tdm_config_t tdm_cfg = {
-        .clk_cfg = {
-            .sample_rate_hz = rate,
-            .clk_src = I2S_CLK_SRC_DEFAULT,
-            .ext_clk_freq_hz = 0,
-            .mclk_multiple = I2S_MCLK_MULTIPLE_256,
-            .bclk_div = 8,
-        },
-        .slot_cfg = {
-            .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,
-            .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO,
-            .slot_mode = I2S_SLOT_MODE_STEREO,
-            .slot_mask = I2S_TDM_SLOT0 | I2S_TDM_SLOT1
-                       | I2S_TDM_SLOT2 | I2S_TDM_SLOT3,
-            .ws_width = I2S_TDM_AUTO_WS_WIDTH,
-            .ws_pol = false,
-            .bit_shift = true,
-            .left_align = false,
-            .big_endian = false,
-            .bit_order_lsb = false,
-            .skip_mask = false,
-            .total_slot = I2S_TDM_AUTO_SLOT_NUM,
-        },
+    /* MAX98357 上电稳定需要 ~20ms */
+    vTaskDelay(pdMS_TO_TICKS(25));
+
+    ESP_LOGI(TAG, "I2S0 TX: MAX98357 @ %lu Hz (BCLK=46, LRC=9, DIN=3)", rate);
+    return ESP_OK;
+}
+
+/* ================================================================
+ *  I2S1 RX — 数字麦克风
+ * ================================================================ */
+static esp_err_t init_i2s1_rx(uint32_t rate)
+{
+    i2s_chan_config_t chan_cfg = {
+        .id = BSP_MIC_HOST,  /* I2S_NUM_1 */
+        .role = I2S_ROLE_MASTER,
+        .dma_desc_num = 6,
+        .dma_frame_num = 240,
+        .auto_clear_after_cb = true,
+        .auto_clear_before_cb = false,
+        .intr_priority = 0,
+    };
+    /* RX only — tx_handle = NULL */
+    ESP_RETURN_ON_ERROR(i2s_new_channel(&chan_cfg, NULL, &s_rx_chan),
+                        TAG, "i2s_new_channel(RX) failed");
+
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(rate),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = {
-            .mclk = BSP_AUDIO_MCLK,
-            .bclk = BSP_AUDIO_BCLK,
-            .ws   = BSP_AUDIO_WS,
+            .mclk = I2S_GPIO_UNUSED,   /* 数字麦克风不需要 MCLK */
+            .bclk = BSP_MIC_BCLK,      /* IO11 */
+            .ws   = BSP_MIC_WS,        /* IO12 */
             .dout = I2S_GPIO_UNUSED,
-            .din  = BSP_AUDIO_DIN,
+            .din  = BSP_MIC_DATA,      /* IO10 */
             .invert_flags = {false, false, false},
         },
     };
-    ESP_RETURN_ON_ERROR(i2s_channel_init_tdm_mode(s_rx_chan, &tdm_cfg),
-                        TAG, "i2s_channel_init_tdm_mode failed");
+    ESP_RETURN_ON_ERROR(i2s_channel_init_std_mode(s_rx_chan, &std_cfg),
+                        TAG, "i2s_channel_init_std_mode(RX) failed");
     ESP_RETURN_ON_ERROR(i2s_channel_enable(s_rx_chan),
                         TAG, "i2s_channel_enable(RX) failed");
 
-    audio_codec_i2s_cfg_t i2s_cfg = {
-        .rx_handle = s_rx_chan,
-        .tx_handle = s_tx_chan,
-    };
-    s_data_if = audio_codec_new_i2s_data(&i2s_cfg);
-    ESP_RETURN_ON_FALSE(s_data_if, ESP_FAIL, TAG, "audio_codec_new_i2s_data failed");
-
-    ESP_LOGI(TAG, "I2S_NUM_0 duplex: TX(std)+RX(tdm4) @ %lu Hz", rate);
+    ESP_LOGI(TAG, "I2S1 RX: Digital Mic @ %lu Hz (BCLK=11, WS=12, DATA=10)", rate);
     return ESP_OK;
 }
 
-static esp_err_t create_i2c_bus(void)
-{
-    if (s_i2c_bus) return ESP_OK;
-    i2c_master_bus_config_t cfg = {
-        .i2c_port = I2C_NUM_1,
-        .sda_io_num = BSP_CODEC_SDA,
-        .scl_io_num = BSP_CODEC_SCL,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .glitch_ignore_cnt = 7,
-        .trans_queue_depth = 0,
-        .flags.enable_internal_pullup = true,
-    };
-    ESP_RETURN_ON_ERROR(i2c_new_master_bus(&cfg, &s_i2c_bus),
-                        TAG, "i2c_new_master_bus failed");
-    return ESP_OK;
-}
-
-/* Internal: open codecs after I2S is up */
-static esp_err_t open_codecs(uint32_t rate)
-{
-    /* ES8311 DAC */
-    {
-        audio_codec_i2c_cfg_t i2c_cfg = {
-            .addr = ES8311_CODEC_DEFAULT_ADDR,
-            .bus_handle = s_i2c_bus,
-        };
-        s_out_ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
-        ESP_RETURN_ON_FALSE(s_out_ctrl_if, ESP_FAIL, TAG, "ES8311 I2C ctrl failed");
-
-        s_gpio_if = audio_codec_new_gpio();
-        ESP_RETURN_ON_FALSE(s_gpio_if, ESP_FAIL, TAG, "gpio_if failed");
-
-        es8311_codec_cfg_t es8311_cfg = {
-            .ctrl_if = s_out_ctrl_if,
-            .gpio_if = s_gpio_if,
-            .codec_mode = ESP_CODEC_DEV_WORK_MODE_DAC,
-            .pa_pin = BSP_AUDIO_PA_PIN,
-            .use_mclk = true,
-            .hw_gain = { .pa_voltage = 5.0, .codec_dac_voltage = 3.3 },
-            .pa_reverted = false,
-        };
-        s_out_codec_if = es8311_codec_new(&es8311_cfg);
-        ESP_RETURN_ON_FALSE(s_out_codec_if, ESP_FAIL, TAG, "es8311_codec_new failed");
-
-        esp_codec_dev_cfg_t dev_cfg = {
-            .dev_type = ESP_CODEC_DEV_TYPE_OUT,
-            .codec_if = s_out_codec_if,
-            .data_if = s_data_if,
-        };
-        s_out_dev = esp_codec_dev_new(&dev_cfg);
-        ESP_RETURN_ON_FALSE(s_out_dev, ESP_FAIL, TAG, "esp_codec_dev_new(OUT) failed");
-
-        esp_codec_dev_sample_info_t fs = {
-            .bits_per_sample = AUDIO_BITS,
-            .channel = 1,
-            .channel_mask = 0,
-            .sample_rate = rate,
-            .mclk_multiple = 0,
-        };
-        ESP_RETURN_ON_ERROR(esp_codec_dev_open(s_out_dev, &fs),
-                            TAG, "esp_codec_dev_open(OUT) failed");
-        ESP_RETURN_ON_ERROR(esp_codec_dev_set_out_vol(s_out_dev, s_volume),
-                            TAG, "set_out_vol failed");
-    }
-
-    /* ES7210 ADC */
-    {
-        audio_codec_i2c_cfg_t i2c_cfg = {
-            .addr = ES7210_CODEC_DEFAULT_ADDR,
-            .bus_handle = s_i2c_bus,
-        };
-        s_in_ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
-        ESP_RETURN_ON_FALSE(s_in_ctrl_if, ESP_FAIL, TAG, "ES7210 I2C ctrl failed");
-
-        es7210_codec_cfg_t es7210_cfg = {
-            .ctrl_if = s_in_ctrl_if,
-            .master_mode = false,
-            .mic_selected = ES7210_SEL_MIC1 | ES7210_SEL_MIC2,
-        };
-        s_in_codec_if = es7210_codec_new(&es7210_cfg);
-        ESP_RETURN_ON_FALSE(s_in_codec_if, ESP_FAIL, TAG, "es7210_codec_new failed");
-
-        esp_codec_dev_cfg_t dev_cfg = {
-            .dev_type = ESP_CODEC_DEV_TYPE_IN,
-            .codec_if = s_in_codec_if,
-            .data_if = s_data_if,
-        };
-        s_in_dev = esp_codec_dev_new(&dev_cfg);
-        ESP_RETURN_ON_FALSE(s_in_dev, ESP_FAIL, TAG, "esp_codec_dev_new(IN) failed");
-
-        esp_codec_dev_sample_info_t fs = {
-            .bits_per_sample = AUDIO_BITS,
-            .channel = 4,
-            .channel_mask = ESP_CODEC_DEV_MAKE_CHANNEL_MASK(0),  /* mic1 only, like XiaoZhi */
-            .sample_rate = rate,
-            .mclk_multiple = 0,
-        };
-        ESP_RETURN_ON_ERROR(esp_codec_dev_open(s_in_dev, &fs),
-                            TAG, "esp_codec_dev_open(IN) failed");
-    }
-
-    return ESP_OK;
-}
+/* ================================================================
+ *  公共 API
+ * ================================================================ */
 
 esp_err_t box_audio_init(void)
 {
@@ -230,77 +132,92 @@ esp_err_t box_audio_init_rate(uint32_t sample_rate)
 {
     if (s_inited && s_sample_rate == sample_rate) return ESP_OK;
 
-    /* If already initialized at a different rate, tear down I2S + codecs only (keep I2C) */
+    /* 先清理旧资源 */
     if (s_inited) {
         ESP_LOGI(TAG, "Reconfiguring %lu -> %lu Hz", s_sample_rate, sample_rate);
-        if (s_out_dev) { esp_codec_dev_close(s_out_dev); esp_codec_dev_delete(s_out_dev); s_out_dev = NULL; }
-        if (s_out_codec_if) { audio_codec_delete_codec_if(s_out_codec_if); s_out_codec_if = NULL; }
-        if (s_out_ctrl_if) { audio_codec_delete_ctrl_if(s_out_ctrl_if); s_out_ctrl_if = NULL; }
-        if (s_gpio_if) { audio_codec_delete_gpio_if(s_gpio_if); s_gpio_if = NULL; }
-        if (s_in_dev) { esp_codec_dev_close(s_in_dev); esp_codec_dev_delete(s_in_dev); s_in_dev = NULL; }
-        if (s_in_codec_if) { audio_codec_delete_codec_if(s_in_codec_if); s_in_codec_if = NULL; }
-        if (s_in_ctrl_if) { audio_codec_delete_ctrl_if(s_in_ctrl_if); s_in_ctrl_if = NULL; }
-        if (s_data_if) { audio_codec_delete_data_if(s_data_if); s_data_if = NULL; }
-        if (s_rx_chan) { i2s_channel_disable(s_rx_chan); i2s_del_channel(s_rx_chan); s_rx_chan = NULL; }
-        if (s_tx_chan) { i2s_channel_disable(s_tx_chan); i2s_del_channel(s_tx_chan); s_tx_chan = NULL; }
-        s_inited = false;
-
-        ESP_RETURN_ON_ERROR(create_shared_i2s(sample_rate), TAG, "I2S reconfig failed");
-        ESP_RETURN_ON_ERROR(open_codecs(sample_rate), TAG, "Codec reopen failed");
-        s_sample_rate = sample_rate;
-        s_inited = true;
-        ESP_LOGI(TAG, "Audio reconfigured to %lu Hz", sample_rate);
-        return ESP_OK;
+        box_audio_stop();
     }
 
-    /* First-time init */
     s_sample_rate = sample_rate;
-    ESP_RETURN_ON_ERROR(create_i2c_bus(), TAG, "I2C bus failed");
-    ESP_RETURN_ON_ERROR(create_shared_i2s(sample_rate), TAG, "I2S init failed");
-    ESP_RETURN_ON_ERROR(open_codecs(sample_rate), TAG, "Codec init failed");
 
-    ESP_LOGI(TAG, "Audio ready: ES8311+ES7210 @ %lu Hz %d-bit", sample_rate, AUDIO_BITS);
+    ESP_RETURN_ON_ERROR(init_i2s0_tx(sample_rate), TAG, "I2S0 TX init failed");
+    ESP_RETURN_ON_ERROR(init_i2s1_rx(sample_rate), TAG, "I2S1 RX init failed");
+
+    ESP_LOGI(TAG, "Audio ready: MAX98357 + Digital Mic @ %lu Hz %d-bit", sample_rate, AUDIO_BITS);
     s_inited = true;
     return ESP_OK;
 }
 
 esp_err_t box_audio_read(int16_t *data, int samples)
 {
-    if (!s_inited || !s_in_dev) return ESP_ERR_INVALID_STATE;
-    int ret = esp_codec_dev_read(s_in_dev, (void *)data, samples * sizeof(int16_t));
-    return (ret == ESP_CODEC_DEV_OK) ? ESP_OK : ESP_FAIL;
+    if (!s_inited || !s_rx_chan) return ESP_ERR_INVALID_STATE;
+
+    /* 16-bit STEREO: 每帧2个int16_t, 取左右声道中信号大的那个 */
+    int frames = samples;
+    int16_t *stereo = (int16_t *)heap_caps_malloc(frames * 2 * sizeof(int16_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!stereo) stereo = (int16_t *)malloc(frames * 2 * sizeof(int16_t));
+    if (!stereo) return ESP_ERR_NO_MEM;
+
+    size_t bytes_read = 0;
+    esp_err_t ret = i2s_channel_read(s_rx_chan, stereo,
+                                     frames * 2 * sizeof(int16_t), &bytes_read,
+                                     portMAX_DELAY);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "i2s_channel_read failed: %s", esp_err_to_name(ret));
+        free(stereo);
+        return ESP_FAIL;
+    }
+
+    int n = bytes_read / sizeof(int16_t);
+    int out = 0;
+    for (int i = 0; i < n - 1 && out < samples; i += 2) {
+        int32_t l = stereo[i];
+        int32_t r = stereo[i + 1];
+        /* 取左右声道中信号较大的那个 — 适配不同 MSM261 变种 */
+        int32_t v = (abs(l) > abs(r)) ? l : r;
+        if (s_mic_gain != 1.0f) v = (int32_t)(v * s_mic_gain);
+        data[out++] = (int16_t)(v > 32767 ? 32767 : (v < -32768 ? -32768 : v));
+    }
+    free(stereo);
+
+    if (out == 0) {
+        ESP_LOGW(TAG, "box_audio_read: no data (n=%d)", n);
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 esp_err_t box_audio_write(const int16_t *data, int samples)
 {
-    if (!s_inited || !s_out_dev) return ESP_ERR_INVALID_STATE;
-    int ret = esp_codec_dev_write(s_out_dev, (void *)data, samples * sizeof(int16_t));
-    return (ret == ESP_CODEC_DEV_OK) ? ESP_OK : ESP_FAIL;
-}
+    if (!s_inited || !s_tx_chan) return ESP_ERR_INVALID_STATE;
 
-/* 简单提示音（880Hz, 150ms） */
-#define BEEP_FREQ      880
-#define BEEP_DURATION  0.15f
-#define BEEP_VOLUME    6000
+    /* I2S配置为32-bit，将16-bit数据扩展到32-bit（左对齐到MSB） */
+    int32_t *buf32 = (int32_t *)heap_caps_malloc(samples * sizeof(int32_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!buf32) buf32 = (int32_t *)malloc(samples * sizeof(int32_t));
+    if (!buf32) return ESP_ERR_NO_MEM;
 
-void box_audio_beep(void)
-{
-    if (!s_inited || !s_out_dev) return;
-    int samples = (int)(s_sample_rate * BEEP_DURATION);
-    int16_t *buf = (int16_t *)heap_caps_malloc(samples * sizeof(int16_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    if (!buf) return;
+    float gain = s_volume / 100.0f;
     for (int i = 0; i < samples; i++) {
-        buf[i] = (int16_t)(sinf(2.0f * M_PI * BEEP_FREQ * i / s_sample_rate) * BEEP_VOLUME);
+        int32_t v = (int32_t)(data[i] * gain);
+        buf32[i] = (v << 16);
     }
-    box_audio_write(buf, samples);
-    heap_caps_free(buf);
+
+    size_t bytes_written = 0;
+    esp_err_t ret = i2s_channel_write(s_tx_chan, buf32,
+                                      samples * sizeof(int32_t), &bytes_written,
+                                      portMAX_DELAY);
+    free(buf32);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "i2s_channel_write failed: %s", esp_err_to_name(ret));
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 void box_audio_set_volume(uint8_t vol)
 {
     if (vol > 100) vol = 100;
     s_volume = vol;
-    if (s_out_dev) esp_codec_dev_set_out_vol(s_out_dev, s_volume);
 }
 
 uint8_t box_audio_get_volume(void)
@@ -310,25 +227,76 @@ uint8_t box_audio_get_volume(void)
 
 void box_audio_set_mic_gain(uint8_t db)
 {
-    if (!s_in_dev) return;
-    esp_codec_dev_set_in_channel_gain(s_in_dev,
-        ESP_CODEC_DEV_MAKE_CHANNEL_MASK(0) | ESP_CODEC_DEV_MAKE_CHANNEL_MASK(1), db);
+    /* 将 0-37dB 映射为增益系数 — 对照旧硬件 ES7210 的 37dB ≈ 70x */
+    float gain = 1.0f;
+    if (db >= 37) gain = 70.0f;          /* 最大增益 */
+    else if (db >= 30) gain = 35.0f;
+    else if (db >= 20) gain = 15.0f;
+    else if (db >= 10) gain = 5.0f;
+    else if (db > 0) gain = 1.0f + (db * 0.5f);
+    if (gain < 1.0f) gain = 1.0f;
+    if (gain > 70.0f) gain = 70.0f;
+    s_mic_gain = gain;
+    ESP_LOGI(TAG, "mic_gain set: db=%d → gain=%.1fx", db, gain);
+}
+
+void box_audio_beep(void)
+{
+    if (!s_inited || !s_tx_chan) {
+        ESP_LOGW(TAG, "beep skipped: inited=%d tx=%p", s_inited, s_tx_chan);
+        return;
+    }
+#define BEEP_FREQ      880
+#define BEEP_AMPLITUDE 28000  /* MAX98357 灵敏度有限，加大振幅使提示音更响 */
+#define BEEP_DURATION  0.15f
+    int samples = (int)(s_sample_rate * BEEP_DURATION);
+    int16_t *buf = (int16_t *)heap_caps_malloc(samples * sizeof(int16_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (!buf) { ESP_LOGW(TAG, "beep skipped: OOM"); return; }
+    for (int i = 0; i < samples; i++) {
+        buf[i] = (int16_t)(sinf(2.0f * M_PI * BEEP_FREQ * i / s_sample_rate) * BEEP_AMPLITUDE);
+    }
+    esp_err_t r = box_audio_write(buf, samples);
+    ESP_LOGI(TAG, "beep play: ret=%s", esp_err_to_name(r));
+    heap_caps_free(buf);
+}
+
+/* 诊断：读取一帧 I2S RX 数据并打印统计 */
+void box_audio_diag(void)
+{
+    if (!s_inited || !s_rx_chan) {
+        ESP_LOGW(TAG, "diag skipped: inited=%d rx=%p", s_inited, s_rx_chan);
+        return;
+    }
+    int16_t buf[64];  /* 32 stereo frames */
+    size_t br = 0;
+    esp_err_t ret = i2s_channel_read(s_rx_chan, buf, sizeof(buf), &br, pdMS_TO_TICKS(100));
+    int n = br / sizeof(int16_t);
+    int16_t vmin = 32767, vmax = -32768;
+    for (int i = 0; i < n; i++) {
+        if (buf[i] < vmin) vmin = buf[i];
+        if (buf[i] > vmax) vmax = buf[i];
+    }
+    ESP_LOGI(TAG, "diag: ret=%s br=%d n=%d L=[%d %d %d %d] R=[%d %d %d %d] range=[%d..%d]",
+             esp_err_to_name(ret), (int)br, n,
+             n>0?buf[0]:0, n>2?buf[2]:0, n>4?buf[4]:0, n>6?buf[6]:0,
+             n>1?buf[1]:0, n>3?buf[3]:0, n>5?buf[5]:0, n>7?buf[7]:0,
+             vmin, vmax);
 }
 
 void box_audio_stop(void)
 {
-    if (s_out_dev) { esp_codec_dev_close(s_out_dev); esp_codec_dev_delete(s_out_dev); s_out_dev = NULL; }
-    if (s_out_codec_if) { audio_codec_delete_codec_if(s_out_codec_if); s_out_codec_if = NULL; }
-    if (s_out_ctrl_if) { audio_codec_delete_ctrl_if(s_out_ctrl_if); s_out_ctrl_if = NULL; }
-    if (s_gpio_if) { audio_codec_delete_gpio_if(s_gpio_if); s_gpio_if = NULL; }
-    if (s_in_dev) { esp_codec_dev_close(s_in_dev); esp_codec_dev_delete(s_in_dev); s_in_dev = NULL; }
-    if (s_in_codec_if) { audio_codec_delete_codec_if(s_in_codec_if); s_in_codec_if = NULL; }
-    if (s_in_ctrl_if) { audio_codec_delete_ctrl_if(s_in_ctrl_if); s_in_ctrl_if = NULL; }
-    if (s_data_if) { audio_codec_delete_data_if(s_data_if); s_data_if = NULL; }
-    if (s_rx_chan) { i2s_channel_disable(s_rx_chan); i2s_del_channel(s_rx_chan); s_rx_chan = NULL; }
-    if (s_tx_chan) { i2s_channel_disable(s_tx_chan); i2s_del_channel(s_tx_chan); s_tx_chan = NULL; }
-    if (s_i2c_bus) { i2c_del_master_bus(s_i2c_bus); s_i2c_bus = NULL; }
+    if (s_tx_chan) {
+        i2s_channel_disable(s_tx_chan);
+        i2s_del_channel(s_tx_chan);
+        s_tx_chan = NULL;
+    }
+    if (s_rx_chan) {
+        i2s_channel_disable(s_rx_chan);
+        i2s_del_channel(s_rx_chan);
+        s_rx_chan = NULL;
+    }
     s_inited = false;
+    ESP_LOGI(TAG, "Audio stopped");
 }
 
 bool box_audio_is_inited(void)
@@ -341,9 +309,6 @@ uint32_t box_audio_get_sample_rate(void)
     return s_sample_rate;
 }
 
-
-
-/* Expose raw I2S TX handle for direct writes (bypass codec layer) */
 i2s_chan_handle_t box_audio_get_tx_channel(void)
 {
     return s_tx_chan;
