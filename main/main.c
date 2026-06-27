@@ -51,7 +51,6 @@ static const char *TAG = "MAIN";
 /* Sleep management */
 static bool s_sleeping = false;
 static TickType_t s_last_activity = 0;
-static uint8_t s_wake_brightness = 50;
 
 
 /* ================================================================
@@ -70,6 +69,11 @@ void settings_sync_global(void) {
 static void key_handler(key_id_t key, bool pressed) {
     if (pressed) {
         s_last_activity = xTaskGetTickCount();
+        if (s_sleeping) {
+            s_sleeping = false;
+            settings_t s; settings_load(&s);
+            bsp_lcd_backlight_set(s.brightness);
+        }
     }
 
     /* Game exit checking removed — games now run on separate partition (ota_0) */
@@ -332,28 +336,15 @@ static void key_handler(key_id_t key, bool pressed) {
 }
 
 /* ================================================================
- * Power management task — Light Sleep（5s间隔）
+ * Power management task — 背光控制（5s间隔，暂不进入 Light Sleep）
  * ================================================================ */
 static void pm_task(void *arg) {
-    static const gpio_num_t s_wake_pins[] = {
-        BSP_KEY_UP, BSP_KEY_DOWN, BSP_KEY_LEFT, BSP_KEY_RIGHT,
-        BSP_KEY_A, BSP_KEY_B, BSP_KEY_START
-    };
-    static const uint64_t s_wake_mask = (1ULL << BSP_KEY_UP)    | (1ULL << BSP_KEY_DOWN)  |
-                                        (1ULL << BSP_KEY_LEFT)  | (1ULL << BSP_KEY_RIGHT) |
-                                        (1ULL << BSP_KEY_A)     | (1ULL << BSP_KEY_B)     |
-                                        (1ULL << BSP_KEY_START);
-
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(5000));
         if (s_sleeping) continue;
 
         settings_t cfg;
-        if (settings_load(&cfg) != ESP_OK || !cfg.sleep_enabled) {
-            ESP_LOGW(TAG, "Sleep skipped: load=%d enabled=%d",
-                     settings_load(&cfg), cfg.sleep_enabled);
-            continue;
-        }
+        if (settings_load(&cfg) != ESP_OK || !cfg.sleep_enabled) continue;
         if (app_manager_get_current_app() == APP_ID_COUNTDOWN) continue;
         if (app_manager_get_current_app() == APP_ID_SPECTRUM) continue;
 
@@ -361,42 +352,9 @@ static void pm_task(void *arg) {
         if ((now - s_last_activity) <= pdMS_TO_TICKS(cfg.sleep_timeout_sec * 1000))
             continue;
 
-        ESP_LOGI(TAG, "Sleep: timeout=%ds, entering light sleep", cfg.sleep_timeout_sec);
-
         s_sleeping = true;
-        s_wake_brightness = cfg.brightness;
         bsp_lcd_backlight_set(0);
-        vTaskDelay(pdMS_TO_TICKS(30));
-
-        /* EXT1 wake-up on any key press (LOW level = pressed) */
-        esp_sleep_enable_ext1_wakeup(s_wake_mask, ESP_EXT1_WAKEUP_ANY_LOW);
-
-        esp_light_sleep_start();
-
-        /* ========== 唤醒 ========== */
-        ESP_LOGI(TAG, "Wake: reconfiguring GPIOs");
-
-        /* EXT1 会把 GPIO 切到 RTC 模式，必须恢复为数字 GPIO */
-        for (int i = 0; i < 7; i++) {
-            gpio_reset_pin(s_wake_pins[i]);
-            gpio_set_direction(s_wake_pins[i], GPIO_MODE_INPUT);
-            gpio_set_pull_mode(s_wake_pins[i], GPIO_PULLUP_ONLY);
-        }
-        /* 重新注册按键回调 */
-        key_driver_init(key_handler);
-
-        /* 重新初始化 BLE + WiFi（之前没有 deinit，但确保它们正常） */
-        if (!ble_hid_is_initialized()) {
-            esp_err_t r = ble_hid_init();
-            if (r != ESP_OK) ESP_LOGW(TAG, "BLE re-init: %s", esp_err_to_name(r));
-        }
-        if (!wifi_manager_is_connected()) {
-            wifi_manager_start_station();
-        }
-
-        bsp_lcd_backlight_set(s_wake_brightness);
-        s_last_activity = xTaskGetTickCount();
-        s_sleeping = false;
+        ESP_LOGI(TAG, "Display off (timeout=%ds, light sleep TBD)", cfg.sleep_timeout_sec);
     }
 }
 
