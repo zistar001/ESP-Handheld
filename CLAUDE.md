@@ -557,7 +557,20 @@ See `modules/pc_remote/wifi_audio.c` + `tools/pc_voice_receiver.py`.
 
 ## BLE HID
 
-Bluedroid BLE, HID keyboard + mouse. Just Works pairing, device name "ESP-Handheld". Passkey hardcoded "1234". API: `ble_hid_send_key(modifier, key)`, `ble_hid_send_mouse(buttons, dx, dy)`.
+Bluedroid BLE, HID keyboard + mouse. Just Works pairing (`ESP_IO_CAP_NONE`), device name "ESP-Handheld". API: `ble_hid_send_key(modifier, key)`, `ble_hid_send_mouse(buttons, dx, dy)`.
+
+**Windows 连接问题：**
+- Just Works 通吃手机/平板，但部分 Windows 版本/BT 适配器要求 MITM 配对（会看到 `PASSKEY_NOTIF` 日志）
+- 如果 Windows 找不到/连不上，先删掉所有 "ESP-Handheld" 配对记录，重启蓝牙再试
+- 串口日志看 `BLE_HID` 标签，是否有 `AUTH OK` 或 `AUTH ERROR`
+
+## IMU (LSM6DS3TR-C)
+
+I2C 地址 0x6A（SA0=VDD）。使用标准 I2C 总线（IO1/IO2），ODR=104Hz，ACC ±2g，GYRO ±2000dps。
+
+**朝向修正：** 代码在 `imu_driver.c` 的 `imu_read()` 中对 `ax` 和 `gx` 取反（`-val/scale`），因为 PCB 安装将 IMU X 轴方向翻转了 180 度。上下轴（az/gz）和左右轴（ay/gy）不需修正。
+
+`imu_calib.c` 提供基于加速度的四方向姿态检测（UPRIGHT/LEFT/RIGHT/FLAT），支持 NVS 校准。校准数据通过 `calib_screen`（APP_ID_CALIB）触发保存。
 
 ## WiFi Manager
 

@@ -61,9 +61,14 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         break;
+    case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
+        ESP_LOGI(TAG, "Passkey: %06d (enter on remote device)", param->ble_security.key_notif.passkey);
+        break;
     case ESP_GAP_BLE_AUTH_CMPL_EVT:
         if (!param->ble_security.auth_cmpl.success)
             ESP_LOGE(TAG, "AUTH ERROR: 0x%x", param->ble_security.auth_cmpl.fail_reason);
+        else
+            ESP_LOGI(TAG, "AUTH OK");
         break;
     default:
         break;
@@ -72,7 +77,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 
 static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data) {
     esp_hidd_event_t event = (esp_hidd_event_t)id;
-    esp_hidd_event_data_t *param = (esp_hidd_event_data_t *)event_data;
+    (void)event_data;  /* 未使用，保留用于扩展 */
 
     switch (event) {
     case ESP_HIDD_START_EVENT:
