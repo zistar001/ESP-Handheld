@@ -152,13 +152,13 @@ esp_err_t imu_read(imu_data_t *d) {
     if (!read_i16(0x22, &val)) return ESP_FAIL;
     d->gx = -(float)val / 70.0f;       /* PCB mount flips X axis */
     if (!read_i16(0x24, &val)) return ESP_FAIL;
-    d->gy = (float)val / 70.0f;
+    d->gy = -(float)val / 70.0f;       /* PCB mount flips Y axis too */
     if (!read_i16(0x26, &val)) return ESP_FAIL;
     d->gz = (float)val / 70.0f;
     if (!read_i16(0x28, &val)) return ESP_FAIL;
     d->ax = -(float)val / 16384.0f;    /* PCB mount flips X axis */
     if (!read_i16(0x2A, &val)) return ESP_FAIL;
-    d->ay = (float)val / 16384.0f;
+    d->ay = -(float)val / 16384.0f;    /* PCB mount flips Y axis too */
     if (!read_i16(0x2C, &val)) return ESP_FAIL;
     d->az = (float)val / 16384.0f;
     return ESP_OK;
