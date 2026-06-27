@@ -1,0 +1,6 @@
+# NES emulator core (esp32s3_nes_gamer project)
+idf_component_register(
+    SRCS "emucore.cpp"
+    INCLUDE_DIRS "."
+    REQUIRES driver esp_timer esp_system freertos soc hal spi_flash
+)

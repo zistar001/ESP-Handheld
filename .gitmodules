@@ -1,0 +1,6 @@
+[submodule "components/lvgl"]
+	path = components/lvgl
+	url = https://github.com/lvgl/lvgl.git
+[submodule "components/esp-wifi-connect"]
+	path = components/esp-wifi-connect
+	url = https://github.com/78/esp-wifi-connect.git
