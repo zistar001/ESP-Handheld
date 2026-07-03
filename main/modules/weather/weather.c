@@ -22,7 +22,7 @@ static const char *TAG = "WEATHER";
 #define DEFAULT_LOCATION "101230501"      /* 泉州本级，无 NVS 时的后备 */
 #define WEATHER_INTERVAL_SEC 1800
 #define WIFI_TIMEOUT_MS   30000
-#define HEFENG_HOST      "p23p3qvugk.re.qweatherapi.com"
+#define HEFENG_HOST      "devapi.qweather.com"      /* 和风天气 API — 可在 menuconfig 中修改 */
 #define NVS_NS           "weather"
 
 /* API 密钥从 NVS 动态加载，不再硬编码 */
@@ -287,9 +287,8 @@ esp_err_t weather_init(void) {
     if (s_weather_task) return ESP_OK;
     load_location();
 
-    /* ── API 密钥：首次启动时迁移旧硬编码密钥到 NVS ── */
-    /*     迁移后密钥仅存在于设备 NVS 中，不在 git 源码里 */
-    #define MIGRATE_API_KEY "700cf8ab08774bf089e52d33b89aecf8"
+    /* ── API 密钥：优先从 Kconfig 读取（CONFIG_WEATHER_API_KEY）── */
+    /*     密钥编译时注入，不在 git 源码里；也可运行时通过 weather_set_api_key() 设置后存入 NVS */
     nvs_handle_t h;
     bool has_key = false;
     if (nvs_open(NVS_NS, NVS_READWRITE, &h) == ESP_OK) {
@@ -298,20 +297,22 @@ esp_err_t weather_init(void) {
             s_skip_weather = false;
             has_key = true;
             ESP_LOGI(TAG, "API key loaded from NVS");
-        } else {
-            /* 首次启动：迁移默认密钥到 NVS */
-            strncpy(s_api_key, MIGRATE_API_KEY, sizeof(s_api_key) - 1);
+        }
+#ifdef CONFIG_WEATHER_API_KEY
+        if (!has_key && CONFIG_WEATHER_API_KEY[0]) {
+            strncpy(s_api_key, CONFIG_WEATHER_API_KEY, sizeof(s_api_key) - 1);
             s_api_key[sizeof(s_api_key) - 1] = '\0';
             nvs_set_str(h, "api_key", s_api_key);
             nvs_commit(h);
             s_skip_weather = false;
             has_key = true;
-            ESP_LOGI(TAG, "API key migrated to NVS (one-time)");
+            ESP_LOGI(TAG, "API key from Kconfig migrated to NVS");
         }
+#endif
         nvs_close(h);
     }
     if (!has_key) {
-        ESP_LOGW(TAG, "No NVS — weather disabled");
+        ESP_LOGW(TAG, "API key not set — weather disabled. Configure it via 'idf.py menuconfig' or weather_set_api_key()");
     }
     xTaskCreatePinnedToCore(weather_task,"weather",4096,NULL,2,&s_weather_task,0);
     ESP_LOGI(TAG,"started, location=%s (%s) api=%s",

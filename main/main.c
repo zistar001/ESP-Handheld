@@ -336,13 +336,16 @@ static void key_handler(key_id_t key, bool pressed) {
 }
 
 /* ================================================================
- * Power management task — 熄屏（5s间隔，按键恢复背光）
+ * Power management task — Light Sleep 待机（5s 间隔）
+ *
+ * 流程：超时 → 关背光 → 停 WiFi/BLE → Light Sleep（GPIO 唤醒）
+ *       醒来 → 恢复 key_driver → 恢复 WiFi/BLE → 恢复背光
  * ================================================================ */
 static void pm_task(void *arg) {
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(5000));
 
-        if (s_sleeping) continue;  /* 已休眠：背光在 key_handler 恢复 */
+        if (s_sleeping) continue;  /* 已休眠 */
 
         settings_t cfg;
         if (settings_load(&cfg) != ESP_OK || !cfg.sleep_enabled) continue;
@@ -354,8 +357,46 @@ static void pm_task(void *arg) {
             continue;
 
         s_sleeping = true;
+
+        /* 1. 关背光 */
         bsp_lcd_backlight_set(0);
-        ESP_LOGI(TAG, "Standby: backlight off (timeout=%ds)", cfg.sleep_timeout_sec);
+
+        /* 2. 停 WiFi station + BLE 以省电 */
+        wifi_manager_stop_station();
+        vTaskDelay(pdMS_TO_TICKS(100));
+        if (ble_hid_is_initialized()) ble_hid_deinit();
+
+        /* 3. 配置 GPIO 唤醒（所有 7 个按键，任意边沿触发）*/
+        const uint64_t wakeup_mask =
+            BIT64(BSP_KEY_UP)    | BIT64(BSP_KEY_DOWN) |
+            BIT64(BSP_KEY_LEFT)  | BIT64(BSP_KEY_RIGHT) |
+            BIT64(BSP_KEY_START) | BIT64(BSP_KEY_A) | BIT64(BSP_KEY_B);
+        for (int i = 0; i < 64; i++) {
+            if (wakeup_mask & BIT64(i)) gpio_wakeup_enable(i, GPIO_INTR_ANYEDGE);
+        }
+        esp_sleep_enable_gpio_wakeup();
+
+        ESP_LOGI(TAG, "Light Sleep: enter (timeout=%ds)", cfg.sleep_timeout_sec);
+
+        esp_light_sleep_start();
+
+        /* ====== 被按键唤醒 ====== */
+        ESP_LOGI(TAG, "Light Sleep: wake (cause=%d)",
+                 (int)esp_sleep_get_wakeup_cause());
+
+        /* 4. 恢复 key_driver（sleep 时 GPIO 中断配置可能被覆盖） */
+        key_driver_init(key_handler);
+
+        /* 5. 恢复 WiFi + BLE */
+        wifi_manager_start_station();
+        ble_hid_init();
+
+        /* 6. 恢复背光 */
+        bsp_lcd_backlight_set(cfg.brightness);
+
+        s_sleeping = false;
+        s_last_activity = xTaskGetTickCount();
+        ESP_LOGI(TAG, "Light Sleep: resumed");
     }
 }
 

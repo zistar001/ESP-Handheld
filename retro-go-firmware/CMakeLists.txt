@@ -25,16 +25,20 @@ macro(rg_setup_compile_options)
     endif()
 endmacro()
 
-# Extra component dirs: our retro-go + emulator cores from D:\retro-go
+# Extra component dirs: our retro-go + emulator cores
+# NOTE: emulator cores are expected at ../retro-go-core/ relative to this directory.
+#       Clone https://github.com/ducalex/retro-go and set RETRO_GO_CORE_DIR to point to
+#       its retro-core/components/ directory, or adjust paths below.
+set(RETRO_GO_CORE_DIR "D:/retro-go/retro-core/components" CACHE PATH "Path to retro-go emulator cores")
 set(EXTRA_COMPONENT_DIRS
-    "D:/code/claudecode/ESP_BSP1/components/retro-go"
-    "D:/retro-go/retro-core/components/nofrendo"
-    "D:/retro-go/retro-core/components/gnuboy"
-    "D:/retro-go/retro-core/components/pce-go"
-    "D:/retro-go/retro-core/components/gw-emulator"
-    "D:/retro-go/retro-core/components/handy"
-    "D:/retro-go/retro-core/components/smsplus"
-    "D:/retro-go/retro-core/components/snes9x"
+    "${CMAKE_SOURCE_DIR}/../components/retro-go"
+    "${RETRO_GO_CORE_DIR}/nofrendo"
+    "${RETRO_GO_CORE_DIR}/gnuboy"
+    "${RETRO_GO_CORE_DIR}/pce-go"
+    "${RETRO_GO_CORE_DIR}/gw-emulator"
+    "${RETRO_GO_CORE_DIR}/handy"
+    "${RETRO_GO_CORE_DIR}/smsplus"
+    "${RETRO_GO_CORE_DIR}/snes9x"
 )
 
 # Components we need

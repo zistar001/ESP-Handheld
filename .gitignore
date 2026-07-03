@@ -11,41 +11,55 @@ retro-go-firmware/sdkconfig
 retro-go-firmware/sdkconfig.bak
 xiaozhi-zistar-main/sdkconfig
 xiaozhi-zistar-main/sdkconfig.bak
-xiaozhi-zistar-main/sdkconfig.defaults.esp32
-xiaozhi-zistar-main/sdkconfig.defaults.esp32c3
-xiaozhi-zistar-main/sdkconfig.defaults.esp32c5
-xiaozhi-zistar-main/sdkconfig.defaults.esp32c6
-xiaozhi-zistar-main/sdkconfig.defaults.esp32p4
-xiaozhi-zistar-main/sdkconfig.defaults.esp32s3
+xiaozhi-zistar-main/sdkconfig.defaults.*
 
-# Auto-downloaded components
+# Auto-downloaded components from IDF registry
 managed_components/
 xiaozhi-zistar-main/managed_components/
-xiaozhi-esp32-main/
 
-# Reference repos (not part of the build)
+# External reference repos (not part of the build)
 reference_nes/
 esp32s3_nes_gamer/
 retro-go-esp32s3-st7789v-v1.1/
 Rachel/
+xiaozhi-esp32-main/
+
+# Binary artifacts
 tools/VoiceReceiver/VoiceReceiver.exe
 tools/VoiceReceiver/_internal/
 
-# Logs and temp files
+# Logs, temp files, crash dumps
 *.log
 build_output.log
 *.txt
 !chinese_chars.txt
+!dependencies.lock
 _tmp_*.bat
 check_msys.py
 build.sh
 build_verbose.bat
+nes_*.txt
+IO*.txt
 
-# IDE / personal
+# Personal build scripts (contain user-specific paths)
+_*.ps1
+!_quickstart.ps1
+!_setup.ps1
+build_*.ps1
+!build.bat
+idf_env.ps1
+
+# Development notes (personal debugging history)
+DEVELOPMENT_NOTES.md
+AGENTS.md
+YI64.md
+
+# IDE / personal / cache
 .claude/
 .venv/
 __pycache__/
 *.pyc
+.cache/
 
 # CMake (keep top-level CMakeLists.txt)
 !CMakeLists.txt
