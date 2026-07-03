@@ -125,6 +125,7 @@ components/
 
 ## Documentation
 
+- [User Manual](docs/USER_MANUAL.md) — Complete operation guide (button layout, apps, WiFi, etc.)
 - [Build Guide](docs/BUILD.md) — Detailed build instructions for all platforms
 - [Flash Guide](docs/FLASH.md) — All flashing methods
 - [Hardware Adaptation](docs/HARDWARE.md) — Pin mappings and PCB guide

@@ -125,10 +125,11 @@ components/
 
 ## 文档
 
-- [编译指南](docs/BUILD.md) — 各平台详细编译步骤
-- [烧录指南](docs/FLASH.md) — 所有烧录方式
-- [硬件适配](docs/HARDWARE.md) — 引脚定义和 PCB 指南
-- [API 密钥](docs/API_KEYS.md) — 服务注册和配置
+- [操作手册](docs/USER_MANUAL_CN.md) — 完整使用指南（按键说明、应用操作、WiFi/蓝牙等）
+- [编译指南](docs/BUILD_CN.md) — 各平台详细编译步骤
+- [烧录指南](docs/FLASH_CN.md) — 所有烧录方式
+- [硬件适配](docs/HARDWARE_CN.md) — 引脚定义和 PCB 指南
+- [API 密钥](docs/API_KEYS_CN.md) — 服务注册和配置
 
 ## 开源协议
 
