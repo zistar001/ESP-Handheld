@@ -132,11 +132,13 @@ components/
 
 ## License
 
-This project is licensed under **GNU General Public License v3.0** — see [LICENSE](LICENSE).
+This project is licensed under **GNU General Public License v2.0** — see [LICENSE](LICENSE).
+
+**Why GPL v2?** The NES emulator core (nofrendo) is compiled and linked into the main firmware binary, and nofrendo is licensed under GPL v2. This requires the combined work to be distributed under GPL v2.
 
 Includes components from:
-- [Retro-Go](https://github.com/ducalex/retro-go) — GPL v2
-- [nofrendo](https://github.com/ducalex/retro-go) — BSD-3-Clause
+- [nofrendo](https://github.com/ducalex/retro-go/tree/master/retro-core/components/nofrendo) — **GPL v2** (linked in main firmware)
+- [Retro-Go](https://github.com/ducalex/retro-go) — GPL v2 (standalone ota_0 firmware, separate binary)
 - [LVGL](https://github.com/lvgl/lvgl) — MIT
-- [esp-wifi-connect](https://github.com/78/esp-wifi-connect) — Apache 2.0
-- [XiaoZhi AI](https://github.com/78/xiaozhi-esp32) — Apache 2.0
+- [esp-wifi-connect](https://github.com/78/esp-wifi-connect) — No explicit license (submodule reference)
+- [XiaoZhi AI](https://github.com/78/xiaozhi-esp32) — MIT (standalone ota_1 firmware, separate binary)

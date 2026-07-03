@@ -175,11 +175,12 @@ Key log tags: `MAIN`, `APP_MGR`, `LAUNCHER`, `WEATHER`, `NES`, `WIFI`, `LVGL`, `
 
 ## Third-Party Dependencies
 
-| Component | Source | License |
-|-----------|--------|---------|
-| Retro-Go | https://github.com/ducalex/retro-go | GPL v2 |
-| LVGL v8.4 | https://github.com/lvgl/lvgl | MIT |
-| esp-wifi-connect | https://github.com/78/esp-wifi-connect | Apache 2.0 |
-| XiaoZhi AI | https://github.com/78/xiaozhi-esp32 | Apache 2.0 |
-| Weather API | HeFeng (devapi.qweather.com) | Free tier |
-| NTP | ntp.aliyun.com + pool.ntp.org | — |
+| Component | Source | License | Relation |
+|-----------|--------|---------|----------|
+| nofrendo | retro-go repo | **GPL v2** | **Linked into main binary** — this is why the project must be GPL v2 |
+| Retro-Go | https://github.com/ducalex/retro-go | GPL v2 | Standalone ota_0 firmware (separate binary) |
+| LVGL v8.4 | https://github.com/lvgl/lvgl | MIT | Linked into main binary |
+| esp-wifi-connect | https://github.com/78/esp-wifi-connect | No explicit license | Submodule (cloned from upstream) |
+| XiaoZhi AI | https://github.com/78/xiaozhi-esp32 | MIT | Standalone ota_1 firmware (separate binary) |
+| Weather API | HeFeng (devapi.qweather.com) | Free tier | External service |
+| NTP | ntp.aliyun.com + pool.ntp.org | — | External service |

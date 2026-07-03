@@ -132,11 +132,13 @@ components/
 
 ## 开源协议
 
-本项目使用 **GNU General Public License v3.0** — 详见 [LICENSE](LICENSE)。
+本项目使用 **GNU General Public License v2.0** — 详见 [LICENSE](LICENSE)。
+
+**为什么用 GPL v2？** 本固件（factory 分区）编译并链接了 nofrendo NES 模拟器核心，而 nofrendo 采用 GPL v2 许可证。根据 GPL 的要求，合并后的作品必须使用 GPL v2 发布。
 
 包含以下开源组件：
-- [Retro-Go](https://github.com/ducalex/retro-go) — GPL v2
-- [nofrendo](https://github.com/ducalex/retro-go) — BSD-3-Clause
+- [nofrendo](https://github.com/ducalex/retro-go/tree/master/retro-core/components/nofrendo) — **GPL v2**（编译链接在主固件中）
+- [Retro-Go](https://github.com/ducalex/retro-go) — GPL v2（独立 ota_0 固件，单独二进制）
 - [LVGL](https://github.com/lvgl/lvgl) — MIT
-- [esp-wifi-connect](https://github.com/78/esp-wifi-connect) — Apache 2.0
-- [XiaoZhi AI](https://github.com/78/xiaozhi-esp32) — Apache 2.0
+- [esp-wifi-connect](https://github.com/78/esp-wifi-connect) — 未明确声明许可证（子模块引用）
+- [XiaoZhi AI](https://github.com/78/xiaozhi-esp32) — MIT（独立 ota_1 固件，单独二进制）
