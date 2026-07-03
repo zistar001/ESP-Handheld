@@ -48,6 +48,9 @@
 
 static const char *TAG = "MAIN";
 
+/* System ready flag — blocks key input until init completes */
+static volatile bool s_system_ready = false;
+
 /* Sleep management */
 static bool s_sleeping = false;
 static TickType_t s_last_activity = 0;
@@ -67,6 +70,10 @@ void settings_sync_global(void) {
  * Key handler — routes based on app_manager state
  * ================================================================ */
 static void key_handler(key_id_t key, bool pressed) {
+    /* Ignore all key events until system initialization is complete.
+     * Pressing buttons during WiFi/weather async init can cause reboots. */
+    if (!s_system_ready) return;
+
     if (pressed) {
         s_last_activity = xTaskGetTickCount();
         if (s_sleeping) {
@@ -506,6 +513,8 @@ void app_main(void) {
     /* 17. App manager — shows launcher/home screen */
     app_manager_init();
 
+    /* Allow key input now — all subsystems are initialized */
+    s_system_ready = true;
     ESP_LOGI(TAG, "System ready. Idle loop.");
 
     while (1) {
