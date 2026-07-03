@@ -23,6 +23,10 @@ esp32s3_nes_gamer/
 retro-go-esp32s3-st7789v-v1.1/
 Rachel/
 xiaozhi-esp32-main/
+xiaozhi-zistar-main/
+
+# Personal design docs
+docs/superpowers/
 
 # Binary artifacts
 tools/VoiceReceiver/VoiceReceiver.exe
