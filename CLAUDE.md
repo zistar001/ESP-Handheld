@@ -167,19 +167,33 @@ Key log tags: `MAIN`, `APP_MGR`, `LAUNCHER`, `WEATHER`, `NES`, `WIFI`, `LVGL`, `
 
 ### Build XiaoZhi AI (ota_1)
 
-XiaoZhi is NOT included in this repo. Build it separately:
+XiaoZhi is NOT included in this repo. Build it separately using the board definition in `docs/xiaozhi/`:
 
 ```bash
+# 1. Clone XiaoZhi
 git clone https://github.com/78/xiaozhi-esp32.git
 cd xiaozhi-esp32
-# Create your board definition under boards/ (see docs)
+
+# 2. Copy the custom board definition for our Rev 2 hardware
+cp -r path/to/ESP-Handheld/docs/xiaozhi/ main/boards/zistar/
+
+# 3. Build
 idf.py set-target esp32s3
 idf.py build
+
+# 4. Flash to ota_1 partition
 python -m esptool --chip esp32s3 -p (PORT) -b 921600 \
   write_flash 0x810000 build/xiaozhi.bin
 ```
 
 The ESP-Handheld menu's "小智" card will reboot into ota_1 to launch XiaoZhi.
+
+**Hardware config** (`docs/xiaozhi/config.h`):
+- Display: ST7789 240×280 on SPI2_HOST
+- Audio: MAX98357 (I2S_NUM_1 TX) + MSM261 digital mic (I2S_NUM_0 RX)
+- Buttons: A=PTT (GPIO4), UP=Vol+ (GPIO16), DOWN=Vol- (GPIO15)
+- START+B combo = return to ESP-Handheld (GPIO6+GPIO5, 150ms debounce)
+- No battery ADC (reports 100%)
 
 ## NVS Quick Reference
 

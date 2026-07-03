@@ -130,6 +130,7 @@ components/
 - [烧录指南](docs/FLASH_CN.md) — 所有烧录方式
 - [硬件适配](docs/HARDWARE_CN.md) — 引脚定义和 PCB 指南
 - [API 密钥](docs/API_KEYS_CN.md) — 服务注册和配置
+- [小智 AI 编译指南](docs/xiaozhi/README.md) — 为 Rev 2 硬件编译 XiaoZhi 固件
 
 ## 开源协议
 

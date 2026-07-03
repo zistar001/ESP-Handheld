@@ -1,0 +1,53 @@
+#ifndef _BOARD_CONFIG_H_
+#define _BOARD_CONFIG_H_
+
+#include <driver/gpio.h>
+
+#define AUDIO_INPUT_SAMPLE_RATE  16000
+#define AUDIO_OUTPUT_SAMPLE_RATE 16000
+
+/* Simplex I2S: I2S0 TX → MAX98357, I2S1 RX → 数字麦克风 */
+#define AUDIO_I2S_METHOD_SIMPLEX
+
+#define AUDIO_I2S_MIC_GPIO_WS   GPIO_NUM_12
+#define AUDIO_I2S_MIC_GPIO_SCK  GPIO_NUM_11
+#define AUDIO_I2S_MIC_GPIO_DIN  GPIO_NUM_10
+
+#define AUDIO_I2S_SPK_GPIO_DOUT GPIO_NUM_3
+#define AUDIO_I2S_SPK_GPIO_BCLK GPIO_NUM_46
+#define AUDIO_I2S_SPK_GPIO_LRCK GPIO_NUM_9
+
+/* LED 指示 */
+#define BUILTIN_LED_GPIO        GPIO_NUM_18
+
+/* 按键 — Rev 2 映射 */
+#define BOOT_BUTTON_GPIO        GPIO_NUM_4   /* A键 也用作语音触发 */
+#define VOLUME_UP_BUTTON_GPIO   GPIO_NUM_16  /* 上键 */
+#define VOLUME_DOWN_BUTTON_GPIO GPIO_NUM_15  /* 下键 */
+
+/* 显示屏 ST7789 — SPI2_HOST */
+#define DISPLAY_SPI_SCK_PIN     GPIO_NUM_21
+#define DISPLAY_SPI_MOSI_PIN    GPIO_NUM_14
+#define DISPLAY_DC_PIN          GPIO_NUM_44
+#define DISPLAY_SPI_CS_PIN      GPIO_NUM_42
+#define DISPLAY_RES             GPIO_NUM_13
+#define DISPLAY_BLK             GPIO_NUM_43
+
+#define DISPLAY_WIDTH   240
+#define DISPLAY_HEIGHT  280
+#define DISPLAY_SWAP_XY false
+#define DISPLAY_MIRROR_X false
+#define DISPLAY_MIRROR_Y false
+#define BACKLIGHT_INVERT false
+
+#define DISPLAY_OFFSET_X 0
+#define DISPLAY_OFFSET_Y 20
+
+#define DISPLAY_BACKLIGHT_PIN GPIO_NUM_43
+#define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
+
+/* 电池 — 无ADC，无充电检测GPIO */
+/* #define CHARGING_GPIO */
+/* #define DONE_GPIO */
+
+#endif // _BOARD_CONFIG_H_
