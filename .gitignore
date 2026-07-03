@@ -50,8 +50,9 @@ _*.ps1
 !_quickstart.ps1
 !_setup.ps1
 build_*.ps1
-!build.bat
 idf_env.ps1
+build.bat
+setup_idf_env.bat
 
 # Development notes (personal debugging history)
 DEVELOPMENT_NOTES.md
