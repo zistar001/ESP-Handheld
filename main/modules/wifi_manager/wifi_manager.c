@@ -8,7 +8,7 @@ static bool s_inited = false;
 
 esp_err_t wifi_manager_init(void) {
     if (s_inited) return ESP_OK;
-    esp_err_t ret = wifi_bridge_init("ESP-Handheld", "zh-CN");
+    esp_err_t ret = wifi_bridge_init(CONFIG_WIFI_AP_SSID_PREFIX, "zh-CN");
     if (ret != ESP_OK) return ret;
 
     /* Auto-connect if we have saved credentials */

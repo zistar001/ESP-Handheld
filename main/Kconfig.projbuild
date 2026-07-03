@@ -1,0 +1,36 @@
+# ESP-Handheld Configuration
+# ==========================
+# Set your API keys and device preferences here.
+# Run: idf.py menuconfig → "ESP-Handheld Configuration"
+
+menu "ESP-Handheld Configuration"
+
+    config WEATHER_API_KEY
+        string "HeFeng Weather API Key"
+        default ""
+        help
+            和风天气 (devapi.qweather.com) API 密钥。
+            注册地址: https://devapi.qweather.com
+            留空则天气功能自动禁用。
+            You can also set this at runtime via 'weather_set_api_key()'.
+
+    config WEATHER_DEFAULT_LOCATION
+        string "Default Weather Location ID"
+        default "101230501"
+        help
+            和风天气城市 ID。默认 101230501 (泉州)。
+            可在设备 Settings → 天气地区 中修改。
+
+    config BLE_DEVICE_NAME
+        string "Bluetooth Device Name"
+        default "ESP-Handheld"
+        help
+            BLE HID 广播名称，其他设备搜索时显示此名称。
+
+    config WIFI_AP_SSID_PREFIX
+        string "WiFi AP SSID Prefix"
+        default "ESP-Handheld"
+        help
+            配置模式下 WiFi 热点 SSID 前缀。
+
+endmenu
