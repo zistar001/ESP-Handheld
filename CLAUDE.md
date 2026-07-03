@@ -38,9 +38,12 @@ xtensa-esp32s3-elf-gcc --version  # Should show 14.2.0
 
 ### First Clone
 ```bash
-git clone --recursive <repo-url>
+# ⚠️ MUST use --recursive to get submodules (LVGL + esp-wifi-connect)
+git clone --recursive https://github.com/zistar001/ESP-Handheld.git
 cd ESP-Handheld
-git submodule update --init --recursive   # if cloned without --recursive
+
+# If you forgot --recursive, run this:
+git submodule update --init --recursive
 ```
 Submodules: LVGL v8.4 (`components/lvgl`), esp-wifi-connect (`components/esp-wifi-connect`).
 CJK font at `components/lvgl/src/font/lv_font_simsun_16_cjk.c` — already in repo.
@@ -49,12 +52,12 @@ CJK font at `components/lvgl/src/font/lv_font_simsun_16_cjk.c` — already in re
 ```bash
 # Must NOT be in MSYS2/Mingw — use PowerShell or cmd.exe
 export IDF_COMPONENT_MANAGER=0     # 0 = offline (default), 1 = weather needs zlib
-idf.py set-target esp32s3          # first time only
+idf.py set-target esp32s3          # first time only (sets target + configures build)
 idf.py menuconfig                  # optional: set Weather API Key
 idf.py build
 ```
 
-**Windows parallel build fix:** `idf.py build -j2` if `cc1.exe: CreateProcess` error.
+**Windows parallel build fix:** `idf.py build -- -j2` if `cc1.exe: CreateProcess` error.
 
 ### Flash
 ```bash
@@ -161,6 +164,22 @@ lv_mem_monitor_t mm; lv_mem_monitor(&mm);
 ```
 
 Key log tags: `MAIN`, `APP_MGR`, `LAUNCHER`, `WEATHER`, `NES`, `WIFI`, `LVGL`, `RG_WRAP`, `BLE_HID`
+
+### Build XiaoZhi AI (ota_1)
+
+XiaoZhi is NOT included in this repo. Build it separately:
+
+```bash
+git clone https://github.com/78/xiaozhi-esp32.git
+cd xiaozhi-esp32
+# Create your board definition under boards/ (see docs)
+idf.py set-target esp32s3
+idf.py build
+python -m esptool --chip esp32s3 -p (PORT) -b 921600 \
+  write_flash 0x810000 build/xiaozhi.bin
+```
+
+The ESP-Handheld menu's "小智" card will reboot into ota_1 to launch XiaoZhi.
 
 ## NVS Quick Reference
 

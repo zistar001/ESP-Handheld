@@ -64,23 +64,41 @@ idf.py --version   # Verify: should show v5.5.4
 
 ### Step-by-Step (tell the user)
 
+**⚠️ Critical: You MUST clone with `--recursive`** to get the LVGL and esp-wifi-connect submodules.
+
 ```bash
-# 1. Clone with submodules
-git clone --recursive https://github.com/<user>/ESP-Handheld.git
+# 1. Clone with submodules (MUST use --recursive)
+git clone --recursive https://github.com/zistar001/ESP-Handheld.git
 cd ESP-Handheld
 
+# If you forgot --recursive, run this:
+git submodule update --init --recursive
+```
+
+```bash
 # 2. Set up ESP-IDF environment
 # Windows: launch "ESP-IDF PowerShell" shortcut
 # Linux/macOS:
 . $IDF_PATH/export.sh
 
-# 3. Configure API keys (optional)
+# 3. First-time only: set target
+idf.py set-target esp32s3
+
+# 4. Configure API keys (optional)
 idf.py menuconfig
 # → "ESP-Handheld Configuration" → Weather API Key
 
-# 4. Build
-export IDF_COMPONENT_MANAGER=0
+# 5. Build
+export IDF_COMPONENT_MANAGER=0   # 0 = offline (default); 1 = weather needs zlib
 idf.py build
+```
+
+**⚠️ Environment variable note:** If you see `ESP_ROM_ELF_DIR environment variable is not defined`, it's harmless — the firmware builds fine. To silence it, run the ESP-IDF export/install scripts properly.
+
+**⚠️ Windows parallel build fix:** If `cc1.exe: CreateProcess` error occurs, retry with:
+```bash
+idf.py build -- -j2
+```
 
 # 5. Flash (full, first time)
 python -m esptool --chip esp32s3 -p (PORT) -b 921600 \
@@ -284,7 +302,17 @@ WARN the user about these critical non-default settings:
 
 ### Standalone sub-projects (not part of main build):
 - `retro-go-firmware/` — Standalone OTA_0 firmware. Requires emulator cores from [ducalex/retro-go](https://github.com/ducalex/retro-go). Set `RETRO_GO_CORE_DIR` in its CMakeLists.txt.
-- `xiaozhi-zistar-main/` — Not included in repo. Clone [xiaozhi-esp32](https://github.com/78/xiaozhi-esp32) separately for OTA_1.
+- **XiaoZhi AI (ota_1)** — NOT included in this repo. Clone [xiaozhi-esp32](https://github.com/78/xiaozhi-esp32) separately:
+  ```bash
+  git clone https://github.com/78/xiaozhi-esp32.git
+  cd xiaozhi-esp32
+  # Create a board definition or use an existing one
+  idf.py set-target esp32s3
+  idf.py build
+  python -m esptool --chip esp32s3 -p (PORT) -b 921600 \
+    write_flash 0x810000 build/xiaozhi.bin
+  ```
+  The ESP-Handheld menu's "小智" button reboots into ota_1 to launch it.
 
 ---
 
