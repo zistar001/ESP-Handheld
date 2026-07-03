@@ -17,14 +17,17 @@ xiaozhi-zistar-main/sdkconfig.defaults.*
 managed_components/
 xiaozhi-zistar-main/managed_components/
 
-# External reference repos (cloned during development, not part of the build)
-# These directories may exist locally from earlier development; if so they are ignored.
+# External reference repos (not part of the build)
 reference_nes/
 esp32s3_nes_gamer/
 retro-go-esp32s3-st7789v-v1.1/
 Rachel/
 xiaozhi-esp32-main/
-xiaozhi-zistar-main/
+
+# XiaoZhi AI — keep source, ignore build artifacts
+xiaozhi-zistar-main/build/
+xiaozhi-zistar-main/managed_components/
+xiaozhi-zistar-main/sdkconfig
 
 # Personal design docs
 docs/superpowers/

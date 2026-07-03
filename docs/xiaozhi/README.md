@@ -1,22 +1,14 @@
 # XiaoZhi AI — ESP-Handheld Board Definition
 
-This folder contains the **board definition files** needed to build [XiaoZhi AI](https://github.com/78/xiaozhi-esp32) for the ESP-Handheld Rev 2 hardware.
+The XiaoZhi firmware with the custom board definition is included in the ESP-Handheld repo at `xiaozhi-zistar-main/`. You don't need to clone it separately.
 
-## How to Use
+## How to Build
 
 ```bash
-# 1. Clone XiaoZhi
-git clone https://github.com/78/xiaozhi-esp32.git
-cd xiaozhi-esp32
-
-# 2. Copy the custom board definition
-cp -r path/to/ESP-Handheld/docs/xiaozhi/ main/boards/zistar/
-
-# 3. Build
-idf.py set-target esp32s3
+cd xiaozhi-zistar-main
+idf.py set-target esp32s3          # first time only
 idf.py build
-
-# 4. Flash to ota_1
+# Flash to ota_1:
 python -m esptool --chip esp32s3 -p (PORT) -b 921600 \
   write_flash 0x810000 build/xiaozhi.bin
 ```

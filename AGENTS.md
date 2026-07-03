@@ -302,22 +302,14 @@ WARN the user about these critical non-default settings:
 
 ### Standalone sub-projects (not part of main build):
 - `retro-go-firmware/` — Standalone OTA_0 firmware. Requires emulator cores from [ducalex/retro-go](https://github.com/ducalex/retro-go). Set `RETRO_GO_CORE_DIR` in its CMakeLists.txt.
-- **XiaoZhi AI (ota_1)** — NOT included in this repo. Clone [xiaozhi-esp32](https://github.com/78/xiaozhi-esp32) separately.
-  The custom board definition for the ESP-Handheld Rev 2 hardware is in `docs/xiaozhi/`.
-  Build instructions:
+- **XiaoZhi AI (ota_1)** — Included in this repo at `xiaozhi-zistar-main/`. The custom board definition (`boards/zistar/`) is already configured for the Rev 2 hardware. Build and flash:
   ```bash
-  git clone https://github.com/78/xiaozhi-esp32.git
-  cd xiaozhi-esp32
-  
-  # Apply the custom board definition for our hardware
-  cp -r path/to/ESP-Handheld/docs/xiaozhi/ main/boards/zistar/
-  
-  idf.py set-target esp32s3
+  cd xiaozhi-zistar-main
+  idf.py set-target esp32s3     # first time only
   idf.py build
   python -m esptool --chip esp32s3 -p (PORT) -b 921600 \
     write_flash 0x810000 build/xiaozhi.bin
   ```
-  See `docs/xiaozhi/README.md` for full hardware configuration details.
   The ESP-Handheld menu's "小智" button reboots into ota_1 to launch it.
 
 ---
