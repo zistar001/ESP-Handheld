@@ -5,12 +5,10 @@
 ### Physical Buttons
 
 ```
-        [START]  [UP]
-                    ↑
-    [LEFT] ←     → [RIGHT]
-
-         [DOWN]  [A]  [B]
-          ↓
+               [UP]
+                ↑                      [A]
+    [LEFT] ←  [DOWN]  → [RIGHT]        [B]
+                ↓                [START] 
 ```
 
 | Button | Location | GPIO | Function |
@@ -21,7 +19,7 @@
 | **RIGHT** | Mid-right | GPIO7 | Navigate right |
 | **A** | Top-right | GPIO4 | Confirm |
 | **B** | Bottom-right | GPIO5 | Backspace / Delete |
-| **START** | Mid-bottom | GPIO6 | Menu / Start |
+| **START** | Mid-bottom | GPIO6 | Menu / Start / ESC |
 
 ### Combo Keys
 
@@ -90,7 +88,7 @@ Launches XiaoZhi AI voice assistant (ota_1 partition).
 
 Pairs as a Bluetooth keyboard. Enter the Keyboard app and pair with your device via Bluetooth settings (search for "ESP-Handheld").
 
-**Key mapping:** UP/DOWN/LEFT/RIGHT = arrow keys, A = Enter, B = Esc, START = Tab
+**Key mapping:** UP/DOWN/LEFT/RIGHT = arrow keys, A = Enter, B = Backspace, START = ESC
 
 **Push-to-talk:** Hold **RIGHT** to speak through the mic (requires PC IP configuration).
 
