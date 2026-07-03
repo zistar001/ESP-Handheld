@@ -5,10 +5,12 @@
 ### Physical Buttons
 
 ```
-              [START]                    [UP]
-                                          ↑
-    [LEFT] ←  [DOWN]  → [RIGHT]    [A]  [B]
-                ↓
+        [START]  [UP]
+                    ↑
+    [LEFT] ←     → [RIGHT]
+
+         [DOWN]  [A]  [B]
+          ↓
 ```
 
 | Button | Location | GPIO | Function |
@@ -16,10 +18,10 @@
 | **UP** | Top-left | GPIO16 | Navigate up |
 | **DOWN** | Bottom-left | GPIO15 | Navigate down |
 | **LEFT** | Mid-left | GPIO17 | Navigate left |
-| **RIGHT** | Mid-right | GPIO7 | Navigate right / confirm |
-| **A** | Bottom-right | GPIO4 | Confirm / select |
-| **B** | Bottom-right (left of A) | GPIO5 | Back / cancel |
-| **START** | Top-left (above UP) | GPIO6 | Menu / start |
+| **RIGHT** | Mid-right | GPIO7 | Navigate right |
+| **A** | Top-right | GPIO4 | Confirm |
+| **B** | Bottom-right | GPIO5 | Backspace / Delete |
+| **START** | Mid-bottom | GPIO6 | Menu / Start |
 
 ### Combo Keys
 

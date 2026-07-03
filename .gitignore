@@ -29,6 +29,9 @@ xiaozhi-zistar-main/
 # Personal design docs
 docs/superpowers/
 
+# UI design files (not needed for open source)
+tools/ui/
+
 # Binary artifacts
 tools/VoiceReceiver/
 tools/VoiceReceiver.zip
