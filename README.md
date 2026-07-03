@@ -1,6 +1,6 @@
 # ESP-Handheld
 
-[![Build](https://github.com/YOUR_USERNAME/ESP-Handheld/actions/workflows/build.yml/badge.svg)](https://github.com/YOUR_USERNAME/ESP-Handheld/actions/workflows/build.yml)
+[![Build](https://github.com/zistar001/ESP-Handheld/actions/workflows/build.yml/badge.svg)](https://github.com/zistar001/ESP-Handheld/actions/workflows/build.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 An open-source firmware for **ESP32-S3 handheld gaming & utility devices**. Features a retro game launcher with NES emulation, LVGL-based UI, weather dashboard, BLE HID keyboard/mouse, WiFi audio streaming, fortune telling (I Ching), and a dual-firmware system with XiaoZhi AI.
@@ -49,7 +49,7 @@ An open-source firmware for **ESP32-S3 handheld gaming & utility devices**. Feat
 
 ```powershell
 # From ESP-IDF PowerShell environment:
-git clone --recursive https://github.com/YOUR_USERNAME/ESP-Handheld.git
+git clone --recursive https://github.com/zistar001/ESP-Handheld.git
 cd ESP-Handheld
 .\scripts\setup.ps1
 ```
@@ -63,7 +63,7 @@ To configure your Weather API key:
 ### Linux / macOS
 
 ```bash
-git clone --recursive https://github.com/YOUR_USERNAME/ESP-Handheld.git
+git clone --recursive https://github.com/zistar001/ESP-Handheld.git
 cd ESP-Handheld
 source $IDF_PATH/export.sh
 ./scripts/setup.sh

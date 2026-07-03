@@ -13,7 +13,7 @@ None. The firmware works without any external services — weather will simply b
 **Required for:** Weather dashboard on home screen
 
 **Registration:**
-1. Go to [devapi.qweather.com](https://devapi.qweather.com)
+1. Go to [dev.qweather.com](https://dev.qweather.com)
 2. Sign up for a free account
 3. Create a project and get your **API Key** (free tier: 1000 calls/day)
 

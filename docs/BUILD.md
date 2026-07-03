@@ -52,7 +52,7 @@ cd esp-idf
 
 ```bash
 # 1. Clone with submodules
-git clone --recursive https://github.com/YOUR_USERNAME/ESP-Handheld.git
+git clone --recursive https://github.com/zistar001/ESP-Handheld.git
 cd ESP-Handheld
 git submodule update --init --recursive
 

@@ -30,8 +30,8 @@ xiaozhi-zistar-main/
 docs/superpowers/
 
 # Binary artifacts
-tools/VoiceReceiver/VoiceReceiver.exe
-tools/VoiceReceiver/_internal/
+tools/VoiceReceiver/
+tools/VoiceReceiver.zip
 
 # Logs, temp files, crash dumps
 *.log
@@ -57,7 +57,6 @@ setup_idf_env.bat
 
 # Development notes (personal debugging history)
 DEVELOPMENT_NOTES.md
-AGENTS.md
 YI64.md
 
 # IDE / personal / cache

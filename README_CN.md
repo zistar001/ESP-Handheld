@@ -1,6 +1,6 @@
 # ESP-Handheld
 
-[![Build](https://github.com/YOUR_USERNAME/ESP-Handheld/actions/workflows/build.yml/badge.svg)](https://github.com/YOUR_USERNAME/ESP-Handheld/actions/workflows/build.yml)
+[![Build](https://github.com/zistar001/ESP-Handheld/actions/workflows/build.yml/badge.svg)](https://github.com/zistar001/ESP-Handheld/actions/workflows/build.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 基于 **ESP32-S3** 的开源掌机固件。集成了复古游戏模拟器、LVGL 图形界面、天气显示、BLE 蓝牙键盘鼠标、WiFi 音频串流、占卜工具等功能。
@@ -49,7 +49,7 @@
 
 ```powershell
 # 在 ESP-IDF PowerShell 环境中运行：
-git clone --recursive https://github.com/YOUR_USERNAME/ESP-Handheld.git
+git clone --recursive https://github.com/zistar001/ESP-Handheld.git
 cd ESP-Handheld
 .\scripts\setup.ps1
 ```
@@ -63,7 +63,7 @@ cd ESP-Handheld
 ### Linux / macOS
 
 ```bash
-git clone --recursive https://github.com/YOUR_USERNAME/ESP-Handheld.git
+git clone --recursive https://github.com/zistar001/ESP-Handheld.git
 cd ESP-Handheld
 . $IDF_PATH/export.sh
 ./scripts/setup.sh
