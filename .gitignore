@@ -17,7 +17,8 @@ xiaozhi-zistar-main/sdkconfig.defaults.*
 managed_components/
 xiaozhi-zistar-main/managed_components/
 
-# External reference repos (not part of the build)
+# External reference repos (cloned during development, not part of the build)
+# These directories may exist locally from earlier development; if so they are ignored.
 reference_nes/
 esp32s3_nes_gamer/
 retro-go-esp32s3-st7789v-v1.1/

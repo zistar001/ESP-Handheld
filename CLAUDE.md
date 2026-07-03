@@ -4,11 +4,42 @@ Agent guidance for **ESP-Handheld** firmware — ESP32-S3 handheld with LVGL UI,
 
 **Project:** `esp_handheld` — ESP-IDF v5.5.4, target `esp32s3`, entry `main/main.c`
 
+## Environment Setup
+
+### Prerequisites
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| ESP-IDF | **v5.5.4** | Must target `esp32s3`. Do NOT use other versions — code relies on v5.5.4 APIs. |
+| Python | 3.11+ | Bundled with ESP-IDF installer |
+| CMake | ≥3.16 | Bundled with ESP-IDF |
+| Ninja | ≥1.10 | Bundled with ESP-IDF |
+| Git | Any | For cloning + submodules |
+
+### Install ESP-IDF
+
+**Windows:** Download the ESP-IDF v5.5.4 installer from [Espressif's website](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/get-started/windows-setup.html). Select "ESP32S3" target during installation. After install, use the "ESP-IDF PowerShell" shortcut.
+
+**Linux / macOS:**
+```bash
+git clone -b v5.5.4 --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf
+./install.sh esp32s3
+. ./export.sh     # add to .bashrc for convenience
+```
+
+**Verify installation:**
+```bash
+idf.py --version     # Should show v5.5.4
+xtensa-esp32s3-elf-gcc --version  # Should show 14.2.0
+```
+
 ## Build & Flash
 
 ### First Clone
 ```bash
 git clone --recursive <repo-url>
+cd ESP-Handheld
 git submodule update --init --recursive   # if cloned without --recursive
 ```
 Submodules: LVGL v8.4 (`components/lvgl`), esp-wifi-connect (`components/esp-wifi-connect`).
