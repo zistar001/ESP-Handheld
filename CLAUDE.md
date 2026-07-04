@@ -206,5 +206,19 @@ The ESP-Handheld menu's "小智" card will reboot into ota_1 to launch XiaoZhi.
 | LVGL v8.4 | https://github.com/lvgl/lvgl | MIT | Linked into main binary |
 | esp-wifi-connect | https://github.com/78/esp-wifi-connect | No explicit license | Submodule (cloned from upstream) |
 | XiaoZhi AI | https://github.com/78/xiaozhi-esp32 | MIT | Standalone ota_1 firmware (separate binary) |
+| ESP-Claw | https://github.com/espressif/esp-claw | Apache-2.0 | Optional ota_1 replacement — see `esp-claw-integration/` |
 | Weather API | HeFeng (devapi.qweather.com) | Free tier | External service |
 | NTP | ntp.aliyun.com + pool.ntp.org | — | External service |
+
+## ESP-Claw Integration (Optional)
+
+`esp-claw-integration/` contains everything needed to replace XiaoZhi AI with
+[ESP-Claw](https://github.com/espressif/esp-claw) as the ota_1 firmware:
+
+- **Custom board definition** for the Rev.2 PCB (ST7789, MAX98357, MSM261)
+- **Hybrid partition table** adding emote/system/storage data partitions
+- **START+B patch** to return from ESP-Claw to ESP-Handheld
+- **Flash tools** for dual-boot setup
+- **Usage guide** for ESP-Claw features (LLM, chat, chat coding, etc.)
+
+See `esp-claw-integration/README.md` for full build & flash instructions.

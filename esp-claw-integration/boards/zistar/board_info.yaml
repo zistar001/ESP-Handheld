@@ -1,0 +1,4 @@
+board: zistar
+chip: esp32s3
+description: "Zistar ESP-Handheld (ST7789 240x280 + MAX98357 + MSM261) Game Console"
+manufacturer: "Zistar"

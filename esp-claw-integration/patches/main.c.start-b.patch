@@ -1,0 +1,87 @@
+From: ESP-Handheld integration
+Date: 2026-07-04
+Subject: [PATCH] add START+B button to switch back to ESP-Handheld (factory)
+
+Add GPIO button monitoring for START (GPIO6) + B (GPIO5) combo.
+When both are pressed simultaneously for 150ms (debounce),
+set boot partition to factory and restart.
+
+Apply:  cd esp-claw/application/edge_agent && git apply this.patch
+
+---
+ main/main.c | 45 ++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 44 insertions(+), 1 deletion(-)
+
+diff --git a/main/main.c b/main/main.c
+index 4c69302..e4db085 100644
+--- a/main/main.c
++++ b/main/main.c
+@@ -28,6 +28,7 @@
+ #include "esp_system.h"
+ #include "esp_board_manager_includes.h"
+ #include "captive_dns.h"
++#include "esp_ota_ops.h"
++#include "esp_partition.h"
+ #include "cmd_wifi.h"
+ #include "driver/gpio.h"
+ #include "freertos/FreeRTOS.h"
+@@ -419,6 +420,49 @@ static esp_err_t main_restart_device(void)
+     return ESP_OK;
+ }
+
++/* START+B (GPIO6+GPIO5) → switch to factory partition (ESP-Handheld) */
++#define KEY_START GPIO_NUM_6
++#define KEY_B     GPIO_NUM_5
++#define KEY_MASK  (BIT64(KEY_START) | BIT64(KEY_B))
++
++static void switch_to_factory_task(void *arg)
++{
++    (void)arg;
++    gpio_config_t io_conf = {
++        .pin_bit_mask = KEY_MASK,
++        .mode = GPIO_MODE_INPUT,
++        .pull_up_en = GPIO_PULLUP_ENABLE,
++        .pull_down_en = GPIO_PULLDOWN_DISABLE,
++        .intr_type = GPIO_INTR_DISABLE,
++    };
++    gpio_config(&io_conf);
++
++    while (1) {
++        vTaskDelay(pdMS_TO_TICKS(50));
++        if (gpio_get_level(KEY_START) == 0 && gpio_get_level(KEY_B) == 0) {
++            vTaskDelay(pdMS_TO_TICKS(150)); /* debounce */
++            if (gpio_get_level(KEY_START) == 0 && gpio_get_level(KEY_B) == 0) {
++                ESP_LOGI(TAG, "START+B pressed — switching to factory (ESP-Handheld)");
++                const esp_partition_t *target = esp_partition_find_first(
++                    ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
++                if (target) {
++                    esp_ota_set_boot_partition(target);
++                    ESP_LOGI(TAG, "Boot partition set to factory, restarting...");
++                    vTaskDelay(pdMS_TO_TICKS(100));
++                    esp_restart();
++                } else {
++                    ESP_LOGE(TAG, "Factory partition not found!");
++                }
++            }
++        }
++    }
++}
++
++static void start_b_monitor_start(void)
++{
++    xTaskCreate(switch_to_factory_task, "key_mon", 3072, NULL, 5, NULL);
++}
++
+ #if CONFIG_APP_CLAW_CAP_IM_WECHAT
+ static esp_err_t main_wechat_login_start(const char *account_id, bool force)
+ {
+@@ -810,7 +854,7 @@ void app_main(void)
+
+     register_wifi_command();
+
+-    /* Start START+B monitoring to allow switching back to ESP-Handheld */
+-    start_b_monitor_start();
++    start_b_monitor_start();  /* START+B → switch back to ESP-Handheld */
+
+ #if APP_ENABLE_MEM_LOG
+     /* Start memory monitor: print internal free, min free, PSRAM free every 20s */
