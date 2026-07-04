@@ -65,3 +65,21 @@ devices:
     version: default
     peripherals:
       - name: ledc_backlight
+
+  # Physical buttons — ESP-Claw default doesn't navigate by buttons,
+  # but these are documented for hardware reference and Lua GPIO access.
+  # START+B combo (GPIO6+GPIO5) enables return to ESP-Handheld (see patch).
+  - name: buttons
+    chip: gpio_button
+    type: custom
+    version: 1.0.0
+    init_skip: true
+    config:
+      button_up_gpio: 16
+      button_down_gpio: 15
+      button_left_gpio: 17
+      button_right_gpio: 7
+      button_a_gpio: 4
+      button_b_gpio: 5
+      button_start_gpio: 6
+      active_level: 0
